@@ -31,7 +31,7 @@ import {
   SystemAuditLog,
 } from '../data/mockData';
 import { api, authApi, ApiError } from '../../lib/api';
-import { useResourceSync } from '../../lib/data';
+import { useResourceSync, useSettingSync } from '../../lib/data';
 import {
   getRoleDashboardSlug,
   getRoleFromSlug,
@@ -77,6 +77,7 @@ interface AppContextType {
   userAccounts: UserAccount[];
   currentUser: UserAccount | null;
   isAuthenticated: boolean;
+  dataHydrated: boolean;
   login: (usernameOrEmail: string, password: string) => Promise<{ success: boolean; error?: string; user?: UserAccount }>;
   logout: () => void;
   signup: (account: Omit<UserAccount, 'id' | 'createdAt'>) => Promise<{ success: boolean; error?: string; user?: UserAccount }>;
@@ -356,24 +357,14 @@ function loadFromStorage<T>(key: string, fallback: T): T {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // User Accounts State (Persistent)
-  const [userAccounts, setUserAccounts] = useState<UserAccount[]>(() => {
-    const loaded = loadFromStorage('artrust_user_accounts', INITIAL_USER_ACCOUNTS);
-    const existingIds = new Set(loaded.map((u: UserAccount) => u.id));
-    const missing = INITIAL_USER_ACCOUNTS.filter((u) => !existingIds.has(u.id));
-    if (missing.length > 0) {
-      const merged = [...loaded, ...missing];
-      try { localStorage.setItem('artrust_user_accounts', JSON.stringify(merged)); } catch {}
-      return merged;
-    }
-    return loaded;
-  });
+  const [userAccounts, setUserAccounts] = useState<UserAccount[]>([]);
 
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
     try {
       const saved = localStorage.getItem('artrust_current_user');
       if (saved) return JSON.parse(saved);
     } catch {}
-    return INITIAL_USER_ACCOUNTS[0]; // Default to Super Admin
+    return null; // No implicit user — require a real login.
   });
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
@@ -381,7 +372,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const saved = localStorage.getItem('artrust_is_authenticated');
       if (saved !== null) return JSON.parse(saved);
     } catch {}
-    return true;
+    return false; // Require authentication before showing the ERP console.
   });
 
   // Active Role state: default to role from URL slug if visiting a specific dashboard slug, or currentUser's role, or 'super-admin'
@@ -410,42 +401,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [rates, setRates] = useState<ExchangeRates>(() => loadFromStorage('artrust_rates', INITIAL_RATES));
+  const [rates, setRates] = useState<ExchangeRates>(INITIAL_RATES); // hydrated from settings
 
   // Persistent Real Production Datasets (never lose user input or CRUD changes)
-  const [bookings, setBookings] = useState<Booking[]>(() => loadFromStorage('artrust_bookings', INITIAL_BOOKINGS));
-  const [drivers, setDrivers] = useState<Driver[]>(() => loadFromStorage('artrust_drivers', INITIAL_DRIVERS));
-  const [fleetVehicles, setFleetVehicles] = useState<FleetVehicle[]>(() => {
-    const loaded = loadFromStorage('artrust_fleet_vehicles', INITIAL_FLEET_VEHICLES);
-    const existingIds = new Set(loaded.map((v: FleetVehicle) => v.id));
-    const updatedLoaded = loaded.map((v: FleetVehicle) => {
-      const initial = INITIAL_FLEET_VEHICLES.find((iv) => iv.id === v.id);
-      if (initial) {
-        const isOldUrl = typeof v.image === 'string' && (v.image.includes('artrusttravel.com') || !v.image);
-        return {
-          ...initial,
-          ...v,
-          image: isOldUrl ? initial.image : (v.image || initial.image),
-          category: v.category || initial.category,
-        };
-      }
-      return v;
-    });
-    const missing = INITIAL_FLEET_VEHICLES.filter((v) => !existingIds.has(v.id));
-    if (missing.length > 0) {
-      const merged = [...updatedLoaded, ...missing];
-      try {
-        localStorage.setItem('artrust_fleet_vehicles', JSON.stringify(merged));
-      } catch {}
-      return merged;
-    }
-    return updatedLoaded;
-  });
-  const [flights] = useState<FlightInfo[]>(INITIAL_FLIGHTS);
-  const [shiftDrawer, setShiftDrawer] = useState<ShiftDrawer>(() => loadFromStorage('artrust_shift_drawer', INITIAL_SHIFT_DRAWER));
-  const [notifications, setNotifications] = useState<NotificationItem[]>(() =>
-    loadFromStorage('artrust_notifications', INITIAL_NOTIFICATIONS)
-  );
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [fleetVehicles, setFleetVehicles] = useState<FleetVehicle[]>([]);
+  const [flights] = useState<FlightInfo[]>(INITIAL_FLIGHTS); // live flight board — no DB table
+  const [shiftDrawer, setShiftDrawer] = useState<ShiftDrawer>(INITIAL_SHIFT_DRAWER); // hydrated from settings
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [latestToastNotification, setLatestToastNotification] = useState<NotificationItem | null>(null);
   const [liveFeedEnabled, setLiveFeedEnabled] = useState<boolean>(() => {
     try {
@@ -455,76 +419,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return true;
     }
   });
-  const [expenses, setExpenses] = useState<FinanceExpense[]>(() => loadFromStorage('artrust_expenses', INITIAL_FINANCE_EXPENSES));
-  const [systemLogs, setSystemLogs] = useState<SystemAuditLog[]>(() => loadFromStorage('artrust_system_logs', INITIAL_SYSTEM_LOGS));
-  const [tourGuides, setTourGuides] = useState<TourGuide[]>(() => loadFromStorage('artrust_tour_guides', INITIAL_TOUR_GUIDES));
-  const [salaryRecords, setSalaryRecords] = useState<SalaryRecord[]>(() => loadFromStorage('artrust_salary_records', INITIAL_SALARY_RECORDS));
-  const [commissionRules, setCommissionRules] = useState<CommissionRule[]>(INITIAL_COMMISSION_RULES);
-  const [packages, setPackages] = useState<TourPackage[]>(() => {
-    const loaded = loadFromStorage('artrust_packages', TOUR_PACKAGES);
-    const existingIds = new Set(loaded.map((p) => p.id));
-    const updatedLoaded = loaded.map((p) => {
-      const initial = TOUR_PACKAGES.find((tp) => tp.id === p.id);
-      const serviceType = p.serviceType || initial?.serviceType || getServiceTypeForCategory(p.category, p.isMultiDay);
-      if (initial && (!p.image || !p.badge || !p.serviceType || (p.id === 'pkg-5' && p.image?.includes('Mercedes-Benz-V-Class-1000x1296.png')))) {
-        return {
-          ...initial,
-          ...p,
-          serviceType,
-          image: initial.image,
-          badge: p.badge || initial.badge,
-        };
-      }
-      return { ...p, serviceType };
-    });
-    const missing = TOUR_PACKAGES.filter((p) => !existingIds.has(p.id));
-    const finalPackages = missing.length > 0 ? [...updatedLoaded, ...missing] : updatedLoaded;
-    try {
-      localStorage.setItem('artrust_packages', JSON.stringify(finalPackages));
-    } catch {}
-    return finalPackages;
-  });
-  const [packageCategories, setPackageCategories] = useState<string[]>(() => {
-    const loaded = loadFromStorage('artrust_package_categories', INITIAL_PACKAGE_CATEGORIES);
-    const filteredLoaded = (Array.isArray(loaded) ? loaded : []).filter(
-      (c: string) => c && typeof c === 'string' && c.trim().toLowerCase() !== 'all'
-    );
-    const combined = Array.from(new Set([...filteredLoaded, ...INITIAL_PACKAGE_CATEGORIES]));
-    try {
-      localStorage.setItem('artrust_package_categories', JSON.stringify(combined));
-    } catch {}
-    return combined;
-  });
-  const [categoryServiceMap, setCategoryServiceMap] = useState<Record<string, ServiceMainType>>(() => {
-    const loaded = loadFromStorage('artrust_category_service_map', INITIAL_CATEGORY_SERVICE_MAP);
-    return { ...INITIAL_CATEGORY_SERVICE_MAP, ...(loaded || {}) };
-  });
+  const [expenses, setExpenses] = useState<FinanceExpense[]>([]);
+  const [systemLogs, setSystemLogs] = useState<SystemAuditLog[]>([]);
+  const [tourGuides, setTourGuides] = useState<TourGuide[]>([]);
+  const [salaryRecords, setSalaryRecords] = useState<SalaryRecord[]>([]);
+  const [commissionRules, setCommissionRules] = useState<CommissionRule[]>([]);
+  const [packages, setPackages] = useState<TourPackage[]>([]);
+  const [packageCategories, setPackageCategories] = useState<string[]>(INITIAL_PACKAGE_CATEGORIES); // hydrated from settings
+  const [categoryServiceMap, setCategoryServiceMap] = useState<Record<string, ServiceMainType>>(INITIAL_CATEGORY_SERVICE_MAP); // hydrated from settings
 
   // Airport & Hotel Partner Agent Desks State
-  const [airportDesks, setAirportDesks] = useState<AirportDesk[]>(() => {
-    const loaded = loadFromStorage('artrust_airport_desks', INITIAL_AIRPORT_DESKS);
-    const existingIds = new Set(loaded.map((d) => d.id));
-    const missing = INITIAL_AIRPORT_DESKS.filter((d) => !existingIds.has(d.id));
-    if (missing.length > 0) {
-      const merged = [...loaded, ...missing];
-      try {
-        localStorage.setItem('artrust_airport_desks', JSON.stringify(merged));
-      } catch {}
-      return merged;
-    }
-    return loaded;
-  });
-  const [deskAssignmentHistory, setDeskAssignmentHistory] = useState<DeskAssignmentRecord[]>(() => {
-    const loaded = loadFromStorage('artrust_desk_assignments', INITIAL_DESK_ASSIGNMENT_HISTORY);
-    const existingIds = new Set(loaded.map((d) => d.id));
-    const missing = INITIAL_DESK_ASSIGNMENT_HISTORY.filter((d) => !existingIds.has(d.id));
-    if (missing.length > 0) {
-      const merged = [...loaded, ...missing];
-      try { localStorage.setItem('artrust_desk_assignments', JSON.stringify(merged)); } catch {}
-      return merged;
-    }
-    return loaded;
-  });
+  const [airportDesks, setAirportDesks] = useState<AirportDesk[]>([]);
+  const [deskAssignmentHistory, setDeskAssignmentHistory] = useState<DeskAssignmentRecord[]>([]);
   const [activeDeskId, setActiveDeskId] = useState<string>(() => {
     try {
       const saved = localStorage.getItem('artrust_active_desk_id');
@@ -532,67 +438,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch {}
     return 'desk-hia-01';
   });
-  const [employees, setEmployees] = useState<Employee[]>(() => {
-    const loaded = loadFromStorage('artrust_employees', INITIAL_EMPLOYEES);
-    const existingIds = new Set(loaded.map((e) => e.id));
-    const missing = INITIAL_EMPLOYEES.filter((e) => !existingIds.has(e.id));
-    if (missing.length > 0) {
-      const merged = [...loaded, ...missing];
-      try { localStorage.setItem('artrust_employees', JSON.stringify(merged)); } catch {}
-      return merged;
-    }
-    return loaded;
-  });
-  const [guests, setGuests] = useState<Guest[]>(() => loadFromStorage('artrust_guests', INITIAL_GUESTS));
-  const [guestTiers, setGuestTiers] = useState<GuestTier[]>(() => loadFromStorage('artrust_guest_tiers', INITIAL_GUEST_TIERS));
-  const [hotelVendors, setHotelVendors] = useState<HotelVendor[]>(() => {
-    const loaded = loadFromStorage('artrust_hotel_vendors', INITIAL_HOTEL_VENDORS);
-    const existingIds = new Set(loaded.map((v) => v.id));
-    const missing = INITIAL_HOTEL_VENDORS.filter((v) => !existingIds.has(v.id));
-    if (missing.length > 0) {
-      const merged = [...loaded, ...missing];
-      try { localStorage.setItem('artrust_hotel_vendors', JSON.stringify(merged)); } catch {}
-      return merged;
-    }
-    return loaded;
-  });
-  const [hotelBookings, setHotelBookings] = useState<HotelBooking[]>(() => {
-    const loaded = loadFromStorage('artrust_hotel_bookings', INITIAL_HOTEL_BOOKINGS);
-    const existingIds = new Set(loaded.map((b) => b.id));
-    const missing = INITIAL_HOTEL_BOOKINGS.filter((b) => !existingIds.has(b.id));
-    if (missing.length > 0) {
-      const merged = [...loaded, ...missing];
-      try { localStorage.setItem('artrust_hotel_bookings', JSON.stringify(merged)); } catch {}
-      return merged;
-    }
-    return loaded;
-  });
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [guests, setGuests] = useState<Guest[]>([]);
+  const [guestTiers, setGuestTiers] = useState<GuestTier[]>([]);
+  const [hotelVendors, setHotelVendors] = useState<HotelVendor[]>([]);
+  const [hotelBookings, setHotelBookings] = useState<HotelBooking[]>([]);
 
   // Multi-Currency Treasury & Vault Reserves State
-  const [currencies, setCurrencies] = useState<CurrencyItem[]>(() => {
-    const loaded = loadFromStorage('artrust_custom_currencies', INITIAL_CURRENCIES);
-    const existingCodes = new Set(loaded.map((c: CurrencyItem) => c.code));
-    const missing = INITIAL_CURRENCIES.filter((c) => !existingCodes.has(c.code));
-    if (missing.length > 0) {
-      const merged = [...loaded, ...missing];
-      try { localStorage.setItem('artrust_custom_currencies', JSON.stringify(merged)); } catch {}
-      return merged;
-    }
-    return loaded;
-  });
+  const [currencies, setCurrencies] = useState<CurrencyItem[]>([]);
 
   // Historical Exchange Rates & Vault Reserves Ledger
-  const [currencyHistory, setCurrencyHistory] = useState<CurrencyHistoryRecord[]>(() => {
-    const loaded = loadFromStorage('artrust_currency_history', INITIAL_CURRENCY_HISTORY);
-    const existingIds = new Set(loaded.map((h: CurrencyHistoryRecord) => h.id));
-    const missing = INITIAL_CURRENCY_HISTORY.filter((h) => !existingIds.has(h.id));
-    if (missing.length > 0) {
-      const merged = [...loaded, ...missing];
-      try { localStorage.setItem('artrust_currency_history', JSON.stringify(merged)); } catch {}
-      return merged;
-    }
-    return loaded;
-  });
+  const [currencyHistory, setCurrencyHistory] = useState<CurrencyHistoryRecord[]>([]);
 
   // Date & Year Filter state
   const [dateFilter, setDateFilter] = useState<DateFilterState>(DEFAULT_DATE_FILTER);
@@ -632,6 +488,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       document.documentElement.classList.add('light');
     }
   }, [theme]);
+
+  // ---- Public catalogue for the marketing website — loads WITHOUT login so
+  // the homepage shows live packages & fleet from MySQL (public GET routes).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [pkg, fl] = await Promise.all([
+        api.get<TourPackage[]>('/api/tour-packages?take=200').catch(() => null),
+        api.get<FleetVehicle[]>('/api/fleet?take=200').catch(() => null),
+      ]);
+      if (cancelled) return;
+      if (pkg?.length) setPackages(pkg);
+      if (fl?.length) setFleetVehicles(fl);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // ---- Hydrate every collection from the live API (MySQL is the source of
   // truth). Runs once the user is authenticated; on failure the app keeps the
@@ -679,6 +553,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (ad?.length) setAirportDesks(ad);
         if (da?.length) setDeskAssignmentHistory(da);
         if (notif?.length) setNotifications(notif);
+
+        // Users + payroll/audit lists + singleton config (settings key/value).
+        const [usr, sal, com, logs, rt, sd, pc, csm] = await Promise.all([
+          load<UserAccount>('users'),
+          load<SalaryRecord>('salary-records'),
+          load<CommissionRule>('commission-rules'),
+          load<SystemAuditLog>('audit-logs'),
+          api.get<ExchangeRates>('/api/settings/rates').catch(() => null),
+          api.get<ShiftDrawer>('/api/settings/shiftDrawer').catch(() => null),
+          api.get<string[]>('/api/settings/packageCategories').catch(() => null),
+          api.get<Record<string, ServiceMainType>>('/api/settings/categoryServiceMap').catch(() => null),
+        ]);
+        if (cancelled) return;
+        if (usr?.length) setUserAccounts(usr);
+        if (sal?.length) setSalaryRecords(sal);
+        if (com?.length) setCommissionRules(com);
+        if (logs?.length) setSystemLogs(logs);
+        if (rt) setRates(rt);
+        if (sd) setShiftDrawer(sd);
+        if (pc?.length) setPackageCategories(pc);
+        if (csm && Object.keys(csm).length) setCategoryServiceMap(csm);
       } catch (e) {
         console.error('[hydrate] failed, using local fallback:', (e as Error).message);
       } finally {
@@ -691,46 +586,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
+  // Surface a toast when a background write to the API fails.
+  const notifySyncError = React.useCallback((message: string) => {
+    setLatestToastNotification({
+      id: `sync-err-${Date.now()}`,
+      title: 'Sync issue',
+      titleAr: 'تنبيه المزامنة',
+      message,
+      messageAr: message,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      type: 'cash',
+      read: false,
+    });
+  }, []);
+
   // ---- Live write-through: mirror every CRUD change to MySQL via the API.
   // Replaces the old localStorage persistence for all business collections.
-  useResourceSync('bookings', bookings as never, dataHydrated);
-  useResourceSync('drivers', drivers as never, dataHydrated);
-  useResourceSync('fleet', fleetVehicles as never, dataHydrated);
-  useResourceSync('tour-guides', tourGuides as never, dataHydrated);
-  useResourceSync('guests', guests as never, dataHydrated);
-  useResourceSync('guest-tiers', guestTiers as never, dataHydrated);
-  useResourceSync('hotel-vendors', hotelVendors as never, dataHydrated);
-  useResourceSync('hotel-bookings', hotelBookings as never, dataHydrated);
-  useResourceSync('employees', employees as never, dataHydrated);
-  useResourceSync('expenses', expenses as never, dataHydrated);
-  useResourceSync('currencies', currencies as never, dataHydrated);
-  useResourceSync('currency-history', currencyHistory as never, dataHydrated);
-  useResourceSync('tour-packages', packages as never, dataHydrated);
-  useResourceSync('airport-desks', airportDesks as never, dataHydrated);
-  useResourceSync('desk-assignments', deskAssignmentHistory as never, dataHydrated);
+  useResourceSync('bookings', bookings as never, dataHydrated, notifySyncError);
+  useResourceSync('drivers', drivers as never, dataHydrated, notifySyncError);
+  useResourceSync('fleet', fleetVehicles as never, dataHydrated, notifySyncError);
+  useResourceSync('tour-guides', tourGuides as never, dataHydrated, notifySyncError);
+  useResourceSync('guests', guests as never, dataHydrated, notifySyncError);
+  useResourceSync('guest-tiers', guestTiers as never, dataHydrated, notifySyncError);
+  useResourceSync('hotel-vendors', hotelVendors as never, dataHydrated, notifySyncError);
+  useResourceSync('hotel-bookings', hotelBookings as never, dataHydrated, notifySyncError);
+  useResourceSync('employees', employees as never, dataHydrated, notifySyncError);
+  useResourceSync('expenses', expenses as never, dataHydrated, notifySyncError);
+  useResourceSync('currencies', currencies as never, dataHydrated, notifySyncError);
+  useResourceSync('currency-history', currencyHistory as never, dataHydrated, notifySyncError);
+  useResourceSync('tour-packages', packages as never, dataHydrated, notifySyncError);
+  useResourceSync('airport-desks', airportDesks as never, dataHydrated, notifySyncError);
+  useResourceSync('desk-assignments', deskAssignmentHistory as never, dataHydrated, notifySyncError);
 
-  // ---- UI/config state that has no API table yet — kept in localStorage.
-  useEffect(() => {
-    try { localStorage.setItem('artrust_rates', JSON.stringify(rates)); } catch {}
-  }, [rates]);
+  // ---- Payroll / audit lists + singleton config → live API (MySQL).
+  useResourceSync('salary-records', salaryRecords as never, dataHydrated, notifySyncError);
+  useResourceSync('commission-rules', commissionRules as never, dataHydrated, notifySyncError);
+  useResourceSync('audit-logs', systemLogs as never, dataHydrated, notifySyncError);
+  useSettingSync('rates', rates, dataHydrated, notifySyncError);
+  useSettingSync('shiftDrawer', shiftDrawer, dataHydrated, notifySyncError);
+  useSettingSync('packageCategories', packageCategories, dataHydrated, notifySyncError);
+  useSettingSync('categoryServiceMap', categoryServiceMap, dataHydrated, notifySyncError);
+
+  // ---- Remaining per-session UI preference — stays in localStorage.
   useEffect(() => {
     try { localStorage.setItem('artrust_active_desk_id', activeDeskId); } catch {}
   }, [activeDeskId]);
-  useEffect(() => {
-    try { localStorage.setItem('artrust_package_categories', JSON.stringify(packageCategories)); } catch {}
-  }, [packageCategories]);
-  useEffect(() => {
-    try { localStorage.setItem('artrust_category_service_map', JSON.stringify(categoryServiceMap)); } catch {}
-  }, [categoryServiceMap]);
-  useEffect(() => {
-    try { localStorage.setItem('artrust_salary_records', JSON.stringify(salaryRecords)); } catch {}
-  }, [salaryRecords]);
-  useEffect(() => {
-    try { localStorage.setItem('artrust_shift_drawer', JSON.stringify(shiftDrawer)); } catch {}
-  }, [shiftDrawer]);
-  useEffect(() => {
-    try { localStorage.setItem('artrust_system_logs', JSON.stringify(systemLogs)); } catch {}
-  }, [systemLogs]);
 
   useEffect(() => {
     try { localStorage.setItem('artrust_live_feed', JSON.stringify(liveFeedEnabled)); } catch {}
@@ -805,9 +705,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  useEffect(() => {
-    try { localStorage.setItem('artrust_user_accounts', JSON.stringify(userAccounts)); } catch {}
-  }, [userAccounts]);
+  // User accounts write-through to the API (passwords hashed server-side).
+  useResourceSync('users', userAccounts as never, dataHydrated, notifySyncError);
 
   const login = async (
     usernameOrEmail: string,
@@ -2655,6 +2554,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider
       value={{
+        dataHydrated,
         userAccounts,
         currentUser,
         isAuthenticated,

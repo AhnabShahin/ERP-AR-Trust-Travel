@@ -1,13 +1,12 @@
-'use client';
+import AppClient from './AppClient';
 
-import dynamic from 'next/dynamic';
-
-// The existing app is a client-side SPA with its own window-based router,
-// so we load it with SSR disabled and let it handle every route. This is an
-// optional catch-all route ([[...slug]]) so /login, /dashboard, role slugs,
-// etc. all render the SPA. Routes are migrated to real Next pages gradually.
-const App = dynamic(() => import('../../src/App'), { ssr: false });
+// Static export generates just the root HTML; client-side routing plus the SPA
+// fallback in public/.htaccess serve every other path. In server/dev mode the
+// optional catch-all still renders the SPA for any path at runtime.
+export function generateStaticParams() {
+  return [{ slug: [] }];
+}
 
 export default function CatchAllPage() {
-  return <App />;
+  return <AppClient />;
 }

@@ -122,19 +122,23 @@ This project was converted from a single Vite + React SPA (all data in
   Verified end-to-end: a value edited directly in MySQL appears in the UI, and a
   UI action ("Approve Lead") persists to MySQL (`PATCH … 200`, row updated).
 
-### 🔜 Remaining hardening (for full production)
-1. **Require a real login.** For demo convenience `AppContext` still defaults
-   `isAuthenticated` to `true`; when there's no JWT the hydrate call fails and
-   the app shows mock fallback data. For production, default it to `false` so an
-   unauthenticated visitor always sees the login screen.
-2. **A few config-only collections still use localStorage** (exchange rates,
-   shift drawer, salary records, audit logs, package categories, category map).
-   Add Prisma models + endpoints for any you want persisted server-side.
-3. **Surface sync errors in the UI.** `useResourceSync` currently logs failed
-   writes to the console — add a toast/retry for production.
-4. **(Optional) Split the tab shell into real Next routes** for SEO/perf: public
-   pages as server components under `app/(public)/`, dashboard under
-   `app/(dashboard)/`, replacing the `activeTab` switch in `App.tsx`.
+### ✅ Also done (production hardening)
+- **Login is required** — `AppContext` defaults to logged-out; without a JWT the
+  app shows the sign-in screen (no mock fallback dashboard).
+- **Config, payroll & audit now persist to MySQL too** — salary records,
+  commission rules and audit logs have full CRUD endpoints; exchange rates, the
+  shift drawer, package categories and the category→service map are stored in a
+  generic `app_settings` key/value table (`GET/PUT /api/settings/:key`) and
+  hydrate/write-through via `useSettingSync`.
+- **Sync failures surface a toast** — `useResourceSync` / `useSettingSync` call
+  `notifySyncError`, which raises the in-app notification toast.
+
+### 🔜 Optional further work
+- **Split the tab shell into real Next routes** for SEO/perf: public pages as
+  server components under `app/(public)/`, dashboard under `app/(dashboard)/`,
+  replacing the `activeTab` switch in `App.tsx`.
+- **Per-session UI prefs** (active desk id, live-feed toggle, theme) are
+  intentionally still in `localStorage` — they are device-local by design.
 
 ### Legacy files (safe to delete once Phase 2 is verified)
 Old Vite/static-server artifacts remain at the repo root for reference:

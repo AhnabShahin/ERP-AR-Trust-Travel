@@ -27,6 +27,8 @@ export interface CrudOptions {
   /** Extra exact-match filters allowed as query params, e.g. ['status']. */
   filterFields?: string[];
   defaultOrderBy?: Record<string, 'asc' | 'desc'>;
+  /** When true, GET routes are public (no token); writes still require auth. */
+  publicRead?: boolean;
 }
 
 /**
@@ -47,13 +49,16 @@ export function createCrudRouter(opts: CrudOptions): Router {
     searchFields = [],
     filterFields = [],
     defaultOrderBy = { createdAt: 'desc' },
+    publicRead = false,
   } = opts;
 
   const router = Router();
-  router.use(authenticate);
+  // Reads may be public (catalogue data for the website); writes never are.
+  const readGuard = publicRead ? [] : [authenticate];
 
   router.get(
     '/',
+    ...readGuard,
     asyncHandler(async (req, res) => {
       const where: Record<string, unknown> = {};
 
@@ -80,6 +85,7 @@ export function createCrudRouter(opts: CrudOptions): Router {
 
   router.get(
     '/:id',
+    ...readGuard,
     asyncHandler(async (req, res) => {
       const record = await delegate.findUnique({ where: { id: req.params.id } });
       if (!record) throw new HttpError(404, `${name} not found`);
@@ -89,6 +95,7 @@ export function createCrudRouter(opts: CrudOptions): Router {
 
   router.post(
     '/',
+    authenticate,
     asyncHandler(async (req, res) => {
       const data = createSchema.parse(req.body) as Record<string, unknown>;
       // Honour a client-supplied id so the frontend and DB stay in sync.
@@ -101,6 +108,7 @@ export function createCrudRouter(opts: CrudOptions): Router {
 
   router.patch(
     '/:id',
+    authenticate,
     asyncHandler(async (req, res) => {
       const data = updateSchema.parse(req.body);
       const existing = await delegate.findUnique({ where: { id: req.params.id } });
@@ -112,6 +120,7 @@ export function createCrudRouter(opts: CrudOptions): Router {
 
   router.delete(
     '/:id',
+    authenticate,
     asyncHandler(async (req, res) => {
       const existing = await delegate.findUnique({ where: { id: req.params.id } });
       if (!existing) throw new HttpError(404, `${name} not found`);

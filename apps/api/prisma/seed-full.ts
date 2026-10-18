@@ -25,8 +25,9 @@ const imageStub: esbuild.Plugin = {
       path: args.path,
       namespace: 'img-stub',
     }));
-    build.onLoad({ filter: /.*/, namespace: 'img-stub' }, () => ({
-      contents: 'export default ""',
+    build.onLoad({ filter: /.*/, namespace: 'img-stub' }, (args) => ({
+      // Map each imported image to its public path (copied to web/public/media).
+      contents: `export default ${JSON.stringify('/media/' + path.basename(args.path))}`,
       loader: 'js',
     }));
   },
@@ -91,6 +92,8 @@ async function seedModel(modelName: string, rows: unknown): Promise<void> {
   const delegate = delegateFor(modelName);
   const data = rows.map((r) => sanitise(modelName, r as Record<string, unknown>));
   try {
+    // Fresh demo reset: clear the table, then insert (keeps ids from the mock).
+    await delegate.deleteMany({});
     const res = await delegate.createMany({ data, skipDuplicates: true });
     console.log(`✓ ${modelName}: inserted ${res.count}/${rows.length}`);
   } catch (err) {
@@ -119,10 +122,30 @@ async function main() {
     ['AirportDesk', 'INITIAL_AIRPORT_DESKS'],
     ['DeskAssignment', 'INITIAL_DESK_ASSIGNMENT_HISTORY'],
     ['Notification', 'INITIAL_NOTIFICATIONS'],
+    ['SalaryRecord', 'INITIAL_SALARY_RECORDS'],
+    ['CommissionRule', 'INITIAL_COMMISSION_RULES'],
+    ['SystemAuditLog', 'INITIAL_SYSTEM_LOGS'],
   ];
 
   for (const [modelName, exportName] of plan) {
     await seedModel(modelName, mock[exportName]);
+  }
+
+  // Singletons & config → AppSetting key/value rows.
+  const settings: Array<[string, unknown]> = [
+    ['rates', mock.INITIAL_RATES],
+    ['shiftDrawer', mock.INITIAL_SHIFT_DRAWER],
+    ['packageCategories', mock.INITIAL_PACKAGE_CATEGORIES],
+    ['categoryServiceMap', mock.INITIAL_CATEGORY_SERVICE_MAP],
+  ];
+  for (const [key, value] of settings) {
+    if (value === undefined) continue;
+    await prisma.appSetting.upsert({
+      where: { key },
+      create: { key, value: value as never },
+      update: { value: value as never },
+    });
+    console.log(`✓ setting: ${key}`);
   }
 
   console.log('\n✅ Full data seed complete.');

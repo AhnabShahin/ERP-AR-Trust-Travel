@@ -16,6 +16,7 @@
     "dev:web": "npm run dev -w @ar-trust/web",
     "dev:api": "npm run dev -w @ar-trust/api",
     "build": "npm run build -w @ar-trust/api && npm run build -w @ar-trust/web",
+    "build:web:static": "npm run build:static -w @ar-trust/web",
     "db:generate": "npm run prisma:generate -w @ar-trust/api",
     "db:migrate": "npm run prisma:migrate -w @ar-trust/api",
     "db:seed": "npm run prisma:seed -w @ar-trust/api",

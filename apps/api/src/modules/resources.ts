@@ -23,6 +23,7 @@ interface ResourceDef {
   searchFields?: string[];
   filterFields?: string[];
   defaultOrderBy?: Record<string, 'asc' | 'desc'>;
+  publicRead?: boolean;
 }
 
 // One definition per entity. `shape` is the create schema; update is derived
@@ -32,6 +33,7 @@ const resources: ResourceDef[] = [
     path: 'fleet',
     name: 'Fleet vehicle',
     delegate: prisma.fleetVehicle,
+    publicRead: true,
     searchFields: ['name', 'category', 'plateNumber'],
     filterFields: ['category'],
     shape: {
@@ -266,6 +268,7 @@ const resources: ResourceDef[] = [
     path: 'tour-packages',
     name: 'Tour package',
     delegate: prisma.tourPackage,
+    publicRead: true,
     searchFields: ['name', 'category'],
     filterFields: ['category'],
     shape: {
@@ -393,6 +396,54 @@ const resources: ResourceDef[] = [
       notes: str.optional(),
     },
   },
+  {
+    path: 'salary-records',
+    name: 'Salary record',
+    delegate: prisma.salaryRecord,
+    searchFields: ['employeeName', 'roleTitle', 'department'],
+    filterFields: ['department', 'payoutStatus'],
+    shape: {
+      employeeName: str,
+      roleTitle: str,
+      department: str,
+      fixedBaseMonthlyQAR: num.optional(),
+      accruedCommissionQAR: num.optional(),
+      netPayableQAR: num.optional(),
+      paymentCycle: str,
+      payoutStatus: str,
+    },
+  },
+  {
+    path: 'commission-rules',
+    name: 'Commission rule',
+    delegate: prisma.commissionRule,
+    defaultOrderBy: { createdAt: 'asc' },
+    searchFields: ['targetRole', 'ruleDescription'],
+    shape: {
+      targetRole: str,
+      ruleDescription: str,
+      type: str,
+      rateValue: num,
+      unit: str,
+      appliesTo: str,
+    },
+  },
+  {
+    path: 'audit-logs',
+    name: 'Audit log',
+    delegate: prisma.systemAuditLog,
+    searchFields: ['actor', 'action', 'details'],
+    filterFields: ['category', 'status'],
+    shape: {
+      timestamp: str.optional(),
+      actor: str.optional(),
+      role: str.optional(),
+      action: str,
+      category: str.optional(),
+      details: str.optional(),
+      status: str.optional(),
+    },
+  },
 ];
 
 /** Mounts every resource router under /api/<path>. */
@@ -409,6 +460,7 @@ export function registerResourceRoutes(app: Express) {
         searchFields: def.searchFields,
         filterFields: def.filterFields,
         defaultOrderBy: def.defaultOrderBy,
+        publicRead: def.publicRead,
       })
     );
   }

@@ -509,14 +509,62 @@ model Notification {
 
 model SystemAuditLog {
   id        String   @id @default(cuid())
+  timestamp String?
   actor     String?
+  role      String?
   action    String
-  entity    String?
-  entityId  String?
-  details   Json?
-  ipAddress String?
+  category  String? // FINANCE | SECURITY | DISPATCH | POS | SYSTEM
+  details   String?  @db.Text
+  status    String? // SUCCESS | WARNING | ALERT
   createdAt DateTime @default(now())
 
-  @@index([entity])
+  @@index([category])
   @@map("system_audit_logs")
+}
+
+// ---------------------------------------------------------------------
+// Payroll reference data
+// ---------------------------------------------------------------------
+
+model SalaryRecord {
+  id                   String  @id @default(cuid())
+  employeeName         String
+  roleTitle            String
+  department           String
+  fixedBaseMonthlyQAR  Float   @default(0)
+  accruedCommissionQAR Float   @default(0)
+  netPayableQAR        Float   @default(0)
+  paymentCycle         String
+  payoutStatus         String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("salary_records")
+}
+
+model CommissionRule {
+  id              String  @id @default(cuid())
+  targetRole      String
+  ruleDescription String  @db.Text
+  type            String
+  rateValue       Float
+  unit            String
+  appliesTo       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("commission_rules")
+}
+
+// ---------------------------------------------------------------------
+// Generic key/value app settings (singletons & config: exchange rates,
+// shift drawer, package categories, category→service map, etc.)
+// ---------------------------------------------------------------------
+
+model AppSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("app_settings")
 }

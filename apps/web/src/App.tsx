@@ -74,7 +74,7 @@ const resolveViewModeFromUrl = (): 'homepage' | 'auth' | 'erp' => {
 };
 
 const MainLayout: React.FC = () => {
-  const { activeTab, activeModal, currentRole, setRole, isAuthenticated } = useApp();
+  const { activeTab, activeModal, currentRole, setRole, isAuthenticated, dataHydrated } = useApp();
 
   // Navigation mode: 'homepage' (Public Website) | 'auth' (Login/Signup) | 'erp' (Operations Console)
   const [viewMode, setViewMode] = React.useState<'homepage' | 'auth' | 'erp'>(resolveViewModeFromUrl);
@@ -165,6 +165,19 @@ const MainLayout: React.FC = () => {
   // If not authenticated or explicitly navigating to Auth screen
   if (!isAuthenticated || viewMode === 'auth') {
     return <AuthView onNavigateToHome={navigateToHomepage} />;
+  }
+
+  // Authenticated but the ERP data is still loading from the API — show a
+  // loader instead of rendering views against empty collections.
+  if (!dataHydrated) {
+    return (
+      <div className="h-screen w-full flex flex-col items-center justify-center gap-4 bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+        <div className="w-10 h-10 rounded-full border-2 border-teal-500/30 border-t-teal-500 animate-spin" />
+        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
+          Loading live operations data…
+        </p>
+      </div>
+    );
   }
 
   return (

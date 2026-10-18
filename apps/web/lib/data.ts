@@ -25,7 +25,14 @@ function toPayload(row: Row, { forUpdate }: { forUpdate: boolean }): Record<stri
   return out;
 }
 
-export function useResourceSync(path: string, items: Row[], enabled: boolean) {
+type OnError = (message: string) => void;
+
+export function useResourceSync(
+  path: string,
+  items: Row[],
+  enabled: boolean,
+  onError?: OnError
+) {
   const baseline = useRef<Map<string, string> | null>(null);
 
   useEffect(() => {
@@ -43,6 +50,10 @@ export function useResourceSync(path: string, items: Row[], enabled: boolean) {
     }
 
     const prev = baseline.current;
+    const fail = (verb: string) => (e: { message: string }) => {
+      console.error(`[sync] ${verb} ${path}:`, e.message);
+      onError?.(`Couldn't ${verb} ${path.replace(/-/g, ' ')}`);
+    };
 
     // Creates & updates.
     for (const it of items) {
@@ -51,23 +62,55 @@ export function useResourceSync(path: string, items: Row[], enabled: boolean) {
       const snapshot = next.get(id)!;
       const previous = prev.get(id);
       if (previous === undefined) {
-        api
-          .post(`/api/${path}`, toPayload(it, { forUpdate: false }))
-          .catch((e) => console.error(`[sync] create ${path}:`, e.message));
+        api.post(`/api/${path}`, toPayload(it, { forUpdate: false })).catch((e) => {
+          // 409 = the row already exists (e.g. created via another path); fine.
+          if ((e as { status?: number })?.status === 409) return;
+          fail('save')(e);
+        });
       } else if (previous !== snapshot) {
-        api
-          .patch(`/api/${path}/${id}`, toPayload(it, { forUpdate: true }))
-          .catch((e) => console.error(`[sync] update ${path}:`, e.message));
+        api.patch(`/api/${path}/${id}`, toPayload(it, { forUpdate: true })).catch(fail('update'));
       }
     }
 
     // Deletes.
     for (const id of prev.keys()) {
       if (!next.has(id)) {
-        api.delete(`/api/${path}/${id}`).catch((e) => console.error(`[sync] delete ${path}:`, e.message));
+        api.delete(`/api/${path}/${id}`).catch(fail('delete'));
       }
     }
 
     baseline.current = next;
+    // onError is a stable callback; excluded so the deps length never changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, enabled, path]);
+}
+
+/**
+ * Sync a singleton / config value (exchange rates, shift drawer, package
+ * categories, …) to the key/value settings endpoint whenever it changes.
+ */
+export function useSettingSync(
+  key: string,
+  value: unknown,
+  enabled: boolean,
+  onError?: OnError
+) {
+  const baseline = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!enabled) return;
+    const snapshot = JSON.stringify(value ?? null);
+    if (baseline.current === null) {
+      baseline.current = snapshot;
+      return;
+    }
+    if (baseline.current === snapshot) return;
+    baseline.current = snapshot;
+    api.put(`/api/settings/${key}`, { value }).catch((e) => {
+      console.error(`[sync] setting ${key}:`, e.message);
+      onError?.(`Couldn't save ${key}`);
+    });
+    // onError is a stable callback; excluded so the deps length never changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, enabled, key]);
 }
