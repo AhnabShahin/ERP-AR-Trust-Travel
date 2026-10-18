@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AR Trust Travel & Tourism - Qatar ERP Dashboard</title>
+    <meta name="description" content="High-fidelity modern SaaS ERP dashboard for AR Trust Travel & Tourism in Doha, Qatar. Featuring agent desk POS, hotel vendor partnerships, multi-currency ledger, live passenger dispatch, and EOD shift reconciliation." />
+    <meta property="og:title" content="AR Trust Travel & Tourism - Qatar ERP Dashboard" />
+    <meta property="og:description" content="High-fidelity modern SaaS ERP dashboard for AR Trust Travel & Tourism in Doha, Qatar. Featuring agent desk POS, hotel vendor partnerships, multi-currency ledger, live passenger dispatch, and EOD shift reconciliation." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+      (function() {
+        try {
+          const t = localStorage.getItem('artrust_theme');
+          if (t === 'light') {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
+          } else {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+          }
+        } catch(e) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+  </head>
+  <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 antialiased selection:bg-emerald-500/30 selection:text-emerald-200 transition-colors">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

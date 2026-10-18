@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-slate-850: #131c2e;
+  --color-navy-950: #05161d;
+  --color-navy-900: #09232c;
+  --color-navy-850: #0d3a48;
+  --color-navy-800: #14495a;
+  --color-navy-700: #1c5e73;
+  --color-gold-300: #e7cf8a;
+  --color-gold-400: #d4af37;
+  --color-gold-500: #c0ab6f;
+  --color-gold-600: #a79257;
+  --color-gold-700: #88743f;
+}
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-arabic: 'Cairo', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  [dir="rtl"] {
+    font-family: var(--font-arabic), var(--font-sans);
+  }
+}
+
+/* Smooth scrolling for touch momentum */
+.overflow-y-auto,
+.overflow-x-auto,
+.overflow-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Luxury Qatar Gold & Deep Navy Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(5, 22, 29, 0.4);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(212, 175, 55, 0.35);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(212, 175, 55, 0.7);
+}
+
+/* Firefox scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 175, 55, 0.35) transparent;
+}
+
+/* Utility to hide scrollbars while preserving touch and wheel scrolling */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Infinite Smooth Auto-Scrolling Marquee */
+@keyframes marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: marquee 20s linear infinite;
+}
+
+.animate-marquee:hover,
+.animate-marquee:active {
+  animation-play-state: paused;
+}
+
+.animate-marquee-slow {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: marquee 28s linear infinite;
+}
+
+.animate-marquee-slow:hover,
+.animate-marquee-slow:active {
+  animation-play-state: paused;
+}
+
+
+
+
