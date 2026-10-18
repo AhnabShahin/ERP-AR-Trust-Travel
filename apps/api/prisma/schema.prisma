@@ -1,0 +1,522 @@
+// =====================================================================
+// AR Trust Travel & Tourism ERP — Prisma schema (MySQL)
+// Generated from the app's domain types. Complex nested structures are
+// stored as JSON columns; union-string fields are kept as String with a
+// comment listing the allowed values so the API layer can validate them.
+// =====================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------
+
+enum UserRole {
+  super_admin        @map("super-admin")
+  operations_manager @map("operations-manager")
+  transit_agent      @map("transit-agent")
+  driver_guide       @map("driver-guide")
+  finance_accountant @map("finance-accountant")
+  vendor_partner     @map("vendor-partner")
+  customer
+}
+
+enum AccountStatus {
+  active
+  inactive
+}
+
+// ---------------------------------------------------------------------
+// Auth / Users
+// ---------------------------------------------------------------------
+
+model User {
+  id           String        @id @default(cuid())
+  name         String
+  nameAr       String?
+  username     String        @unique
+  email        String        @unique
+  passwordHash String        @map("password_hash")
+  role         UserRole      @default(customer)
+  phone        String?
+  avatar       String?       @db.Text
+  department   String?
+  vendorId     String?
+  status       AccountStatus @default(active)
+  lastLogin    DateTime?
+
+  // Verification & profile
+  isEmailVerified Boolean  @default(false)
+  emailVerifiedAt DateTime?
+  address         String?
+  city            String?
+  country         String?
+  nationality     String?
+  passportNumber  String?
+  passportExpiry  String?
+  preferredLanguage String?
+  dietaryNotes    String?  @db.Text
+  emergencyContact String?
+  emergencyPhone  String?
+  licenseNumber   String?
+  licenseCategory String?
+  experienceYears Int?
+  spokenLanguages Json?
+  companyName     String?
+  bio             String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------
+// Bookings (airport transfer / tours)
+// ---------------------------------------------------------------------
+
+model Booking {
+  id             String   @id @default(cuid())
+  pnr            String   @unique
+  passengerName  String
+  passengerPhone String
+  passengerEmail String
+  nationality    String
+  flightNumber   String
+  arrivalAirport String
+  arrivalTime    String
+  terminalGate   String?
+  pickupBay      String?
+  packageId      String
+  packageName    String
+  packageNameAr  String?
+  paxCount       Int      @default(1)
+  totalQAR       Float    @default(0)
+  paymentCurrency String  @default("QAR") // QAR | USD | EUR | GBP
+  paymentMethod  String // Cash | POS Card | Payment Link | Prepaid OTA | Website Online Gateway
+  driverId       String?
+  driverName     String?
+  driverVehicle  String?
+  driverPhone    String?
+  guideId        String?
+  guideName      String?
+  qrStatus       String   @default("pending") // BookingStatus union
+  qrCodeUrl      String?  @db.Text
+  voucherSent    Boolean  @default(false)
+  bookingDate    String?
+  bookingTime    String?
+  notes          String?  @db.Text
+  deskId         String?
+  deskCode       String?
+  source         String   @default("Airport Desk")
+  leadType       String? // tour | package | fleet | service
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([qrStatus])
+  @@index([source])
+  @@map("bookings")
+}
+
+// ---------------------------------------------------------------------
+// Fleet & field personnel
+// ---------------------------------------------------------------------
+
+model FleetVehicle {
+  id                 String  @id @default(cuid())
+  name               String
+  nameAr             String?
+  category           String
+  passengers         Int
+  luggage            Int
+  priceQAR           Float
+  rateType           String
+  features           Json // string[]
+  image              String  @db.Text
+  idealFor           String
+  assignedDriverId   String?
+  assignedDriverName String?
+  plateNumber        String?
+  modelYear          String?
+  showOnWebsite      Boolean @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("fleet_vehicles")
+}
+
+model Driver {
+  id              String  @id @default(cuid())
+  name            String
+  nameAr          String?
+  phone           String
+  vehicle         String
+  plateNumber     String
+  vehicleType     String
+  status          String // Dispatched | At Airport Bay | En Route | Standby | Off Duty | Maintenance
+  currentMission  String?
+  activePassengers Int?
+  totalTripsToday Int     @default(0)
+  location        String
+  rating          Float   @default(0)
+  image           String? @db.Text
+  fleetVehicleId  String?
+  priceQAR        Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("drivers")
+}
+
+model TourGuide {
+  id                 String @id @default(cuid())
+  name               String
+  nameAr             String?
+  phone              String
+  languages          Json // string[]
+  specialty          String
+  status             String // Assigned | Available | On Tour
+  toursLedToday      Int    @default(0)
+  totalCommissionQAR Float  @default(0)
+  rating             Float  @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("tour_guides")
+}
+
+// ---------------------------------------------------------------------
+// HR / Payroll
+// ---------------------------------------------------------------------
+
+model Employee {
+  id                    String  @id @default(cuid())
+  name                  String
+  nameAr                String?
+  email                 String
+  phone                 String
+  role                  String
+  department            String
+  assignedAirport       String?
+  assignedDeskId        String?
+  assignedDeskName      String?
+  status                String // On Duty | Available | On Leave | Off Duty
+  hireDate              String
+  baseSalaryMonthlyQAR  Float   @default(0)
+  monthlyServiceTarget  Int     @default(0)
+  commissionPerServiceQAR Float @default(0)
+  monthlyRecords        Json? // EmployeeMonthlyRecord[]
+  totalExpensesQAR      Float   @default(0)
+  rating                Float   @default(0)
+  emergencyContact      String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@map("employees")
+}
+
+// ---------------------------------------------------------------------
+// Guests / CRM
+// ---------------------------------------------------------------------
+
+model GuestTier {
+  id                 String  @id @default(cuid())
+  name               String
+  nameAr             String?
+  discountPercentage Float   @default(0)
+  badgeColor         String?
+  minSpendQAR        Float?
+  description        String? @db.Text
+
+  @@map("guest_tiers")
+}
+
+model Guest {
+  id                 String @id @default(cuid())
+  name               String
+  nationality        String
+  phone              String
+  email              String
+  vipTier            String
+  passportNo         String?
+  totalBookings      Int    @default(0)
+  totalSpentQAR      Float  @default(0)
+  lastArrivalAirport String?
+  lastFlight         String?
+  lastTripDate       String?
+  specialPreferences String? @db.Text
+  bookingIds         Json? // string[]
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("guests")
+}
+
+// ---------------------------------------------------------------------
+// Hotel partners
+// ---------------------------------------------------------------------
+
+model HotelVendor {
+  id             String  @id @default(cuid())
+  name           String
+  nameAr         String?
+  locationZone   String
+  starRating     Int
+  contactPerson  String
+  contactPhone   String
+  contactEmail   String
+  address        String  @db.Text
+  commissionRate Float   @default(0)
+  desks          Json // HotelVendorDesk[]
+  roomOptions    Json // HotelRoomOption[]
+  contractStatus String
+  totalBookings  Int     @default(0)
+  totalRevenueQAR Float  @default(0)
+  imageUrl       String? @db.Text
+  amenities      Json // string[]
+  notes          String? @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("hotel_vendors")
+}
+
+model HotelBooking {
+  id                 String  @id @default(cuid())
+  confirmationCode   String  @unique
+  hotelId            String
+  hotelName          String
+  hotelLocation      String?
+  guestName          String
+  guestPhone         String
+  guestEmail         String
+  guestNationality   String?
+  roomType           String
+  roomsCount         Int     @default(1)
+  paxAdults          Int     @default(1)
+  paxChildren        Int     @default(0)
+  checkInDate        String
+  checkOutDate       String
+  nights             Int
+  mealPlan           String
+  ratePerNightQAR    Float
+  totalQAR           Float
+  commissionRate     Float   @default(0)
+  commissionEarnedQAR Float  @default(0)
+  bookingSource      String
+  deskCode           String?
+  agentName          String?
+  paymentMethod      String
+  paymentStatus      String
+  bookingStatus      String
+  specialRequests    String? @db.Text
+  voucherSent        Boolean @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("hotel_bookings")
+}
+
+// ---------------------------------------------------------------------
+// Finance
+// ---------------------------------------------------------------------
+
+model FinanceExpense {
+  id             String  @id @default(cuid())
+  date           String
+  category       String
+  description    String  @db.Text
+  amountQAR      Float
+  approvedBy     String?
+  status         String // Pending Review | Approved | Paid | Rejected
+  paymentMethod  String?
+  department     String?
+  requestedBy    String?
+  requestedByRole String?
+  submittedBy    String?
+  receiptRef     String?
+  receiptNumber  String?
+  merchant       String?
+  deskId         String?
+  deskName       String?
+  approvedAt     String?
+  approvalNotes  String? @db.Text
+  notes          String? @db.Text
+  rejectedReason String? @db.Text
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status])
+  @@map("finance_expenses")
+}
+
+model CurrencyItem {
+  id               String  @id @default(cuid())
+  code             String  @unique
+  name             String
+  symbol           String
+  rateToQAR        Float
+  isPegged         Boolean @default(false)
+  peggedNote       String?
+  bankAccount      String?
+  cashVaultBalance Float   @default(0)
+  updatedAt        DateTime @updatedAt
+
+  @@map("currency_items")
+}
+
+model CurrencyHistory {
+  id                   String  @id @default(cuid())
+  date                 String
+  time                 String?
+  currencyCode         String
+  currencyName         String
+  rateToQAR            Float
+  previousRateToQAR    Float?
+  vaultBalance         Float
+  balanceQAREquivalent Float
+  recordedBy           String
+  changeType           String
+  notes                String? @db.Text
+  createdAt            DateTime @default(now())
+
+  @@index([currencyCode])
+  @@map("currency_history")
+}
+
+// ---------------------------------------------------------------------
+// Services / packages (website + dashboard sync)
+// ---------------------------------------------------------------------
+
+model TourPackage {
+  id              String  @id @default(cuid())
+  name            String
+  nameAr          String?
+  serviceType     String?
+  category        String
+  duration        String
+  priceQAR        Float
+  description     String  @db.Text
+  descriptionAr   String? @db.Text
+  pickupLocation  String?
+  includes        Json // string[]
+  image           String? @db.Text
+  badge           String?
+  groupSize       String?
+  departure       String?
+  rating          Float?
+  reviewCount     Int?
+  originalPriceQAR Float?
+  isMultiDay      Boolean @default(false)
+  days            Int?
+  nights          Int?
+  highlights      Json? // string[]
+  excluded        Json? // string[]
+  isFeatured      Boolean @default(false)
+  showOnWebsite   Boolean @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("tour_packages")
+}
+
+model ServiceCategory {
+  id          String  @id @default(cuid())
+  name        String
+  nameAr      String?
+  serviceType String // Tour Service | Tour Package | Transfer Service
+
+  @@map("service_categories")
+}
+
+// ---------------------------------------------------------------------
+// Airport desks & shifts
+// ---------------------------------------------------------------------
+
+model AirportDesk {
+  id                   String  @id @default(cuid())
+  airportCode          String
+  airportName          String
+  deskCode             String  @unique
+  deskName             String
+  deskNameAr           String?
+  terminal             String
+  zone                 String?
+  assignedEmployeeId   String?
+  assignedEmployeeName String?
+  assignedEmployeeRole String?
+  status               String
+  shiftTiming          String?
+  phoneExt             String?
+  notes                String? @db.Text
+  operatingHours       String?
+  dailyTargetQAR       Float?
+  currentDrawerCashQAR Float?
+  deskType             String?
+  hotelVendorId        String?
+  hotelName            String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("airport_desks")
+}
+
+model DeskAssignment {
+  id           String  @id @default(cuid())
+  deskId       String
+  deskCode     String
+  deskName     String
+  airportCode  String
+  terminal     String
+  employeeId   String
+  employeeName String
+  employeeRole String
+  assignedDate String
+  shiftTiming  String
+  assignedBy   String
+  status       String
+  notes        String? @db.Text
+  createdAt    DateTime @default(now())
+
+  @@map("desk_assignments")
+}
+
+// ---------------------------------------------------------------------
+// Notifications & audit
+// ---------------------------------------------------------------------
+
+model Notification {
+  id          String  @id @default(cuid())
+  title       String
+  titleAr     String?
+  message     String  @db.Text
+  messageAr   String? @db.Text
+  time        String?
+  type        String // flight | driver | cash | vip | booking | hotel
+  read        Boolean @default(false)
+  actionLabel String?
+  createdAt   DateTime @default(now())
+
+  @@map("notifications")
+}
+
+model SystemAuditLog {
+  id        String   @id @default(cuid())
+  actor     String?
+  action    String
+  entity    String?
+  entityId  String?
+  details   Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([entity])
+  @@map("system_audit_logs")
+}

@@ -144,8 +144,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigateToHome }) => {
     if (!loginId.trim()) { setError('Please enter your username or email.'); return; }
     if (!loginPassword) { setError('Please enter your password.'); return; }
     setIsLoading(true);
-    setTimeout(() => {
-      const res = login(loginId.trim(), loginPassword);
+    setTimeout(async () => {
+      const res = await login(loginId.trim(), loginPassword);
       setIsLoading(false);
       if (!res.success) {
         setError(res.error || 'Authentication failed. Please check your credentials.');
@@ -164,8 +164,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigateToHome }) => {
     if (!signupEmail.trim() || !signupEmail.includes('@')) { setError('Please enter a valid email address.'); return; }
     if (!signupPassword || signupPassword.length < 4) { setError('Password must be at least 4 characters.'); return; }
     setIsLoading(true);
-    setTimeout(() => {
-      const res = signup({
+    setTimeout(async () => {
+      const res = await signup({
         name: signupName.trim(),
         username: signupUsername.trim().toLowerCase(),
         email: signupEmail.trim().toLowerCase(),

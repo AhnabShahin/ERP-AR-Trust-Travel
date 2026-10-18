@@ -30,6 +30,8 @@ import {
   TOUR_PACKAGES,
   SystemAuditLog,
 } from '../data/mockData';
+import { api, authApi, ApiError } from '../../lib/api';
+import { useResourceSync } from '../../lib/data';
 import {
   getRoleDashboardSlug,
   getRoleFromSlug,
@@ -75,9 +77,9 @@ interface AppContextType {
   userAccounts: UserAccount[];
   currentUser: UserAccount | null;
   isAuthenticated: boolean;
-  login: (usernameOrEmail: string, password: string) => { success: boolean; error?: string; user?: UserAccount };
+  login: (usernameOrEmail: string, password: string) => Promise<{ success: boolean; error?: string; user?: UserAccount }>;
   logout: () => void;
-  signup: (account: Omit<UserAccount, 'id' | 'createdAt'>) => { success: boolean; error?: string; user?: UserAccount };
+  signup: (account: Omit<UserAccount, 'id' | 'createdAt'>) => Promise<{ success: boolean; error?: string; user?: UserAccount }>;
   updateUserAccount: (id: string, updates: Partial<UserAccount>) => { success: boolean; error?: string };
   addUserAccount: (account: Omit<UserAccount, 'id' | 'createdAt'>) => { success: boolean; error?: string; user?: UserAccount };
   deleteUserAccount: (id: string) => { success: boolean; error?: string };
@@ -606,6 +608,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 
+  // True once all collections have been loaded from the API (MySQL).
+  const [dataHydrated, setDataHydrated] = useState<boolean>(false);
+
   useEffect(() => {
     // Update document dir and lang attribute
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
@@ -628,94 +633,104 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [theme]);
 
-  // Production localStorage Auto-Sync (Preserves all CRUD updates permanently)
+  // ---- Hydrate every collection from the live API (MySQL is the source of
+  // truth). Runs once the user is authenticated; on failure the app keeps the
+  // locally-loaded fallback data so it still works offline.
   useEffect(() => {
-    try { localStorage.setItem('artrust_bookings', JSON.stringify(bookings)); } catch {}
-  }, [bookings]);
+    if (!isAuthenticated) return;
+    let cancelled = false;
+    (async () => {
+      const q = '?take=200';
+      const load = <T,>(p: string) => api.get<T[]>(`/api/${p}${q}`).catch(() => null);
+      try {
+        const [bk, dr, fl, tg, gs, gt, hv, hb, emp, exp, cur, ch, pkg, ad, da, notif] =
+          await Promise.all([
+            load<Booking>('bookings'),
+            load<Driver>('drivers'),
+            load<FleetVehicle>('fleet'),
+            load<TourGuide>('tour-guides'),
+            load<Guest>('guests'),
+            load<GuestTier>('guest-tiers'),
+            load<HotelVendor>('hotel-vendors'),
+            load<HotelBooking>('hotel-bookings'),
+            load<Employee>('employees'),
+            load<FinanceExpense>('expenses'),
+            load<CurrencyItem>('currencies'),
+            load<CurrencyHistoryRecord>('currency-history'),
+            load<TourPackage>('tour-packages'),
+            load<AirportDesk>('airport-desks'),
+            load<DeskAssignmentRecord>('desk-assignments'),
+            load<NotificationItem>('notifications'),
+          ]);
+        if (cancelled) return;
+        if (bk?.length) setBookings(bk);
+        if (dr?.length) setDrivers(dr);
+        if (fl?.length) setFleetVehicles(fl);
+        if (tg?.length) setTourGuides(tg);
+        if (gs?.length) setGuests(gs);
+        if (gt?.length) setGuestTiers(gt);
+        if (hv?.length) setHotelVendors(hv);
+        if (hb?.length) setHotelBookings(hb);
+        if (emp?.length) setEmployees(emp);
+        if (exp?.length) setExpenses(exp);
+        if (cur?.length) setCurrencies(cur);
+        if (ch?.length) setCurrencyHistory(ch);
+        if (pkg?.length) setPackages(pkg);
+        if (ad?.length) setAirportDesks(ad);
+        if (da?.length) setDeskAssignmentHistory(da);
+        if (notif?.length) setNotifications(notif);
+      } catch (e) {
+        console.error('[hydrate] failed, using local fallback:', (e as Error).message);
+      } finally {
+        if (!cancelled) setDataHydrated(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
+  // ---- Live write-through: mirror every CRUD change to MySQL via the API.
+  // Replaces the old localStorage persistence for all business collections.
+  useResourceSync('bookings', bookings as never, dataHydrated);
+  useResourceSync('drivers', drivers as never, dataHydrated);
+  useResourceSync('fleet', fleetVehicles as never, dataHydrated);
+  useResourceSync('tour-guides', tourGuides as never, dataHydrated);
+  useResourceSync('guests', guests as never, dataHydrated);
+  useResourceSync('guest-tiers', guestTiers as never, dataHydrated);
+  useResourceSync('hotel-vendors', hotelVendors as never, dataHydrated);
+  useResourceSync('hotel-bookings', hotelBookings as never, dataHydrated);
+  useResourceSync('employees', employees as never, dataHydrated);
+  useResourceSync('expenses', expenses as never, dataHydrated);
+  useResourceSync('currencies', currencies as never, dataHydrated);
+  useResourceSync('currency-history', currencyHistory as never, dataHydrated);
+  useResourceSync('tour-packages', packages as never, dataHydrated);
+  useResourceSync('airport-desks', airportDesks as never, dataHydrated);
+  useResourceSync('desk-assignments', deskAssignmentHistory as never, dataHydrated);
+
+  // ---- UI/config state that has no API table yet — kept in localStorage.
   useEffect(() => {
     try { localStorage.setItem('artrust_rates', JSON.stringify(rates)); } catch {}
   }, [rates]);
-
-  useEffect(() => {
-    try { localStorage.setItem('artrust_fleet_vehicles', JSON.stringify(fleetVehicles)); } catch {}
-  }, [fleetVehicles]);
-
-  useEffect(() => {
-    try { localStorage.setItem('artrust_airport_desks', JSON.stringify(airportDesks)); } catch {}
-  }, [airportDesks]);
-
-  useEffect(() => {
-    try { localStorage.setItem('artrust_desk_assignments', JSON.stringify(deskAssignmentHistory)); } catch {}
-  }, [deskAssignmentHistory]);
-
   useEffect(() => {
     try { localStorage.setItem('artrust_active_desk_id', activeDeskId); } catch {}
   }, [activeDeskId]);
-
-  useEffect(() => {
-    try { localStorage.setItem('artrust_employees', JSON.stringify(employees)); } catch {}
-  }, [employees]);
-
-  useEffect(() => {
-    try { localStorage.setItem('artrust_guests', JSON.stringify(guests)); } catch {}
-  }, [guests]);
-
-  useEffect(() => {
-    try { localStorage.setItem('artrust_guest_tiers', JSON.stringify(guestTiers)); } catch {}
-  }, [guestTiers]);
-
-  useEffect(() => {
-    try { localStorage.setItem('artrust_hotel_vendors', JSON.stringify(hotelVendors)); } catch {}
-  }, [hotelVendors]);
-
-  useEffect(() => {
-    try { localStorage.setItem('artrust_hotel_bookings', JSON.stringify(hotelBookings)); } catch {}
-  }, [hotelBookings]);
-
-  useEffect(() => {
-    try { localStorage.setItem('artrust_expenses', JSON.stringify(expenses)); } catch {}
-  }, [expenses]);
-
-  useEffect(() => {
-    try { localStorage.setItem('artrust_packages', JSON.stringify(packages)); } catch {}
-  }, [packages]);
-
   useEffect(() => {
     try { localStorage.setItem('artrust_package_categories', JSON.stringify(packageCategories)); } catch {}
   }, [packageCategories]);
-
   useEffect(() => {
     try { localStorage.setItem('artrust_category_service_map', JSON.stringify(categoryServiceMap)); } catch {}
   }, [categoryServiceMap]);
-
-  useEffect(() => {
-    try { localStorage.setItem('artrust_drivers', JSON.stringify(drivers)); } catch {}
-  }, [drivers]);
-
   useEffect(() => {
     try { localStorage.setItem('artrust_salary_records', JSON.stringify(salaryRecords)); } catch {}
   }, [salaryRecords]);
-
   useEffect(() => {
     try { localStorage.setItem('artrust_shift_drawer', JSON.stringify(shiftDrawer)); } catch {}
   }, [shiftDrawer]);
-
   useEffect(() => {
     try { localStorage.setItem('artrust_system_logs', JSON.stringify(systemLogs)); } catch {}
   }, [systemLogs]);
-
-  useEffect(() => {
-    try { localStorage.setItem('artrust_custom_currencies', JSON.stringify(currencies)); } catch {}
-  }, [currencies]);
-
-  useEffect(() => {
-    try { localStorage.setItem('artrust_currency_history', JSON.stringify(currencyHistory)); } catch {}
-  }, [currencyHistory]);
-
-  useEffect(() => {
-    try { localStorage.setItem('artrust_notifications', JSON.stringify(notifications)); } catch {}
-  }, [notifications]);
 
   useEffect(() => {
     try { localStorage.setItem('artrust_live_feed', JSON.stringify(liveFeedEnabled)); } catch {}
@@ -794,20 +809,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try { localStorage.setItem('artrust_user_accounts', JSON.stringify(userAccounts)); } catch {}
   }, [userAccounts]);
 
-  const login = (usernameOrEmail: string, password: string): { success: boolean; error?: string; user?: UserAccount } => {
-    const query = usernameOrEmail.trim().toLowerCase();
+  const login = async (
+    usernameOrEmail: string,
+    password: string
+  ): Promise<{ success: boolean; error?: string; user?: UserAccount }> => {
+    const query = usernameOrEmail.trim();
+
+    // 1) Try the live backend API first (JWT auth against MySQL).
+    try {
+      const { user: apiUser } = await authApi.login({ username: query, password });
+      const existingLocal = userAccounts.find(
+        (u) => u.username.toLowerCase() === apiUser.username.toLowerCase()
+      );
+      const mergedUser = {
+        ...(existingLocal || {}),
+        ...apiUser,
+        password,
+        lastLogin: 'Just now',
+      } as UserAccount;
+
+      setCurrentUser(mergedUser);
+      setCurrentRole(mergedUser.role);
+      setIsAuthenticated(true);
+      try {
+        localStorage.setItem('artrust_current_user', JSON.stringify(mergedUser));
+        localStorage.setItem('artrust_is_authenticated', JSON.stringify(true));
+      } catch {}
+      addAuditLog('User Login', 'SECURITY', `${mergedUser.name} (${mergedUser.username}) signed in as ${mergedUser.role}.`);
+      return { success: true, user: mergedUser };
+    } catch {
+      // API unreachable or rejected → fall back to local demo accounts below.
+    }
+
+    // 2) Local fallback (offline / API down / local-only accounts).
+    const q = query.toLowerCase();
     const account = userAccounts.find(
-      (u) => u.username.toLowerCase() === query || u.email.toLowerCase() === query
+      (u) => u.username.toLowerCase() === q || u.email.toLowerCase() === q
     );
 
     if (!account) {
       return { success: false, error: 'User account not found. Please verify your username or email.' };
     }
-
     if (account.password !== password) {
       return { success: false, error: 'Incorrect password. Please verify and try again.' };
     }
-
     if (account.status === 'inactive') {
       return { success: false, error: 'This account has been deactivated by the system administrator.' };
     }
@@ -829,13 +874,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const logout = () => {
     setIsAuthenticated(false);
+    authApi.logout(); // clear the stored JWT
     try {
       localStorage.setItem('artrust_is_authenticated', JSON.stringify(false));
     } catch {}
     addAuditLog('User Logout', 'SECURITY', `${currentUser?.name || 'User'} logged out.`);
   };
 
-  const signup = (data: Omit<UserAccount, 'id' | 'createdAt'>): { success: boolean; error?: string; user?: UserAccount } => {
+  const signup = async (
+    data: Omit<UserAccount, 'id' | 'createdAt'>
+  ): Promise<{ success: boolean; error?: string; user?: UserAccount }> => {
     const cleanUsername = data.username.trim().toLowerCase();
     const cleanEmail = data.email.trim().toLowerCase();
 
@@ -844,6 +892,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     if (userAccounts.some((u) => u.email.toLowerCase() === cleanEmail)) {
       return { success: false, error: 'Email is already registered. Please login instead.' };
+    }
+
+    // Register against the live backend first; fall back to local on failure.
+    try {
+      const { user: apiUser } = await authApi.register({
+        name: data.name.trim(),
+        username: cleanUsername,
+        email: cleanEmail,
+        password: data.password,
+        role: data.role,
+        phone: data.phone,
+      });
+      const createdAccount = { ...data, ...apiUser, password: data.password, lastLogin: 'Just now' } as UserAccount;
+      setUserAccounts((prev) => [...prev, createdAccount]);
+      setCurrentUser(createdAccount);
+      setCurrentRole(createdAccount.role);
+      setIsAuthenticated(true);
+      try {
+        localStorage.setItem('artrust_current_user', JSON.stringify(createdAccount));
+        localStorage.setItem('artrust_is_authenticated', JSON.stringify(true));
+      } catch {}
+      addAuditLog('Account Created', 'SECURITY', `New user registered via API: ${createdAccount.name} (${createdAccount.username}).`);
+      return { success: true, user: createdAccount };
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 409) {
+        return { success: false, error: 'Username or email is already registered. Please login instead.' };
+      }
+      // Other errors (API down) → fall through to local signup.
     }
 
     const newAccount: UserAccount = {

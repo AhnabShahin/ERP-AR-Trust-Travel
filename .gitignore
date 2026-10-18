@@ -6,3 +6,17 @@ coverage/
 *.log
 .env*
 !.env.example
+*.zip
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Prisma
+apps/api/prisma/*.db
+apps/api/prisma/migrations/dev.db*
+
+# Turbo / misc
+.turbo/
+*.tsbuildinfo

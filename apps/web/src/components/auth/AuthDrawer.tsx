@@ -144,8 +144,8 @@ export const AuthDrawer: React.FC<AuthDrawerProps> = ({
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      const res = login(cleanId, loginPassword);
+    setTimeout(async () => {
+      const res = await login(cleanId, loginPassword);
       setIsLoading(false);
       if (!res.success) {
         setError(res.error || 'Invalid credentials. Please verify your username and password.');
@@ -188,8 +188,8 @@ export const AuthDrawer: React.FC<AuthDrawerProps> = ({
     }
 
     setIsLoading(true);
-    setTimeout(() => {
-      const res = signup({
+    setTimeout(async () => {
+      const res = await signup({
         name: signupName.trim(),
         username: signupUsername.trim().toLowerCase(),
         email: signupEmail.trim().toLowerCase(),
