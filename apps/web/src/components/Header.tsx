@@ -30,7 +30,6 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Currency, UserRole } from '../types';
-import { ROLE_CONFIGS } from '../data/mockData';
 
 export interface HeaderProps {
   onNavigateToHome?: () => void;
@@ -41,7 +40,6 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
     currentRole,
     currentUser,
     logout,
-    setRole,
     roleConfig,
     language,
     currency,
@@ -72,16 +70,6 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const currencyOptions: Currency[] = ['QAR', 'USD', 'EUR', 'GBP'];
-
-  const roleList: UserRole[] = [
-    'super-admin',
-    'operations-manager',
-    'transit-agent',
-    'customer',
-    'driver-guide',
-    'finance-accountant',
-    'vendor-partner',
-  ];
 
   return (
     <header className="h-16 px-5 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md flex items-center justify-between gap-4 sticky top-0 z-30 transition-colors select-none">
@@ -242,39 +230,24 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
                 )}
               </div>
 
-              {/* Roles Section Header */}
+              {/* Current Role — fixed per user, assigned on the account. No
+                  runtime switching: one user has exactly one role. */}
               <div className="px-2 py-1 text-[10px] uppercase font-bold text-slate-400 flex items-center justify-between">
-                <span>{language === 'ar' ? 'تبديل الصلاحية التشغيلية:' : 'Switch Role Scope:'}</span>
-                <span className="font-mono text-emerald-600 dark:text-emerald-400">{roleList.length} Roles</span>
+                <span>{language === 'ar' ? 'دورك الحالي:' : 'Your Role:'}</span>
               </div>
 
-              <div className="divide-y divide-slate-100 dark:divide-slate-800/60 max-h-48 overflow-y-auto">
-                {roleList.map((r) => {
-                  const cfg = ROLE_CONFIGS[r];
-                  const isSelected = currentRole === r;
-                  return (
-                    <button
-                      key={r}
-                      onClick={() => {
-                        setRole(r);
-                        setShowRoleDropdown(false);
-                      }}
-                      className={`w-full text-left rtl:text-right p-2 rounded-xl transition flex flex-col gap-0.5 cursor-pointer ${
-                        isSelected
-                          ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200'
-                          : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-xs">{cfg.title}</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />}
-                      </div>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                        {cfg.scopeSummary}
-                      </p>
-                    </button>
-                  );
-                })}
+              <div className="px-2 pb-1">
+                <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-200">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs">
+                      {language === 'ar' ? roleConfig.titleAr : roleConfig.title}
+                    </span>
+                    <Check className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                    {language === 'ar' ? roleConfig.scopeSummaryAr : roleConfig.scopeSummary}
+                  </p>
+                </div>
               </div>
 
               {/* Visit Public Website Link */}

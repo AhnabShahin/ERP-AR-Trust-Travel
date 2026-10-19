@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { Globe } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserRole } from '../../types';
+import { getRoleDashboardSlug } from '../../utils/roleSlugs';
 import { Sidebar } from '../Sidebar';
 import { Header } from '../Header';
 import { DashboardView } from '../views/DashboardView';
@@ -49,23 +50,27 @@ export default function DashboardShell({ role }: { role?: UserRole }) {
   const {
     activeTab,
     activeModal,
-    currentRole,
-    setRole,
+    currentUser,
     isAuthenticated,
     dataHydrated,
   } = useApp();
   const router = useRouter();
-
-  // Align the active role with the dashboard route the user landed on.
-  useEffect(() => {
-    if (role && role !== currentRole) setRole(role);
-  }, [role, currentRole, setRole]);
 
   // Guard: the console requires a logged-in user. Anonymous visitors are
   // bounced to the login screen (client-side; the public site is the SSR part).
   useEffect(() => {
     if (!isAuthenticated) router.replace('/login');
   }, [isAuthenticated, router]);
+
+  // Enforce one-user-one-role: a user's role is fixed on their account, so if
+  // the URL points at a different role's dashboard than the signed-in user's,
+  // send them to their own. (No runtime role switching.)
+  useEffect(() => {
+    if (!isAuthenticated || !currentUser) return;
+    if (role && currentUser.role !== role) {
+      router.replace(getRoleDashboardSlug(currentUser.role));
+    }
+  }, [role, currentUser, isAuthenticated, router]);
 
   if (!isAuthenticated) return null;
 

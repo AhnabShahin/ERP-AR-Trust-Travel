@@ -37,11 +37,27 @@ export const UserAccountsManagerView: React.FC = () => {
     resetUserPassword,
     currentUser,
     currentRole,
+    roles,
     language,
     t,
   } = useApp();
 
   const isRtl = language === 'ar';
+
+  // Role options for the add/edit pickers come from the fixed catalogue the
+  // API serves (GET /api/roles). Fall back to a minimal set if not loaded yet.
+  const roleOptions =
+    roles && roles.length > 0
+      ? roles.map((r) => ({ value: r.key, label: isRtl ? r.titleAr : r.title }))
+      : ([
+          { value: 'super-admin', label: 'Super Admin' },
+          { value: 'operations-manager', label: 'Branch / Operations Manager' },
+          { value: 'transit-agent', label: 'Agent Desk Lead (HIA & Hotels)' },
+          { value: 'driver-guide', label: 'Driver / Guide Access' },
+          { value: 'finance-accountant', label: 'Finance / Accountant' },
+          { value: 'vendor-partner', label: 'Hotel Vendor & Partner' },
+          { value: 'customer', label: 'Customer / Traveler' },
+        ] as { value: string; label: string }[]);
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -377,11 +393,11 @@ export const UserAccountsManagerView: React.FC = () => {
             className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200 text-xs font-medium outline-none cursor-pointer"
           >
             <option value="ALL">{isRtl ? 'جميع الأدوار' : 'All Roles'}</option>
-            <option value="super-admin">Super Admin</option>
-            <option value="operations-manager">Operations Manager</option>
-            <option value="transit-agent">Transit Desk Agent</option>
-            <option value="driver-guide">Driver / Guide</option>
-            <option value="finance-accountant">Finance / Accountant</option>
+            {roleOptions.map((r) => (
+              <option key={r.value} value={r.value}>
+                {r.label}
+              </option>
+            ))}
           </select>
 
           {/* Status Filter */}
@@ -738,11 +754,11 @@ export const UserAccountsManagerView: React.FC = () => {
                     onChange={(e) => setEditRole(e.target.value as UserRole)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-semibold outline-none cursor-pointer"
                   >
-                    <option value="super-admin">Super Admin</option>
-                    <option value="operations-manager">Operations Manager</option>
-                    <option value="transit-agent">Transit Desk Agent</option>
-                    <option value="driver-guide">Driver / Guide</option>
-                    <option value="finance-accountant">Finance / Accountant</option>
+                    {roleOptions.map((r) => (
+                      <option key={r.value} value={r.value}>
+                        {r.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -890,11 +906,11 @@ export const UserAccountsManagerView: React.FC = () => {
                     onChange={(e) => setAddRole(e.target.value as UserRole)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-semibold outline-none cursor-pointer"
                   >
-                    <option value="transit-agent">Transit Desk Agent</option>
-                    <option value="operations-manager">Operations Manager</option>
-                    <option value="driver-guide">Driver / Guide</option>
-                    <option value="finance-accountant">Finance / Accountant</option>
-                    <option value="super-admin">Super Admin</option>
+                    {roleOptions.map((r) => (
+                      <option key={r.value} value={r.value}>
+                        {r.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>

@@ -92,6 +92,8 @@ interface AppContextType {
   currentRole: UserRole;
   setRole: (role: UserRole) => void;
   roleConfig: RoleConfig;
+  /** Fixed role catalogue from the API (for role pickers in user management). */
+  roles: RoleCatalogItem[];
 
   // Language & Currency & Theme
   language: Language;
@@ -366,6 +368,17 @@ export interface InitialCatalog {
   currencies?: CurrencyItem[];
 }
 
+// One entry of the fixed role catalogue served by GET /api/roles.
+export interface RoleCatalogItem {
+  key: UserRole;
+  title: string;
+  titleAr: string;
+  description: string;
+  descriptionAr: string;
+  defaultTab: string;
+  dashboardSlug: string;
+}
+
 export const AppProvider: React.FC<{
   children: React.ReactNode;
   initialCatalog?: InitialCatalog;
@@ -390,16 +403,11 @@ export const AppProvider: React.FC<{
   });
 
   // Active Role state: default to role from URL slug if visiting a specific dashboard slug, or currentUser's role, or 'super-admin'
-  const [currentRole, setCurrentRole] = useState<UserRole>(() => {
-    if (typeof window !== 'undefined') {
-      const fromPath = getRoleFromSlug(window.location.pathname);
-      if (fromPath) return fromPath;
-      const cleanHash = window.location.hash.replace(/^#\/?/, '').toLowerCase().trim();
-      const fromHash = getRoleFromSlug(cleanHash);
-      if (fromHash) return fromHash;
-    }
-    return currentUser?.role || 'super-admin';
-  });
+  // A user's role is fixed on their account — not derived from the URL and
+  // never switched at runtime. currentRole simply mirrors the signed-in user.
+  const [currentRole, setCurrentRole] = useState<UserRole>(
+    () => currentUser?.role || 'super-admin'
+  );
   const roleConfig = ROLE_CONFIGS[currentRole] || ROLE_CONFIGS['super-admin'];
 
   const [language, setLanguage] = useState<Language>('en');
@@ -458,6 +466,10 @@ export const AppProvider: React.FC<{
 
   // Multi-Currency Treasury & Vault Reserves State
   const [currencies, setCurrencies] = useState<CurrencyItem[]>(initialCatalog?.currencies ?? []);
+
+  // Fixed role catalogue served by the API (GET /api/roles). Used to populate
+  // role pickers (e.g. user management). Roles are fixed; this is read-only.
+  const [roles, setRoles] = useState<RoleCatalogItem[]>([]);
 
   // Historical Exchange Rates & Vault Reserves Ledger
   const [currencyHistory, setCurrencyHistory] = useState<CurrencyHistoryRecord[]>([]);
@@ -582,12 +594,13 @@ export const AppProvider: React.FC<{
         if (da?.length) setDeskAssignmentHistory(da);
         if (notif?.length) setNotifications(notif);
 
-        // Users + payroll/audit lists + singleton config (settings key/value).
-        const [usr, sal, com, logs, rt, sd, pc, csm] = await Promise.all([
+        // Users + payroll/audit lists + fixed role catalogue + singleton config.
+        const [usr, sal, com, logs, rol, rt, sd, pc, csm] = await Promise.all([
           load<UserAccount>('users'),
           load<SalaryRecord>('salary-records'),
           load<CommissionRule>('commission-rules'),
           load<SystemAuditLog>('audit-logs'),
+          api.get<RoleCatalogItem[]>('/api/roles').catch(() => null),
           api.get<ExchangeRates>('/api/settings/rates').catch(() => null),
           api.get<ShiftDrawer>('/api/settings/shiftDrawer').catch(() => null),
           api.get<string[]>('/api/settings/packageCategories').catch(() => null),
@@ -598,6 +611,7 @@ export const AppProvider: React.FC<{
         if (sal?.length) setSalaryRecords(sal);
         if (com?.length) setCommissionRules(com);
         if (logs?.length) setSystemLogs(logs);
+        if (rol?.length) setRoles(rol);
         if (rt) setRates(rt);
         if (sd) setShiftDrawer(sd);
         if (pc?.length) setPackageCategories(pc);
@@ -2596,6 +2610,7 @@ export const AppProvider: React.FC<{
         currentRole,
         setRole,
         roleConfig,
+        roles,
         language,
         setLanguage,
         currency,
