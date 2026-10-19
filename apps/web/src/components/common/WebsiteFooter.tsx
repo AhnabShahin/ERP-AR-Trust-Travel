@@ -37,6 +37,13 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
 }) => {
   const { isAuthenticated, logout } = useApp();
   const { t } = useWebsiteLanguage();
+
+  // Auth state is client-only (localStorage); gate auth-dependent UI behind
+  // `mounted` so SSR and the first client render match (no hydration mismatch).
+  const [mounted, setMounted] = useState(false);
+  React.useEffect(() => setMounted(true), []);
+  const showAuthed = mounted && isAuthenticated;
+
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [selectedInterest, setSelectedInterest] = useState('Desert Safari');
@@ -503,7 +510,7 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
             <p className="text-[11px] text-slate-400 leading-relaxed">
               Authorized airport agents, guides, and operations staff can access the central operations console.
             </p>
-            {isAuthenticated ? (
+            {showAuthed ? (
               <div className="space-y-2">
                 <button
                   onClick={onNavigateToAuth}

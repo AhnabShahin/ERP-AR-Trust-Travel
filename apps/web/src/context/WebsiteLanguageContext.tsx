@@ -16,15 +16,18 @@ interface WebsiteLanguageContextType {
 const WebsiteLanguageContext = createContext<WebsiteLanguageContextType | undefined>(undefined);
 
 export const WebsiteLanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [websiteLang, setWebsiteLangState] = useState<WebsiteLanguageCode>(() => {
+  // Deterministic default for SSR + the first client render; the stored
+  // language is applied in an effect after mount to avoid a hydration mismatch.
+  const [websiteLang, setWebsiteLangState] = useState<WebsiteLanguageCode>('en');
+
+  useEffect(() => {
     try {
       const saved = localStorage.getItem('artrust_website_language');
       if (saved && ['en', 'de', 'fr', 'it', 'es', 'ru'].includes(saved)) {
-        return saved as WebsiteLanguageCode;
+        setWebsiteLangState(saved as WebsiteLanguageCode);
       }
     } catch {}
-    return 'en';
-  });
+  }, []);
 
   const setWebsiteLang = (lang: WebsiteLanguageCode) => {
     setWebsiteLangState(lang);

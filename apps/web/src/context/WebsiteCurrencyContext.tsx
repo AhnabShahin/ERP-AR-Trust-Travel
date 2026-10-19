@@ -31,13 +31,16 @@ export const WebsiteCurrencyProvider: React.FC<{ children: React.ReactNode }> = 
     return currencies && currencies.length > 0 ? currencies : INITIAL_CURRENCIES;
   }, [currencies]);
 
-  const [selectedCurrencyCode, setSelectedCurrencyCodeState] = useState<string>(() => {
+  // Deterministic default for SSR + the first client render; the stored
+  // currency is applied in an effect after mount to avoid a hydration mismatch.
+  const [selectedCurrencyCode, setSelectedCurrencyCodeState] = useState<string>('QAR');
+
+  useEffect(() => {
     try {
       const saved = localStorage.getItem('artrust_website_currency');
-      if (saved) return saved.toUpperCase();
+      if (saved) setSelectedCurrencyCodeState(saved.toUpperCase());
     } catch {}
-    return 'QAR';
-  });
+  }, []);
 
   const setSelectedCurrencyCode = (code: string) => {
     const clean = code.toUpperCase();

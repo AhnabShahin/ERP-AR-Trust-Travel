@@ -85,6 +85,15 @@ export const WebsiteHeader: React.FC<WebsiteHeaderProps> = ({
   const [currencyDropdownOpen, setCurrencyDropdownOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showHeader, setShowHeader] = useState(true);
+
+  // Auth state lives in localStorage, so it's only known on the client. Gate
+  // the auth-dependent UI behind `mounted` so SSR and the first client render
+  // both show the logged-out state (no hydration mismatch); after mount it
+  // reflects the real session.
+  const [mounted, setMounted] = useState(false);
+  React.useEffect(() => setMounted(true), []);
+  const showAuthed = mounted && isAuthenticated;
+
   const lastScrollY = React.useRef(0);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
   const currencyDropdownRef = React.useRef<HTMLDivElement>(null);
@@ -379,7 +388,7 @@ export const WebsiteHeader: React.FC<WebsiteHeaderProps> = ({
             </button>
 
             {/* Top Header Auth Buttons: Dashboard & Logout if authenticated, else Sign In */}
-            {isAuthenticated ? (
+            {showAuthed ? (
               <div className="flex items-center gap-2">
                 <button
                   onClick={onNavigateToAuth}
@@ -617,7 +626,7 @@ export const WebsiteHeader: React.FC<WebsiteHeaderProps> = ({
           </button>
 
           {/* Authentication Actions */}
-          {isAuthenticated ? (
+          {showAuthed ? (
             <div className="pt-2 border-t border-white/10 flex items-center gap-2">
               <button
                 onClick={() => {

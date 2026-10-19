@@ -404,15 +404,13 @@ export const AppProvider: React.FC<{
 
   const [language, setLanguage] = useState<Language>('en');
   const [currency, setCurrency] = useState<Currency>('QAR');
-  const [theme, setTheme] = useState<Theme>(() => {
-    try {
-      const saved = localStorage.getItem('artrust_theme');
-      if (saved === 'light' || saved === 'dark') return saved;
-    } catch {
-      // fallback
-    }
-    return 'dark';
-  });
+  // Start from a deterministic default so the server and the client's first
+  // (hydration) render agree — localStorage isn't available during SSR, so
+  // reading it in the initializer would make the two renders differ and
+  // trigger a hydration mismatch. The stored theme is applied in an effect
+  // after mount (see below).
+  const [theme, setTheme] = useState<Theme>('dark');
+  const themeHydrated = React.useRef(false);
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [rates, setRates] = useState<ExchangeRates>(INITIAL_RATES); // hydrated from settings
@@ -487,7 +485,23 @@ export const AppProvider: React.FC<{
     document.documentElement.lang = language;
   }, [language]);
 
+  // Apply the persisted theme once, after mount. Runs before the persist
+  // effect below (declared later) on first commit, so we read the stored
+  // value into state before anything writes the default back.
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem('artrust_theme');
+      if (saved === 'light' || saved === 'dark') setTheme(saved);
+    } catch {
+      // ignore
+    }
+    themeHydrated.current = true;
+  }, []);
+
+  useEffect(() => {
+    // Don't persist/apply the theme until we've read the stored value, so the
+    // default never clobbers a user's saved preference on first mount.
+    if (!themeHydrated.current) return;
     // Synchronize dark class on document root element for Tailwind CSS
     try {
       localStorage.setItem('artrust_theme', theme);
