@@ -59,6 +59,10 @@ export const UserAccountsManagerView: React.FC = () => {
           { value: 'customer', label: 'Customer / Traveler' },
         ] as { value: string; label: string }[]);
 
+  // The super-admin role can never be assigned from the UI (it is created only
+  // via the server command), so it is excluded from the create/edit pickers.
+  const assignableRoleOptions = roleOptions.filter((r) => r.value !== 'super-admin');
+
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('ALL');
@@ -597,9 +601,9 @@ export const UserAccountsManagerView: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setDeleteConfirmAccount(acc)}
-                          disabled={acc.role === 'super-admin' && userAccounts.filter((u) => u.role === 'super-admin').length <= 1}
+                          disabled={acc.role === 'super-admin'}
                           className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
-                          title="Delete Account"
+                          title={acc.role === 'super-admin' ? 'The super-admin account cannot be deleted' : 'Delete Account'}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -752,14 +756,25 @@ export const UserAccountsManagerView: React.FC = () => {
                   <select
                     value={editRole}
                     onChange={(e) => setEditRole(e.target.value as UserRole)}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-semibold outline-none cursor-pointer"
+                    disabled={editingAccount?.role === 'super-admin'}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-semibold outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    {roleOptions.map((r) => (
+                    {(editingAccount?.role === 'super-admin'
+                      ? [{ value: 'super-admin', label: 'Super Admin' }]
+                      : assignableRoleOptions
+                    ).map((r) => (
                       <option key={r.value} value={r.value}>
                         {r.label}
                       </option>
                     ))}
                   </select>
+                  {editingAccount?.role === 'super-admin' && (
+                    <p className="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
+                      {isRtl
+                        ? 'لا يمكن تغيير دور المدير العام.'
+                        : 'The super-admin role cannot be changed.'}
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -906,7 +921,7 @@ export const UserAccountsManagerView: React.FC = () => {
                     onChange={(e) => setAddRole(e.target.value as UserRole)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-semibold outline-none cursor-pointer"
                   >
-                    {roleOptions.map((r) => (
+                    {assignableRoleOptions.map((r) => (
                       <option key={r.value} value={r.value}>
                         {r.label}
                       </option>

@@ -11,6 +11,7 @@
 
 export type RoleKey =
   | 'super-admin'
+  | 'admin'
   | 'operations-manager'
   | 'transit-agent'
   | 'driver-guide'
@@ -46,6 +47,17 @@ export const ROLES: RoleDefinition[] = [
       'وصول شامل للتقارير المالية، وهيكل الرواتب، ونسب العمولات، وأسعار الصرف، وإنشاء وتعديل باقات الخدمات السياحية، وسجلات النظام الكاملة.',
     defaultTab: 'dashboard',
     dashboardSlug: '/dashboard',
+  },
+  {
+    key: 'admin',
+    title: 'Admin',
+    titleAr: 'مدير',
+    description:
+      'Full administrative access to all operations, the same as a super-admin, except this account can itself be deactivated or removed by a super-admin or another admin.',
+    descriptionAr:
+      'صلاحية إدارية كاملة لجميع العمليات مثل المدير العام، باستثناء أن هذا الحساب يمكن تعطيله أو حذفه من قبل المدير العام أو مدير آخر.',
+    defaultTab: 'dashboard',
+    dashboardSlug: '/admin-dashboard',
   },
   {
     key: 'operations-manager',

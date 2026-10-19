@@ -3,22 +3,15 @@ import { z } from 'zod';
 import * as authService from './auth.service.js';
 import { HttpError } from '../../middleware/error.js';
 
-const roleEnum = z.enum([
-  'super-admin',
-  'operations-manager',
-  'transit-agent',
-  'driver-guide',
-  'finance-accountant',
-  'vendor-partner',
-  'customer',
-]);
-
+// Public self-service signup can only ever create a customer account, so the
+// request body does NOT accept a role — it is forced to `customer` in the
+// service. (Staff/admin accounts are created from the dashboard via
+// /api/users by an admin or super-admin.)
 const registerSchema = z.object({
   name: z.string().min(2),
   username: z.string().min(3),
   email: z.string().email(),
   password: z.string().min(6),
-  role: roleEnum.optional(),
   phone: z.string().optional(),
 });
 

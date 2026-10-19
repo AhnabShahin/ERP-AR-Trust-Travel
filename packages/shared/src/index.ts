@@ -11,6 +11,7 @@ export type Language = 'en' | 'ar';
 
 export type UserRole =
   | 'super-admin'
+  | 'admin'
   | 'operations-manager'
   | 'transit-agent'
   | 'driver-guide'

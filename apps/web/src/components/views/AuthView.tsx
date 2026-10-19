@@ -114,8 +114,8 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigateToHome }) => {
 
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
 
-  const [loginId, setLoginId] = useState('admin');
-  const [loginPassword, setLoginPassword] = useState('admin123');
+  const [loginId, setLoginId] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [showLoginPwd, setShowLoginPwd] = useState(false);
 
   const [signupName, setSignupName] = useState('');
@@ -173,13 +173,17 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigateToHome }) => {
         role: 'customer',
         phone: signupPhone.trim(),
         department: undefined,
-        status: 'active',
+        status: 'inactive',
       });
       setIsLoading(false);
       if (!res.success) {
         setError(res.error || 'Registration failed. Please try again.');
       } else {
-        setSuccess('Account created successfully! Welcome to AR Trust Travel.');
+        setSuccess(
+          'Account created! Your account is pending activation by our team. ' +
+            'You can sign in once it has been approved.'
+        );
+        setAuthMode('login');
       }
     }, 500);
   };
@@ -366,7 +370,10 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigateToHome }) => {
                   </label>
                   <button
                     type="button"
-                    onClick={() => { setLoginId('admin'); setLoginPassword('admin123'); setError(null); }}
+                    onClick={() => {
+                      setSuccess(null);
+                      setError('Please contact your administrator to reset your password.');
+                    }}
                     className="text-xs text-indigo-500 hover:text-indigo-700 dark:hover:text-indigo-300 hover:underline transition"
                   >
                     {isRtl ? 'Ù†Ø³ÙŠØª ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±ØŸ' : 'Forgot Password?'}
@@ -424,11 +431,6 @@ export const AuthView: React.FC<AuthViewProps> = ({ onNavigateToHome }) => {
                 </button>
               </p>
 
-              <div className="mt-2 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
-                <p className="text-[11px] text-slate-400 font-mono text-center">
-                  Demo: <span className="text-slate-600 dark:text-slate-300">admin</span> / <span className="text-slate-600 dark:text-slate-300">admin123</span>
-                </p>
-              </div>
             </form>
           )}
 

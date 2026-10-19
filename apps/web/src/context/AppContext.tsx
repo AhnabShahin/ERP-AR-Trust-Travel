@@ -82,7 +82,7 @@ interface AppContextType {
   dataHydrated: boolean;
   login: (usernameOrEmail: string, password: string) => Promise<{ success: boolean; error?: string; user?: UserAccount }>;
   logout: () => void;
-  signup: (account: Omit<UserAccount, 'id' | 'createdAt'>) => Promise<{ success: boolean; error?: string; user?: UserAccount }>;
+  signup: (account: Omit<UserAccount, 'id' | 'createdAt'>) => Promise<{ success: boolean; error?: string; user?: UserAccount; pendingActivation?: boolean }>;
   updateUserAccount: (id: string, updates: Partial<UserAccount>) => { success: boolean; error?: string };
   addUserAccount: (account: Omit<UserAccount, 'id' | 'createdAt'>) => { success: boolean; error?: string; user?: UserAccount };
   deleteUserAccount: (id: string) => { success: boolean; error?: string };
@@ -644,6 +644,9 @@ export const AppProvider: React.FC<{
 
   // ---- Live write-through: mirror every CRUD change to MySQL via the API.
   // Replaces the old localStorage persistence for all business collections.
+  // Persist user-account CRUD (create / activate / role change / delete) to the
+  // API so accounts, and especially activation, are the DB's source of truth.
+  useResourceSync('users', userAccounts as never, dataHydrated, notifySyncError);
   useResourceSync('bookings', bookings as never, dataHydrated, notifySyncError);
   useResourceSync('drivers', drivers as never, dataHydrated, notifySyncError);
   useResourceSync('fleet', fleetVehicles as never, dataHydrated, notifySyncError);
@@ -778,8 +781,19 @@ export const AppProvider: React.FC<{
       } catch {}
       addAuditLog('User Login', 'SECURITY', `${mergedUser.name} (${mergedUser.username}) signed in as ${mergedUser.role}.`);
       return { success: true, user: mergedUser };
-    } catch {
-      // API unreachable or rejected → fall back to local demo accounts below.
+    } catch (err) {
+      // If the API is up and rejected the login, surface its reason instead of
+      // silently falling back to local accounts.
+      if (err instanceof ApiError) {
+        if (err.status === 403) {
+          return {
+            success: false,
+            error: 'This account is inactive — it is pending activation by an admin.',
+          };
+        }
+        return { success: false, error: 'Invalid username or password.' };
+      }
+      // Non-API error (network / API down) → fall back to local accounts below.
     }
 
     // 2) Local fallback (offline / API down / local-only accounts).
@@ -824,7 +838,7 @@ export const AppProvider: React.FC<{
 
   const signup = async (
     data: Omit<UserAccount, 'id' | 'createdAt'>
-  ): Promise<{ success: boolean; error?: string; user?: UserAccount }> => {
+  ): Promise<{ success: boolean; error?: string; user?: UserAccount; pendingActivation?: boolean }> => {
     const cleanUsername = data.username.trim().toLowerCase();
     const cleanEmail = data.email.trim().toLowerCase();
 
@@ -835,32 +849,29 @@ export const AppProvider: React.FC<{
       return { success: false, error: 'Email is already registered. Please login instead.' };
     }
 
-    // Register against the live backend first; fall back to local on failure.
+    // Public signup always creates an INACTIVE customer account on the backend.
+    // We deliberately do NOT authenticate the user — an admin must activate the
+    // account first. The returned `pendingActivation` tells the UI to show a
+    // "waiting for approval" message instead of logging the user in.
     try {
       const { user: apiUser } = await authApi.register({
         name: data.name.trim(),
         username: cleanUsername,
         email: cleanEmail,
         password: data.password,
-        role: data.role,
         phone: data.phone,
       });
-      const createdAccount = { ...data, ...apiUser, password: data.password, lastLogin: 'Just now' } as UserAccount;
-      setUserAccounts((prev) => [...prev, createdAccount]);
-      setCurrentUser(createdAccount);
-      setCurrentRole(createdAccount.role);
-      setIsAuthenticated(true);
-      try {
-        localStorage.setItem('artrust_current_user', JSON.stringify(createdAccount));
-        localStorage.setItem('artrust_is_authenticated', JSON.stringify(true));
-      } catch {}
-      addAuditLog('Account Created', 'SECURITY', `New user registered via API: ${createdAccount.name} (${createdAccount.username}).`);
-      return { success: true, user: createdAccount };
+      addAuditLog(
+        'Account Created',
+        'SECURITY',
+        `New customer signup pending activation: ${apiUser.name} (${apiUser.username}).`
+      );
+      return { success: true, user: { ...apiUser, password: data.password } as UserAccount, pendingActivation: true };
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         return { success: false, error: 'Username or email is already registered. Please login instead.' };
       }
-      // Other errors (API down) → fall through to local signup.
+      // Other errors (API down) → fall through to a local (inactive) record.
     }
 
     const newAccount: UserAccount = {
@@ -868,25 +879,14 @@ export const AppProvider: React.FC<{
       id: `usr-${Date.now().toString(36)}`,
       username: data.username.trim(),
       email: data.email.trim(),
-      status: 'active',
+      role: 'customer',
+      status: 'inactive',
       lastLogin: 'Just now',
       createdAt: new Date().toISOString().split('T')[0],
     };
 
-    const nextAccounts = [...userAccounts, newAccount];
-    setUserAccounts(nextAccounts);
-    setCurrentUser(newAccount);
-    setCurrentRole(newAccount.role);
-    setIsAuthenticated(true);
-
-    try {
-      localStorage.setItem('artrust_user_accounts', JSON.stringify(nextAccounts));
-      localStorage.setItem('artrust_current_user', JSON.stringify(newAccount));
-      localStorage.setItem('artrust_is_authenticated', JSON.stringify(true));
-    } catch {}
-
-    addAuditLog('Account Created', 'SECURITY', `New user registered: ${newAccount.name} (${newAccount.username}, Role: ${newAccount.role}).`);
-    return { success: true, user: newAccount };
+    addAuditLog('Account Created', 'SECURITY', `New customer signup pending activation: ${newAccount.name} (${newAccount.username}).`);
+    return { success: true, user: newAccount, pendingActivation: true };
   };
 
   const updateUserAccount = (id: string, updates: Partial<UserAccount>): { success: boolean; error?: string } => {
@@ -944,7 +944,8 @@ export const AppProvider: React.FC<{
       id: `usr-${Date.now().toString(36)}`,
       username: accountData.username.trim(),
       email: accountData.email.trim(),
-      status: accountData.status || 'active',
+      // New accounts always start inactive and must be activated by an admin.
+      status: 'inactive',
       createdAt: new Date().toISOString().split('T')[0],
     };
 

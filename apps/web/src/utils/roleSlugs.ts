@@ -2,6 +2,7 @@ import { UserRole } from '../types';
 
 export const ROLE_DASHBOARD_SLUGS: Record<UserRole, string> = {
   'super-admin': '/dashboard',
+  'admin': '/admin-dashboard',
   'customer': '/customer-dashboard',
   'vendor-partner': '/vendor-dashboard',
   'operations-manager': '/manager-dashboard',
@@ -13,6 +14,7 @@ export const ROLE_DASHBOARD_SLUGS: Record<UserRole, string> = {
 export const SLUG_TO_ROLE: Record<string, UserRole> = {
   'dashboard': 'super-admin',
   'super-admin-dashboard': 'super-admin',
+  'admin-dashboard': 'admin',
   'customer-dashboard': 'customer',
   'vendor-dashboard': 'vendor-partner',
   'partner-dashboard': 'vendor-partner',

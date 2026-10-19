@@ -56,7 +56,7 @@ export const EmployeesView: React.FC = () => {
     t,
   } = useApp();
 
-  const isManagerOrAdmin = currentRole === 'super-admin' || currentRole === 'operations-manager';
+  const isManagerOrAdmin = currentRole === 'super-admin' || currentRole === 'admin' || currentRole === 'operations-manager';
 
   // Sub-tabs: 'staff' | 'desks' | 'payroll'
   const [activeSubTab, setActiveSubTab] = useState<'staff' | 'desks' | 'payroll'>('staff');

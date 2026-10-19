@@ -19,7 +19,8 @@ const demoUsers: Array<{
   vendorId?: string;
   isEmailVerified?: boolean;
 }> = [
-  { name: 'Sheikh Nasser Al-Thani', nameAr: 'الشيخ ناصر آل ثاني', username: 'admin', email: 'admin@artrust.qa', password: 'admin123', role: 'super-admin', department: 'Executive Management & Board', phone: '+974 4499 5000', isEmailVerified: true },
+  // NOTE: the super-admin is intentionally NOT seeded — it is created once,
+  // after deploy, via `npm run create-superadmin -w @ar-trust/api`.
   { name: 'Tariq Al-Sulaiti', nameAr: 'طارق السليطي', username: 'ops', email: 'ops@artrust.qa', password: 'ops123', role: 'operations-manager', department: 'Operations & Dispatch Desk', phone: '+974 5512 8841', isEmailVerified: true },
   { name: 'Zaid Qasim', nameAr: 'زيد قاسم', username: 'agent', email: 'agent@artrust.qa', password: 'agent123', role: 'transit-agent', department: 'Airport Arrivals Counter 4 & Hotels', phone: '+974 6690 1243' },
   { name: 'Tariq Al-Kuwari', nameAr: 'طارق الكواري', username: 'driver', email: 'driver@artrust.qa', password: 'driver123', role: 'driver-guide', department: 'Chauffeur Fleet & Desert Guides', phone: '+974 7741 9920' },
@@ -51,7 +52,11 @@ async function main() {
       },
     });
   }
-  console.log(`✅ Seeded ${demoUsers.length} demo users (admin/admin123, ops/ops123, agent/agent123, driver/driver123, finance/finance123, customer/customer123, + 3 vendor-partners).`);
+  console.log(
+    `✅ Seeded ${demoUsers.length} demo users (ops/ops123, agent/agent123, driver/driver123, ` +
+      `finance/finance123, customer/customer123, + 3 vendor-partners). ` +
+      `Create the super-admin with: npm run create-superadmin -w @ar-trust/api`
+  );
 }
 
 main()

@@ -49,9 +49,8 @@ export async function register(input: {
   username: string;
   email: string;
   password: string;
-  role?: UserRole;
   phone?: string;
-}): Promise<AuthResponse> {
+}): Promise<{ user: UserAccount; pendingActivation: true }> {
   const passwordHash = await bcrypt.hash(input.password, 10);
   try {
     const user = await prisma.user.create({
@@ -61,10 +60,15 @@ export async function register(input: {
         email: input.email.toLowerCase(),
         passwordHash,
         phone: input.phone,
-        role: input.role ? toPrismaRole(input.role) : PrismaRole.customer,
+        // Public signups are always customers and start inactive — an admin
+        // must activate the account before the user can sign in.
+        role: PrismaRole.customer,
+        status: 'inactive',
       },
     });
-    return { token: signToken(user), user: toPublicUser(user) };
+    // No token: the account is inactive, so there is no session yet. The user
+    // must be activated by an admin before they can sign in.
+    return { user: toPublicUser(user), pendingActivation: true };
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
       throw new HttpError(409, 'A user with that username or email already exists');

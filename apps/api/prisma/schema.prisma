@@ -20,6 +20,7 @@ datasource db {
 
 enum UserRole {
   super_admin        @map("super-admin")
+  admin
   operations_manager @map("operations-manager")
   transit_agent      @map("transit-agent")
   driver_guide       @map("driver-guide")
@@ -49,7 +50,9 @@ model User {
   avatar       String?       @db.Text
   department   String?
   vendorId     String?
-  status       AccountStatus @default(active)
+  // New accounts are created inactive and must be activated by an admin /
+  // super-admin before the user can sign in.
+  status       AccountStatus @default(inactive)
   lastLogin    DateTime?
 
   // Verification & profile

@@ -117,15 +117,6 @@ export const AuthDrawer: React.FC<AuthDrawerProps> = ({
     setForgotPasswordMessage(null);
   };
 
-  // Quick fill demo credentials
-  const fillCredentials = (username: string, pass: string) => {
-    setMode('login');
-    setLoginId(username);
-    setLoginPassword(pass);
-    setError(null);
-    setSuccess(null);
-  };
-
   // Handle Login
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,13 +188,17 @@ export const AuthDrawer: React.FC<AuthDrawerProps> = ({
         role: 'customer',
         phone: signupPhone.trim() || '+974 5555 7164',
         department: 'VIP Leisure Traveler',
-        status: 'active',
+        status: 'inactive',
       });
       setIsLoading(false);
       if (!res.success) {
         setError(res.error || 'Registration failed. Please try a different username or email.');
       } else {
-        setSuccess(`Account created successfully! Welcome to AR Trust Travel, ${res.user?.name}.`);
+        setSuccess(
+          `Account created, ${res.user?.name}! Your account is pending activation by our team. ` +
+            `You'll be able to sign in once it's approved.`
+        );
+        setMode('login');
       }
     }, 550);
   };
@@ -448,61 +443,6 @@ export const AuthDrawer: React.FC<AuthDrawerProps> = ({
                       ? 'Sign in to access your booked safaris, instant vouchers, and member pricing.'
                       : 'Register for free and get an instant 10% discount on all Doha desert tours.'}
                   </p>
-                </div>
-              </div>
-
-              {/* Quick Demo Credentials Bar (Super convenient for testing) */}
-              <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 space-y-2">
-                <div className="flex items-center justify-between text-[11px] font-bold text-slate-300">
-                  <span className="flex items-center gap-1 text-[#E7CF8A]">
-                    <KeyRound className="w-3 h-3 text-[#D4AF37]" />
-                    <span>Quick Demo Credentials:</span>
-                  </span>
-                  <span className="text-[10px] text-slate-400">Click to fill</span>
-                </div>
-
-                <div className="grid grid-cols-3 gap-1.5 text-[11px]">
-                  <button
-                    type="button"
-                    onClick={() => fillCredentials('customer', 'customer123')}
-                    className={`px-2 py-1.5 rounded-lg border text-left transition cursor-pointer truncate ${
-                      loginId === 'customer'
-                        ? 'bg-[#C0AB6F]/20 border-[#D4AF37] text-[#E7CF8A] font-bold'
-                        : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                    }`}
-                    title="Traveler / Customer Demo"
-                  >
-                    <div className="font-semibold truncate">👤 Traveler</div>
-                    <div className="text-[9px] font-mono text-slate-400 truncate">customer</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => fillCredentials('admin', 'admin123')}
-                    className={`px-2 py-1.5 rounded-lg border text-left transition cursor-pointer truncate ${
-                      loginId === 'admin'
-                        ? 'bg-[#C0AB6F]/20 border-[#D4AF37] text-[#E7CF8A] font-bold'
-                        : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                    }`}
-                    title="Super Admin / Director"
-                  >
-                    <div className="font-semibold truncate">🛡️ Admin</div>
-                    <div className="text-[9px] font-mono text-slate-400 truncate">admin</div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => fillCredentials('agent', 'agent123')}
-                    className={`px-2 py-1.5 rounded-lg border text-left transition cursor-pointer truncate ${
-                      loginId === 'agent'
-                        ? 'bg-[#C0AB6F]/20 border-[#D4AF37] text-[#E7CF8A] font-bold'
-                        : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                    }`}
-                    title="Airport Transit Agent"
-                  >
-                    <div className="font-semibold truncate">🛫 Airport Desk</div>
-                    <div className="text-[9px] font-mono text-slate-400 truncate">agent</div>
-                  </button>
                 </div>
               </div>
 

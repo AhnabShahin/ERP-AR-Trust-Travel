@@ -51,7 +51,7 @@ export const ServicesManagementView: React.FC = () => {
     setActiveTab,
   } = useApp();
 
-  const isSuperAdmin = currentRole === 'super-admin';
+  const isSuperAdmin = currentRole === 'super-admin' || currentRole === 'admin';
 
   // Primary Service Type Filter ('All' | 'Tour Service' | 'Tour Package' | 'Transfer Service')
   const [selectedMainType, setSelectedMainType] = useState<'All' | ServiceMainType>('All');

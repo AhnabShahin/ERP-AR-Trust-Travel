@@ -214,8 +214,8 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
                   )}
                 </button>
 
-                {/* Admin Accounts Link (Super Admin only) */}
-                {currentRole === 'super-admin' && (
+                {/* Admin Accounts Link (admin & super-admin) */}
+                {(currentRole === 'super-admin' || currentRole === 'admin') && (
                   <button
                     type="button"
                     onClick={() => {

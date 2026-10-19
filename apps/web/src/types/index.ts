@@ -6,6 +6,7 @@ export type Theme = 'dark' | 'light';
 
 export type UserRole =
   | 'super-admin'
+  | 'admin'
   | 'operations-manager'
   | 'transit-agent'
   | 'driver-guide'
