@@ -485,7 +485,11 @@ export const AppProvider: React.FC<{
   const [modalData, setModalData] = useState<any>(null);
 
   // Sidebar Layout state
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  // Open by default on desktop, collapsed by default on mobile so the slide-over
+  // sidebar doesn't cover the content on first load.
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(
+    () => (typeof window === 'undefined' ? true : window.innerWidth >= 768)
+  );
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
 
   // True once all collections have been loaded from the API (MySQL).

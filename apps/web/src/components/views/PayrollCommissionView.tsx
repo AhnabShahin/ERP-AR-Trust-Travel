@@ -137,7 +137,8 @@ export const PayrollCommissionView: React.FC = () => {
             <span className="font-mono text-xs text-slate-400">Payroll Cycle: Monthly 30th (Direct QNB Transfer)</span>
           </div>
 
-          <table className="w-full text-left rtl:text-right border-collapse text-xs font-mono">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left rtl:text-right border-collapse text-xs font-mono">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-400 uppercase">
                 <th className="py-3 px-4">Employee Name</th>
@@ -197,6 +198,7 @@ export const PayrollCommissionView: React.FC = () => {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
@@ -261,7 +263,8 @@ export const PayrollCommissionView: React.FC = () => {
             </span>
           </div>
 
-          <table className="w-full text-left rtl:text-right border-collapse text-xs font-mono">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left rtl:text-right border-collapse text-xs font-mono">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-400 uppercase">
                 <th className="py-3 px-4">Date / Time</th>
@@ -297,6 +300,7 @@ export const PayrollCommissionView: React.FC = () => {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
 
