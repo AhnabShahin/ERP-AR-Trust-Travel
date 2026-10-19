@@ -1,3 +1,5 @@
+'use client';
+
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useApp } from './AppContext';
 import { CurrencyItem } from '../types';

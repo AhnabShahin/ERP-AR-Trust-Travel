@@ -1,3 +1,17 @@
+'use client';
+
+// =====================================================================
+// Public home page CONTENT (client island).
+//
+// Extracted from the old monolithic HomepageView: this renders only the
+// landing-page hero + sections. The fixed header, footer and slide-over
+// drawers now live in the (public) layout / PublicShell, and navigation
+// uses the Next router + PublicUIProvider instead of window.history.
+// Catalogue data (packages / fleet) comes from AppContext, which the SSR
+// layout seeds with server-fetched live data — so this renders real
+// content on the server.
+// =====================================================================
+
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   Phone,
@@ -27,49 +41,25 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { WebsiteHeader, PublicPageSlug } from '../common/WebsiteHeader';
-import { WebsiteFooter } from '../common/WebsiteFooter';
+import { useRouter } from 'next/navigation';
+import { PublicPageSlug } from '../common/WebsiteHeader';
+import { useWebsiteLanguage } from '../../context/WebsiteLanguageContext';
+import { useWebsiteCurrency } from '../../context/WebsiteCurrencyContext';
+import { useApp } from '../../context/AppContext';
+import { usePublicUI } from './PublicUIProvider';
 import {
-  WEBSITE_TRANSLATIONS,
-  WebsiteLanguageCode,
-} from '../../data/websiteTranslations';
-import {
-  WebsiteLanguageProvider,
-  useWebsiteLanguage,
-} from '../../context/WebsiteLanguageContext';
-import { ToursSafarisPageView } from './pages/ToursSafarisPageView';
-import { AirportFleetPageView } from './pages/AirportFleetPageView';
-import { HolidayPackagesPageView } from './pages/HolidayPackagesPageView';
-import { ServicesPageView } from './pages/ServicesPageView';
-import { WhyUsPageView } from './pages/WhyUsPageView';
-import { ReviewsPageView } from './pages/ReviewsPageView';
-import { ContactPageView } from './pages/ContactPageView';
-import {
-  WEBSITE_TOURS,
-  WEBSITE_FLEET,
-  MULTI_DAY_PACKAGES,
   CUSTOMER_REVIEWS,
   CORE_SERVICES,
-  WebsiteTour,
   findExperienceItem,
   getSyncedWebsiteTours,
   getSyncedHolidayPackages,
   getSyncedFleet,
 } from '../../data/websiteData';
-import { BookingDrawer } from '../booking/BookingDrawer';
-import { AuthDrawer } from '../auth/AuthDrawer';
-import { ExploreSearchView } from './ExploreSearchView';
-import { useApp } from '../../context/AppContext';
-import { useWebsiteCurrency } from '../../context/WebsiteCurrencyContext';
 import exploreQatarHeroImage from '../../assets/explore-qatar-hero.jpg';
 import inlandSeaSafariHeroImage from '../../assets/inland-sea-safari-hero.jpg';
 import vipAirportTransitHeroImage from '../../assets/vip-airport-transit-hero.jpg';
 import dhowCruiseHeritageHeroImage from '../../assets/dhow-cruise-heritage-hero.jpg';
 import { mercedesVClass } from '../../assets/cars';
-
-interface HomepageViewProps {
-  onNavigateToAuth: () => void;
-}
 
 const HERO_SLIDES = [
   {
@@ -122,82 +112,12 @@ const HERO_SLIDES = [
   },
 ];
 
-const getSlugFromUrl = (): PublicPageSlug => {
-  if (typeof window === 'undefined') return 'home';
-
-  // 1. Primary: Extract from clean pathname e.g. /tours, /fleet, /packages
-  const path = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase().trim();
-  if (['tours', 'tours-safaris'].includes(path)) return 'tours';
-  if (['fleet', 'airport-fleet'].includes(path)) return 'fleet';
-  if (['packages', 'holiday-packages'].includes(path)) return 'packages';
-  if (path === 'services' || path.startsWith('services/')) return 'services';
-  if (['why-us', 'whyus', 'about'].includes(path)) return 'why-us';
-  if (['reviews', 'review'].includes(path)) return 'reviews';
-  if (['contact', 'contact-us'].includes(path)) return 'contact';
-  if (['search', 'explore', 'catalog', 'explore-catalog', 'explorecatalog'].includes(path)) return 'search';
-
-  // 2. Fallback: If accessed via legacy hash link e.g. /#/fleet or #/tours
-  const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase().trim();
-  if (['tours', 'tours-safaris'].includes(hash)) return 'tours';
-  if (['fleet', 'airport-fleet'].includes(hash)) return 'fleet';
-  if (['packages', 'holiday-packages'].includes(hash)) return 'packages';
-  if (hash === 'services' || hash.startsWith('services/')) return 'services';
-  if (['why-us', 'whyus', 'about'].includes(hash)) return 'why-us';
-  if (['reviews', 'review'].includes(hash)) return 'reviews';
-  if (['contact', 'contact-us'].includes(hash)) return 'contact';
-  if (['search', 'explore', 'catalog', 'explore-catalog', 'explorecatalog'].includes(hash)) return 'search';
-
-  return 'home';
-};
-
-const HomepageViewContent: React.FC<HomepageViewProps> = ({ onNavigateToAuth }) => {
-  const { theme, toggleTheme, packages, fleetVehicles } = useApp();
-  const { websiteLang, setWebsiteLang, t: tWeb } = useWebsiteLanguage();
+export default function HomePage() {
+  const { packages, fleetVehicles } = useApp();
+  const { t: tWeb } = useWebsiteLanguage();
   const { formatPrice, selectedCurrency } = useWebsiteCurrency();
-
-  // Active public page slug: 'home' | 'tours' | 'fleet' | 'packages' | 'services' | 'why-us' | 'reviews' | 'contact' | 'search'
-  const [currentSlug, setCurrentSlug] = useState<PublicPageSlug>(getSlugFromUrl);
-
-  useEffect(() => {
-    // If the page was loaded with an old legacy hash link (e.g. /#/fleet or /#fleet), rewrite cleanly to /slug
-    const legacyHash = window.location.hash.replace(/^#\/?/, '').toLowerCase().trim();
-    if (legacyHash) {
-      const slug = getSlugFromUrl();
-      const cleanPath = slug === 'home' ? '/' : `/${slug}`;
-      window.history.replaceState(null, '', cleanPath);
-    }
-
-    const handleUrlChange = () => {
-      const path = window.location.pathname.replace(/^\/+|\/+$/g, '').toLowerCase().trim();
-      const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase().trim();
-      if (
-        ['dashboard', 'erp', 'admin'].includes(path) ||
-        ['dashboard', 'erp', 'admin'].includes(hash)
-      ) {
-        onNavigateToAuth();
-        return;
-      }
-      const slug = getSlugFromUrl();
-      setCurrentSlug(slug);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    window.addEventListener('popstate', handleUrlChange);
-    window.addEventListener('hashchange', handleUrlChange);
-    return () => {
-      window.removeEventListener('popstate', handleUrlChange);
-      window.removeEventListener('hashchange', handleUrlChange);
-    };
-  }, [onNavigateToAuth]);
-
-  const handleNavigate = (slug: PublicPageSlug) => {
-    setCurrentSlug(slug);
-    const targetPath = slug === 'home' ? '/' : `/${slug}`;
-    if (window.location.pathname !== targetPath || window.location.hash) {
-      window.history.pushState(null, '', targetPath);
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const router = useRouter();
+  const { openBookingDrawer } = usePublicUI();
 
   // Search input state on the Hero section
   const [heroSearchQuery, setHeroSearchQuery] = useState<string>('');
@@ -219,17 +139,13 @@ const HomepageViewContent: React.FC<HomepageViewProps> = ({ onNavigateToAuth }) 
     return () => clearInterval(timer);
   }, []);
 
-  // Right-aligned slide-over booking drawer state
-  const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
-  const [activeTourForDrawer, setActiveTourForDrawer] = useState<string | undefined>(undefined);
+  // Navigate to another public route via the Next router.
+  const handleNavigate = (slug: PublicPageSlug) => {
+    router.push(slug === 'home' ? '/' : `/${slug}`);
+  };
 
-  // Right-aligned slide-over auth drawer state (Login & Signup)
-  const [isAuthDrawerOpen, setIsAuthDrawerOpen] = useState<boolean>(false);
-  const [authDrawerMode, setAuthDrawerMode] = useState<'login' | 'signup'>('login');
-
-  const handleOpenAuthDrawer = (mode: 'login' | 'signup' = 'login') => {
-    setAuthDrawerMode(mode);
-    setIsAuthDrawerOpen(true);
+  const gotoSearch = (q?: string) => {
+    router.push(q ? `/search?q=${encodeURIComponent(q)}` : '/search');
   };
 
   // Dynamic synchronized tours and holiday packages from dashboard
@@ -253,128 +169,22 @@ const HomepageViewContent: React.FC<HomepageViewProps> = ({ onNavigateToAuth }) 
 
   const handleOpenDrawer = (tourTitleOrId?: string) => {
     const item = findExperienceItem(tourTitleOrId, packages, fleetVehicles);
-    setActiveTourForDrawer(item ? item.id : dynamicTours[1]?.id || dynamicTours[0]?.id || 'tour-2');
-    setIsDrawerOpen(true);
+    const resolved = item ? item.id : dynamicTours[1]?.id || dynamicTours[0]?.id || 'tour-2';
+    openBookingDrawer(resolved);
   };
 
   const handleHeroSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleNavigate('search');
+    gotoSearch(heroSearchQuery);
   };
 
   const handleTagClick = (tagQuery: string) => {
     setHeroSearchQuery(tagQuery);
-    handleNavigate('search');
+    gotoSearch(tagQuery);
   };
 
-  // ─── IF VIEWING DEDICATED SLUG PAGES ───
-  if (currentSlug !== 'home') {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-[#05161D] text-slate-900 dark:text-slate-100 font-sans selection:bg-[#C0AB6F] selection:text-[#05161D] transition-colors relative flex flex-col justify-between">
-        <div>
-          <WebsiteHeader
-            currentSlug={currentSlug}
-            onNavigate={handleNavigate}
-            onOpenDrawer={handleOpenDrawer}
-            onNavigateToAuth={onNavigateToAuth}
-            onOpenAuthDrawer={handleOpenAuthDrawer}
-            isTransparentHero={false}
-            websiteLang={websiteLang}
-            onSelectWebsiteLang={setWebsiteLang}
-          />
-
-          <main className="flex-1">
-            {currentSlug === 'tours' && (
-              <ToursSafarisPageView
-                onSelectBooking={(id) => handleOpenDrawer(id)}
-                onNavigateHome={() => handleNavigate('home')}
-              />
-            )}
-            {currentSlug === 'fleet' && (
-              <AirportFleetPageView
-                onSelectBooking={(id) => handleOpenDrawer(id)}
-                onNavigateHome={() => handleNavigate('home')}
-              />
-            )}
-            {currentSlug === 'packages' && (
-              <HolidayPackagesPageView
-                onSelectBooking={(id) => handleOpenDrawer(id)}
-                onNavigateHome={() => handleNavigate('home')}
-              />
-            )}
-            {currentSlug === 'services' && (
-              <ServicesPageView
-                onSelectBooking={(id) => handleOpenDrawer(id)}
-                onNavigateHome={() => handleNavigate('home')}
-              />
-            )}
-            {currentSlug === 'why-us' && (
-              <WhyUsPageView
-                onSelectBooking={() => handleOpenDrawer()}
-                onNavigateHome={() => handleNavigate('home')}
-                onNavigateContact={() => handleNavigate('contact')}
-              />
-            )}
-            {currentSlug === 'reviews' && (
-              <ReviewsPageView
-                onSelectBooking={() => handleOpenDrawer()}
-                onNavigateHome={() => handleNavigate('home')}
-              />
-            )}
-            {currentSlug === 'contact' && (
-              <ContactPageView
-                onNavigateHome={() => handleNavigate('home')}
-              />
-            )}
-            {currentSlug === 'search' && (
-              <ExploreSearchView
-                initialSearchQuery={heroSearchQuery}
-                onBackToHome={() => handleNavigate('home')}
-                onSelectBooking={(title) => handleOpenDrawer(title)}
-              />
-            )}
-          </main>
-        </div>
-
-        <WebsiteFooter
-          onNavigate={handleNavigate}
-          onNavigateToAuth={onNavigateToAuth}
-        />
-
-        {/* Right-aligned Animated Booking Drawer */}
-        <BookingDrawer
-          isOpen={isDrawerOpen}
-          onClose={() => setIsDrawerOpen(false)}
-          preselectedTourId={activeTourForDrawer}
-        />
-
-        {/* Right-aligned Animated Auth (Login/Signup) Drawer */}
-        <AuthDrawer
-          isOpen={isAuthDrawerOpen}
-          onClose={() => setIsAuthDrawerOpen(false)}
-          initialMode={authDrawerMode}
-          onNavigateToERP={onNavigateToAuth}
-          onNavigateHome={() => handleNavigate('home')}
-          onOpenBookingDrawer={() => handleOpenDrawer()}
-        />
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#05161D] text-slate-900 dark:text-slate-100 font-sans selection:bg-[#C0AB6F] selection:text-[#05161D] transition-colors relative">
-      {/* ─── STICKY NAVBAR WITH TRANSPARENT GLASS EFFECT THAT SOLIDIFIES ON SCROLL ─── */}
-      <WebsiteHeader
-        currentSlug={currentSlug}
-        onNavigate={handleNavigate}
-        onOpenDrawer={handleOpenDrawer}
-        onNavigateToAuth={onNavigateToAuth}
-        onOpenAuthDrawer={handleOpenAuthDrawer}
-        isTransparentHero={true}
-        websiteLang={websiteLang}
-        onSelectWebsiteLang={setWebsiteLang}
-      />
-
+    <div className="bg-slate-50 dark:bg-[#05161D] text-slate-900 dark:text-slate-100 font-sans selection:bg-[#C0AB6F] selection:text-[#05161D] transition-colors relative">
       {/* ─── HERO CONTAINER WITH MULTI-IMAGE SLIDER & TRANSPARENT GLASS HEADER (FULL SCREEN) ─── */}
       <div className="relative min-h-screen lg:h-screen flex flex-col justify-between overflow-hidden bg-[#05161D] text-white">
         {/* ─── HERO BACKGROUND IMAGE SLIDER (Spans from very top behind Header) ─── */}
@@ -1219,37 +1029,6 @@ const HomepageViewContent: React.FC<HomepageViewProps> = ({ onNavigateToAuth }) 
           </div>
         </div>
       </section>
-
-      {/* ─── FOOTER ─── */}
-      <WebsiteFooter
-        onNavigate={handleNavigate}
-        onNavigateToAuth={onNavigateToAuth}
-      />
-
-      {/* ─── RIGHT-ALIGNED ANIMATED BOOKING DRAWER POPUP ─── */}
-      <BookingDrawer
-        isOpen={isDrawerOpen}
-        onClose={() => setIsDrawerOpen(false)}
-        preselectedTourId={activeTourForDrawer}
-      />
-
-      {/* ─── RIGHT-ALIGNED ANIMATED AUTH (LOGIN/SIGNUP) DRAWER POPUP ─── */}
-      <AuthDrawer
-        isOpen={isAuthDrawerOpen}
-        onClose={() => setIsAuthDrawerOpen(false)}
-        initialMode={authDrawerMode}
-        onNavigateToERP={onNavigateToAuth}
-        onNavigateHome={() => handleNavigate('home')}
-        onOpenBookingDrawer={() => handleOpenDrawer()}
-      />
     </div>
   );
-};
-
-export const HomepageView: React.FC<HomepageViewProps> = (props) => {
-  return (
-    <WebsiteLanguageProvider>
-      <HomepageViewContent {...props} />
-    </WebsiteLanguageProvider>
-  );
-};
+}

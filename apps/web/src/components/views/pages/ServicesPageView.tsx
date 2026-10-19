@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Plane,
   Building2,
@@ -23,53 +24,26 @@ import { useWebsiteCurrency } from '../../../context/WebsiteCurrencyContext';
 interface ServicesPageViewProps {
   onSelectBooking: (serviceTitleOrId: string) => void;
   onNavigateHome: () => void;
+  /** Active service slug from the /services/[slug] route (null = catalog). */
+  initialSlug?: string | null;
 }
 
 export const ServicesPageView: React.FC<ServicesPageViewProps> = ({
   onSelectBooking,
   onNavigateHome,
+  initialSlug = null,
 }) => {
   const { t } = useWebsiteLanguage();
   const { formatPrice, selectedCurrency } = useWebsiteCurrency();
+  const router = useRouter();
 
-  // Helper to extract service slug from URL path or query
-  const getInitialServiceSlug = (): string | null => {
-    if (typeof window === 'undefined') return null;
-
-    // 1. Check clean path (e.g. /services/airline-ticketing)
-    const parts = window.location.pathname.replace(/^\/+|\/+$/g, '').split('/');
-    if (parts.length >= 2 && parts[0].toLowerCase() === 'services' && parts[1]) {
-      return parts[1].toLowerCase().trim();
-    }
-
-    // 2. Check query parameter e.g. /services?service=airline-ticketing
-    const query = new URLSearchParams(window.location.search).get('service');
-    if (query) return query.toLowerCase().trim();
-
-    return null;
-  };
-
-  const [selectedServiceSlug, setSelectedServiceSlug] = useState<string | null>(getInitialServiceSlug);
-
-  // Sync state with browser back/forward buttons
-  useEffect(() => {
-    const handlePopState = () => {
-      const slug = getInitialServiceSlug();
-      setSelectedServiceSlug(slug);
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  // The active service is driven entirely by the route: /services (catalog)
+  // vs /services/:slug (detail). Selecting a service navigates to its route,
+  // so the detail page is server-rendered too.
+  const selectedServiceSlug = initialSlug ? initialSlug.toLowerCase().trim() : null;
 
   const handleSelectService = (slug: string | null) => {
-    setSelectedServiceSlug(slug);
-    if (slug) {
-      window.history.pushState(null, '', `/services/${slug}`);
-    } else {
-      window.history.pushState(null, '', '/services');
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    router.push(slug ? `/services/${slug}` : '/services');
   };
 
   // Check if a service is currently selected

@@ -251,6 +251,7 @@ const resources: ResourceDef[] = [
     path: 'currencies',
     name: 'Currency',
     delegate: prisma.currencyItem,
+    publicRead: true,
     defaultOrderBy: { code: 'asc' },
     searchFields: ['code', 'name'],
     shape: {
@@ -302,6 +303,7 @@ const resources: ResourceDef[] = [
     path: 'service-categories',
     name: 'Service category',
     delegate: prisma.serviceCategory,
+    publicRead: true,
     defaultOrderBy: { name: 'asc' },
     shape: {
       name: str,

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import {
   INITIAL_AIRPORT_DESKS,
@@ -355,7 +357,19 @@ function loadFromStorage<T>(key: string, fallback: T): T {
   }
 }
 
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+// Catalogue the public website fetches on the server (SSR) and hands to the
+// provider so the first render already contains live data instead of empty
+// arrays. The client-side hydration effects below still refresh it.
+export interface InitialCatalog {
+  packages?: TourPackage[];
+  fleetVehicles?: FleetVehicle[];
+  currencies?: CurrencyItem[];
+}
+
+export const AppProvider: React.FC<{
+  children: React.ReactNode;
+  initialCatalog?: InitialCatalog;
+}> = ({ children, initialCatalog }) => {
   // User Accounts State (Persistent)
   const [userAccounts, setUserAccounts] = useState<UserAccount[]>([]);
 
@@ -406,7 +420,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Persistent Real Production Datasets (never lose user input or CRUD changes)
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
-  const [fleetVehicles, setFleetVehicles] = useState<FleetVehicle[]>([]);
+  const [fleetVehicles, setFleetVehicles] = useState<FleetVehicle[]>(initialCatalog?.fleetVehicles ?? []);
   const [flights] = useState<FlightInfo[]>(INITIAL_FLIGHTS); // live flight board — no DB table
   const [shiftDrawer, setShiftDrawer] = useState<ShiftDrawer>(INITIAL_SHIFT_DRAWER); // hydrated from settings
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -424,7 +438,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [tourGuides, setTourGuides] = useState<TourGuide[]>([]);
   const [salaryRecords, setSalaryRecords] = useState<SalaryRecord[]>([]);
   const [commissionRules, setCommissionRules] = useState<CommissionRule[]>([]);
-  const [packages, setPackages] = useState<TourPackage[]>([]);
+  const [packages, setPackages] = useState<TourPackage[]>(initialCatalog?.packages ?? []);
   const [packageCategories, setPackageCategories] = useState<string[]>(INITIAL_PACKAGE_CATEGORIES); // hydrated from settings
   const [categoryServiceMap, setCategoryServiceMap] = useState<Record<string, ServiceMainType>>(INITIAL_CATEGORY_SERVICE_MAP); // hydrated from settings
 
@@ -445,7 +459,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [hotelBookings, setHotelBookings] = useState<HotelBooking[]>([]);
 
   // Multi-Currency Treasury & Vault Reserves State
-  const [currencies, setCurrencies] = useState<CurrencyItem[]>([]);
+  const [currencies, setCurrencies] = useState<CurrencyItem[]>(initialCatalog?.currencies ?? []);
 
   // Historical Exchange Rates & Vault Reserves Ledger
   const [currencyHistory, setCurrencyHistory] = useState<CurrencyHistoryRecord[]>([]);

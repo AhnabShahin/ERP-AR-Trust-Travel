@@ -2,9 +2,10 @@
 const nextConfig = {
   reactStrictMode: true,
 
-  // Build a fully static site (out/) when NEXT_OUTPUT=export — ideal for
-  // shared hosting (just upload the files). Normal builds stay server-mode.
-  output: process.env.NEXT_OUTPUT === 'export' ? 'export' : undefined,
+  // This app is served by a Node server (`next start`) so public pages can be
+  // rendered on the server (SSR). Static export is intentionally NOT used — it
+  // would force every page back to client-only rendering and disable the
+  // server-side data fetching the public website now relies on.
 
   // Compile the shared workspace package (it ships TypeScript source).
   transpilePackages: ['@ar-trust/shared'],
