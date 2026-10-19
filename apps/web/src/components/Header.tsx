@@ -72,7 +72,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
   const currencyOptions: Currency[] = ['QAR', 'USD', 'EUR', 'GBP'];
 
   return (
-    <header className="h-16 px-5 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md flex items-center justify-between gap-4 sticky top-0 z-30 transition-colors select-none">
+    <header className="h-16 px-3 sm:px-5 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md flex items-center justify-between gap-2 sm:gap-3 sticky top-0 z-30 transition-colors select-none">
       {/* Zone 0: Left Sidebar Toggle */}
       <button
         onClick={toggleSidebar}
@@ -96,7 +96,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
       </button>
 
       {/* Zone 1: Global Search & Context */}
-      <div className="flex-1 max-w-sm relative">
+      <div className="flex-1 min-w-0 max-w-sm relative">
         <div className="relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 rtl:left-auto rtl:right-3 pointer-events-none" />
           <input
@@ -286,7 +286,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
         </div>
 
         {/* Currency Switcher */}
-        <div className="relative">
+        <div className="relative hidden xl:block">
           <button
             onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors"
@@ -335,7 +335,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
         {onNavigateToHome && (
           <button
             onClick={onNavigateToHome}
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-teal-500/30 bg-teal-50/70 dark:bg-teal-950/40 hover:bg-teal-100/60 text-xs font-semibold text-teal-800 dark:text-teal-300 transition-all cursor-pointer shadow-xs"
+            className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-teal-500/30 bg-teal-50/70 dark:bg-teal-950/40 hover:bg-teal-100/60 text-xs font-semibold text-teal-800 dark:text-teal-300 transition-all cursor-pointer shadow-xs"
             title="Switch to Public Website (/)"
           >
             <Globe className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
@@ -552,7 +552,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
           title="Scan and verify Qatar digital vouchers & boarding passes"
         >
           <QrCode className="w-4 h-4 text-[#D4AF37]" />
-          <span className="hidden md:inline">Verify QR Voucher</span>
+          <span className="hidden xl:inline">Verify QR Voucher</span>
         </button>
 
         {/* Quick Action: + New Booking */}
@@ -561,7 +561,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
           className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold shadow-md shadow-emerald-600/20 hover:shadow-emerald-600/30 transition-all cursor-pointer active:scale-95 shrink-0"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>{t('newBooking')}</span>
+          <span className="hidden lg:inline">{t('newBooking')}</span>
         </button>
       </div>
     </header>
