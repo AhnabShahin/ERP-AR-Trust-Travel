@@ -762,14 +762,14 @@ export const AirportDeskPOSView: React.FC = () => {
                     <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
                       <span className="text-[10px] text-slate-400 block font-mono">Drawer Cash:</span>
                       <span className="font-mono font-bold text-slate-900 dark:text-white">
-                        {(desk.currentDrawerCashQAR || 3500).toLocaleString()} QAR
+                        {(desk.currentDrawerCashQAR || 0).toLocaleString()} QAR
                       </span>
                     </div>
 
                     <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
                       <span className="text-[10px] text-slate-400 block font-mono">Daily Target:</span>
                       <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                        {(desk.dailyTargetQAR || 15000).toLocaleString()} QAR
+                        {(desk.dailyTargetQAR || 0).toLocaleString()} QAR
                       </span>
                     </div>
                   </div>
@@ -1740,14 +1740,14 @@ export const AirportDeskPOSView: React.FC = () => {
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/30 border border-slate-200/60 dark:border-slate-800">
                 <span className="text-slate-400 font-mono text-[10px] block">Current Drawer Cash:</span>
                 <span className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-sm mt-0.5 block">
-                  {(inspectingDesk.currentDrawerCashQAR || 3500).toLocaleString()} QAR
+                  {(inspectingDesk.currentDrawerCashQAR || 0).toLocaleString()} QAR
                 </span>
               </div>
 
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/30 border border-slate-200/60 dark:border-slate-800">
                 <span className="text-slate-400 font-mono text-[10px] block">Daily Sales Target:</span>
                 <span className="font-mono font-black text-indigo-600 dark:text-indigo-400 text-sm mt-0.5 block">
-                  {(inspectingDesk.dailyTargetQAR || 15000).toLocaleString()} QAR
+                  {(inspectingDesk.dailyTargetQAR || 0).toLocaleString()} QAR
                 </span>
               </div>
 
@@ -1938,7 +1938,7 @@ export const AirportDeskPOSView: React.FC = () => {
                   </label>
                   <input
                     type="number"
-                    value={editingDesk.dailyTargetQAR || 15000}
+                    value={editingDesk.dailyTargetQAR || 0}
                     onChange={(e) => setEditingDesk({ ...editingDesk, dailyTargetQAR: Number(e.target.value) })}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 dark:text-slate-100"
                   />
@@ -1950,7 +1950,7 @@ export const AirportDeskPOSView: React.FC = () => {
                   </label>
                   <input
                     type="number"
-                    value={editingDesk.currentDrawerCashQAR || 3500}
+                    value={editingDesk.currentDrawerCashQAR || 0}
                     onChange={(e) => setEditingDesk({ ...editingDesk, currentDrawerCashQAR: Number(e.target.value) })}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 dark:text-slate-100"
                   />
