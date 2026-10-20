@@ -61,6 +61,7 @@ import {
   HotelRoomOption,
   HotelVendorDesk,
   Language,
+  Location,
   NotificationItem,
   RoleConfig,
   SalaryRecord,
@@ -161,6 +162,12 @@ interface AppContextType {
   deletePackage: (id: string) => { success: boolean; error?: string };
   addPackageCategory: (categoryName: string, serviceType?: ServiceMainType) => { success: boolean; error?: string };
   deletePackageCategory: (categoryName: string) => { success: boolean; error?: string };
+
+  // Locations (airports + resorts) Management
+  locations: Location[];
+  addLocation: (location: Omit<Location, 'id'>) => { success: boolean; error?: string; location?: Location };
+  updateLocation: (id: string, updates: Partial<Location>) => { success: boolean; error?: string };
+  deleteLocation: (id: string) => { success: boolean; error?: string };
 
   // Airport Desks Management
   airportDesks: AirportDesk[];
@@ -450,6 +457,8 @@ export const AppProvider: React.FC<{
 
   // Airport & Hotel Partner Agent Desks State
   const [airportDesks, setAirportDesks] = useState<AirportDesk[]>([]);
+  // Locations (airports + resorts) — the source for the desk location picker.
+  const [locations, setLocations] = useState<Location[]>([]);
   const [deskAssignmentHistory, setDeskAssignmentHistory] = useState<DeskAssignmentRecord[]>([]);
   const [activeDeskId, setActiveDeskId] = useState<string>(() => {
     try {
@@ -561,7 +570,7 @@ export const AppProvider: React.FC<{
       const q = '?take=200';
       const load = <T,>(p: string) => api.get<T[]>(`/api/${p}${q}`).catch(() => null);
       try {
-        const [bk, dr, fl, tg, gs, gt, hv, hb, emp, exp, cur, ch, pkg, ad, da, notif] =
+        const [bk, dr, fl, tg, gs, gt, hv, hb, emp, exp, cur, ch, pkg, ad, loc, da, notif] =
           await Promise.all([
             load<Booking>('bookings'),
             load<Driver>('drivers'),
@@ -579,6 +588,7 @@ export const AppProvider: React.FC<{
             load<CurrencyHistoryRecord>('currency-history'),
             load<TourPackage>('tour-packages'),
             load<AirportDesk>('airport-desks'),
+            load<Location>('locations'),
             load<DeskAssignmentRecord>('desk-assignments'),
             load<NotificationItem>('notifications'),
           ]);
@@ -597,6 +607,7 @@ export const AppProvider: React.FC<{
         if (ch?.length) setCurrencyHistory(ch);
         if (pkg?.length) setPackages(pkg);
         if (ad?.length) setAirportDesks(ad);
+        if (loc?.length) setLocations(loc);
         if (da?.length) setDeskAssignmentHistory(da);
         if (notif?.length) setNotifications(notif);
 
@@ -668,6 +679,7 @@ export const AppProvider: React.FC<{
   useResourceSync('currency-history', currencyHistory as never, dataHydrated, notifySyncError);
   useResourceSync('tour-packages', packages as never, dataHydrated, notifySyncError);
   useResourceSync('airport-desks', airportDesks as never, dataHydrated, notifySyncError);
+  useResourceSync('locations', locations as never, dataHydrated, notifySyncError);
   useResourceSync('desk-assignments', deskAssignmentHistory as never, dataHydrated, notifySyncError);
 
   // ---- Payroll / audit lists + singleton config → live API (MySQL).
@@ -1928,6 +1940,53 @@ export const AppProvider: React.FC<{
   };
 
   // Airport Desks Management
+  // ---- Locations (airports + resorts) CRUD. Synced to /api/locations. ----
+  const addLocation = (
+    data: Omit<Location, 'id'>
+  ): { success: boolean; error?: string; location?: Location } => {
+    if (!data.name?.trim()) return { success: false, error: 'Location name is required.' };
+    if (!data.code?.trim()) return { success: false, error: 'Location code is required.' };
+    const code = data.code.trim().toUpperCase();
+    if (locations.some((l) => l.code.toUpperCase() === code)) {
+      return { success: false, error: `A location with code "${code}" already exists.` };
+    }
+    const newLocation: Location = {
+      ...data,
+      id: `loc-${Date.now().toString(36)}`,
+      code,
+      active: data.active ?? true,
+    };
+    setLocations((prev) => [...prev, newLocation]);
+    addAuditLog('Location Added', 'SYSTEM', `Added ${data.type} location "${data.name}" (${code}).`);
+    return { success: true, location: newLocation };
+  };
+
+  const updateLocation = (
+    id: string,
+    updates: Partial<Location>
+  ): { success: boolean; error?: string } => {
+    const existing = locations.find((l) => l.id === id);
+    if (!existing) return { success: false, error: 'Location not found.' };
+    if (updates.code) {
+      const code = updates.code.trim().toUpperCase();
+      if (locations.some((l) => l.id !== id && l.code.toUpperCase() === code)) {
+        return { success: false, error: `Code "${code}" is already in use.` };
+      }
+      updates = { ...updates, code };
+    }
+    setLocations((prev) => prev.map((l) => (l.id === id ? { ...l, ...updates } : l)));
+    return { success: true };
+  };
+
+  const deleteLocation = (id: string): { success: boolean; error?: string } => {
+    const inUse = airportDesks.some((d) => d.locationId === id);
+    if (inUse) {
+      return { success: false, error: 'This location is used by one or more desks. Reassign them first.' };
+    }
+    setLocations((prev) => prev.filter((l) => l.id !== id));
+    return { success: true };
+  };
+
   const addAirportDesk = (deskData: Omit<AirportDesk, 'id'>): { success: boolean; error?: string; desk?: AirportDesk } => {
     if (!deskData.deskName.trim()) {
       return { success: false, error: 'Desk name is required.' };
@@ -2666,6 +2725,10 @@ export const AppProvider: React.FC<{
         deletePackage,
         addPackageCategory,
         deletePackageCategory,
+        locations,
+        addLocation,
+        updateLocation,
+        deleteLocation,
         airportDesks,
         activeDeskId,
         setActiveDeskId,

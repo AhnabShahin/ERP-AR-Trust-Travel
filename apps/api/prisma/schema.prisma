@@ -491,8 +491,32 @@ model ServiceCategory {
 // Airport desks & shifts
 // ---------------------------------------------------------------------
 
+// A physical location where an agent desk can be stationed: an airport or a
+// resort/hotel. This is the single source for the desk "location" dropdown and
+// is managed via its own CRUD (/api/locations). Agent desks reference it by
+// `locationId`; the desk also keeps denormalized display fields (airportCode /
+// airportName / hotelName) populated from the chosen location.
+model Location {
+  id            String        @id @default(cuid())
+  name          String
+  nameAr        String?
+  type          String // 'airport' | 'resort'
+  code          String        @unique // HIA, DIA, RC, FR, …
+  city          String?
+  address       String?
+  hotelVendorId String? // optional link for resort locations
+  active        Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  desks         AirportDesk[]
+
+  @@map("locations")
+}
+
 model AirportDesk {
-  id                   String  @id @default(cuid())
+  id                   String    @id @default(cuid())
+  locationId           String?
+  location             Location? @relation(fields: [locationId], references: [id])
   airportCode          String
   airportName          String
   deskCode             String  @unique

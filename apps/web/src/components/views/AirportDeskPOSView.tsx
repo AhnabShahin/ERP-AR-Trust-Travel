@@ -6,6 +6,7 @@ import {
   QrCode,
   Printer,
   Plus,
+  MapPin,
   Trash2,
   CheckCircle2,
   User,
@@ -36,7 +37,7 @@ import {
   BedDouble,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { Currency, TourPackage, AirportDesk, Employee, DeskAssignmentRecord, ServiceMainType } from '../../types';
+import { Currency, TourPackage, AirportDesk, Employee, DeskAssignmentRecord, ServiceMainType, Location } from '../../types';
 import { getServiceTypeForCategory } from '../../data/mockData';
 import { DateFilterBar } from '../common/DateFilterBar';
 import { matchesDateFilter } from '../../utils/dateFilter';
@@ -52,6 +53,10 @@ export const AirportDeskPOSView: React.FC = () => {
     drivers,
     flights,
     airportDesks,
+    locations,
+    addLocation,
+    updateLocation,
+    deleteLocation,
     activeDeskId,
     setActiveDeskId,
     activeDesk,
@@ -94,11 +99,99 @@ export const AirportDeskPOSView: React.FC = () => {
   const [showAddDeskModal, setShowAddDeskModal] = useState(false);
   const [inspectingDesk, setInspectingDesk] = useState<AirportDesk | null>(null);
   const [editingDesk, setEditingDesk] = useState<AirportDesk | null>(null);
+
+  // Locations management (airports + resorts)
+  const [showLocationsModal, setShowLocationsModal] = useState(false);
+  const [editingLocation, setEditingLocation] = useState<Location | null>(null);
+  const [locName, setLocName] = useState('');
+  const [locType, setLocType] = useState<'airport' | 'resort'>('airport');
+  const [locCode, setLocCode] = useState('');
+  const [locCity, setLocCity] = useState('Doha');
+
+  const resetLocForm = () => {
+    setEditingLocation(null);
+    setLocName('');
+    setLocType('airport');
+    setLocCode('');
+    setLocCity('Doha');
+  };
+
+  const startEditLocation = (l: Location) => {
+    setEditingLocation(l);
+    setLocName(l.name);
+    setLocType(l.type);
+    setLocCode(l.code);
+    setLocCity(l.city || 'Doha');
+  };
+
+  const handleSaveLocation = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!locName.trim() || !locCode.trim()) {
+      setFeedbackMessage({ text: 'Location name and code are required.', type: 'error' });
+      return;
+    }
+    const payload = { name: locName.trim(), type: locType, code: locCode.trim().toUpperCase(), city: locCity.trim() };
+    const res = editingLocation
+      ? updateLocation(editingLocation.id, payload)
+      : addLocation(payload);
+    if (res.success) {
+      setFeedbackMessage({ text: editingLocation ? 'Location updated.' : 'Location added.', type: 'success' });
+      setTimeout(() => setFeedbackMessage(null), 2500);
+      resetLocForm();
+    } else {
+      setFeedbackMessage({ text: res.error || 'Failed to save location.', type: 'error' });
+    }
+  };
+
+  const handleDeleteLocation = (l: Location) => {
+    if (!window.confirm(`Delete location "${l.name}"?`)) return;
+    const res = deleteLocation(l.id);
+    if (!res.success) {
+      setFeedbackMessage({ text: res.error || 'Failed to delete location.', type: 'error' });
+    } else {
+      setFeedbackMessage({ text: 'Location deleted.', type: 'success' });
+      setTimeout(() => setFeedbackMessage(null), 2500);
+      if (editingLocation?.id === l.id) resetLocForm();
+    }
+  };
   const [deskSearchQuery, setDeskSearchQuery] = useState('');
   const [selectedAirportFilter, setSelectedAirportFilter] = useState<string>('ALL');
   const [feedbackMessage, setFeedbackMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
+  // Active locations (airports + resorts) for the desk picker — airports first.
+  const locationOptions = useMemo(
+    () =>
+      [...locations]
+        .filter((l) => l.active !== false)
+        .sort((a, b) =>
+          a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'airport' ? -1 : 1
+        ),
+    [locations]
+  );
+
+  // Denormalized desk fields derived from a chosen location, so the rest of the
+  // view (icon, filters, display) keeps working from the desk record alone.
+  const deskFieldsForLocation = (loc: Location): Partial<AirportDesk> =>
+    loc.type === 'resort'
+      ? {
+          locationId: loc.id,
+          deskType: 'Hotel Vendor Desk',
+          hotelName: loc.name,
+          hotelVendorId: loc.hotelVendorId || '',
+          airportCode: 'DOH-HOTEL',
+          airportName: loc.name,
+        }
+      : {
+          locationId: loc.id,
+          deskType: 'Airport Counter',
+          airportCode: loc.code,
+          airportName: loc.name,
+          hotelName: '',
+          hotelVendorId: '',
+        };
+
   // New Desk Form State
+  const [newLocationId, setNewLocationId] = useState('');
   const [newAirportCode, setNewAirportCode] = useState('HIA');
   const [newAirportName, setNewAirportName] = useState('Hamad International Airport');
   const [newDeskCode, setNewDeskCode] = useState(`HIA-CTR-0${airportDesks.length + 1}`);
@@ -251,8 +344,15 @@ export const AirportDeskPOSView: React.FC = () => {
   const handleCreateDesk = (e: React.FormEvent) => {
     e.preventDefault();
     const assignedEmp = employees.find((emp) => emp.id === newAssignedEmployeeId);
+    const selectedLocation = locations.find((l) => l.id === newLocationId);
+    if (!selectedLocation) {
+      setFeedbackMessage({ text: 'Please select a location (airport or resort).', type: 'error' });
+      return;
+    }
+    const locFields = deskFieldsForLocation(selectedLocation);
 
     const res = addAirportDesk({
+      ...locFields,
       airportCode: newAirportCode,
       airportName: newAirportName,
       deskCode: newDeskCode,
@@ -662,13 +762,23 @@ export const AirportDeskPOSView: React.FC = () => {
               </div>
             </div>
 
-            <button
-              onClick={() => setShowAddDeskModal(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer self-start md:self-auto"
-            >
-              <Plus className="w-4 h-4" />
-              <span>+ Add New Agent Desk</span>
-            </button>
+            <div className="flex items-center gap-2 self-start md:self-auto">
+              <button
+                onClick={() => { resetLocForm(); setShowLocationsModal(true); }}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
+                title="Manage airports & resorts used by desks"
+              >
+                <MapPin className="w-4 h-4" />
+                <span>Manage Locations</span>
+              </button>
+              <button
+                onClick={() => setShowAddDeskModal(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Add New Agent Desk</span>
+              </button>
+            </div>
           </div>
 
           {/* Conditional Display: Card Grid View vs List / Table View */}
@@ -946,7 +1056,7 @@ export const AirportDeskPOSView: React.FC = () => {
                               title="Open in Live Checkout POS"
                             >
                               <Receipt className="w-3 h-3" />
-                              <span>{isCurrentActive ? 'POS' : 'Activate'}</span>
+                              <span>{isCurrentActive ? 'POS Active' : 'Open POS'}</span>
                             </button>
 
                             <button
@@ -1646,6 +1756,104 @@ export const AirportDeskPOSView: React.FC = () => {
       )}
 
       {/* ========================================================================= */}
+      {/* MODAL: MANAGE LOCATIONS (airports + resorts)                              */}
+      {/* ========================================================================= */}
+      {showLocationsModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/70 backdrop-blur-sm p-4">
+          <div className="w-full max-w-2xl max-h-[88vh] overflow-y-auto rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl">
+            <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900 z-10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
+                  <MapPin className="w-4.5 h-4.5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Manage Locations</h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                    Airports &amp; resorts used by agent desks
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => { setShowLocationsModal(false); resetLocForm(); }}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-4">
+              {/* Add / edit form */}
+              <form onSubmit={handleSaveLocation} className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                <div className="col-span-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  {editingLocation ? `Edit: ${editingLocation.name}` : 'Add a new location'}
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">Name *</label>
+                  <input value={locName} onChange={(e) => setLocName(e.target.value)} placeholder="e.g. The Pearl Marina" className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">Type *</label>
+                  <select value={locType} onChange={(e) => setLocType(e.target.value as 'airport' | 'resort')} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-900 dark:text-slate-100 cursor-pointer">
+                    <option value="airport">✈️ Airport</option>
+                    <option value="resort">🏨 Resort / Hotel</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">Code *</label>
+                  <input value={locCode} onChange={(e) => setLocCode(e.target.value.toUpperCase())} placeholder="e.g. DOH / PEARL" className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-mono font-bold text-slate-900 dark:text-slate-100" />
+                </div>
+                <div>
+                  <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 block mb-1">City</label>
+                  <input value={locCity} onChange={(e) => setLocCity(e.target.value)} placeholder="Doha" className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-900 dark:text-slate-100" />
+                </div>
+                <div className="col-span-2 flex items-center justify-end gap-2">
+                  {editingLocation && (
+                    <button type="button" onClick={resetLocForm} className="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">
+                      Cancel edit
+                    </button>
+                  )}
+                  <button type="submit" className="px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold cursor-pointer">
+                    {editingLocation ? 'Save changes' : '+ Add location'}
+                  </button>
+                </div>
+              </form>
+
+              {/* Existing locations list */}
+              <div className="rounded-xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden">
+                {locationOptions.length === 0 && (
+                  <div className="p-4 text-center text-xs text-slate-400">No locations yet — add one above.</div>
+                )}
+                {locationOptions.map((l) => {
+                  const deskCount = airportDesks.filter((d) => d.locationId === l.id).length;
+                  return (
+                    <div key={l.id} className="flex items-center justify-between gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span className="text-base">{l.type === 'airport' ? '✈️' : '🏨'}</span>
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-slate-900 dark:text-white truncate">{l.name}</div>
+                          <div className="text-[10px] font-mono text-slate-400">
+                            {l.code} · {l.city || '—'} · {deskCount} desk{deskCount === 1 ? '' : 's'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button onClick={() => startEditLocation(l)} className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 transition" title="Edit">
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => handleDeleteLocation(l)} disabled={deskCount > 0} className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/60 transition disabled:opacity-30 disabled:cursor-not-allowed" title={deskCount > 0 ? 'In use by desks — reassign first' : 'Delete'}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
       {/* MODAL: VIEW INDIVIDUAL DESK DETAILS ("desk duke sob info dekha jabe")      */}
       {/* ========================================================================= */}
       {inspectingDesk && (
@@ -1843,24 +2051,22 @@ export const AirportDeskPOSView: React.FC = () => {
 
                 <div>
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Airport Code
+                    Location (Airport / Resort)
                   </label>
                   <select
-                    value={editingDesk.airportCode}
-                    onChange={(e) =>
-                      setEditingDesk({
-                        ...editingDesk,
-                        airportCode: e.target.value,
-                        airportName:
-                          e.target.value === 'HIA'
-                            ? 'Hamad International Airport'
-                            : 'Doha International Airport',
-                      })
-                    }
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100"
+                    value={editingDesk.locationId || ''}
+                    onChange={(e) => {
+                      const loc = locations.find((l) => l.id === e.target.value);
+                      if (loc) setEditingDesk({ ...editingDesk, ...deskFieldsForLocation(loc) });
+                    }}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-slate-100 cursor-pointer"
                   >
-                    <option value="HIA">HIA (Hamad International)</option>
-                    <option value="DIA">DIA (Doha International)</option>
+                    <option value="">— Select a location —</option>
+                    {locationOptions.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.type === 'airport' ? '✈️' : '🏨'} {l.name} ({l.code})
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -2037,22 +2243,26 @@ export const AirportDeskPOSView: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Airport Code *
+                    Location (Airport / Resort) *
                   </label>
                   <select
-                    value={newAirportCode}
+                    value={newLocationId}
                     onChange={(e) => {
-                      setNewAirportCode(e.target.value);
-                      setNewAirportName(
-                        e.target.value === 'HIA'
-                          ? 'Hamad International Airport'
-                          : 'Doha International Airport'
-                      );
+                      setNewLocationId(e.target.value);
+                      const loc = locations.find((l) => l.id === e.target.value);
+                      if (loc) {
+                        setNewAirportCode(loc.type === 'resort' ? 'DOH-HOTEL' : loc.code);
+                        setNewAirportName(loc.name);
+                      }
                     }}
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-slate-100"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 dark:text-slate-100 cursor-pointer"
                   >
-                    <option value="HIA">Hamad Int’l Airport (HIA)</option>
-                    <option value="DIA">Doha Int’l Airport (DIA)</option>
+                    <option value="">— Select a location —</option>
+                    {locationOptions.map((l) => (
+                      <option key={l.id} value={l.id}>
+                        {l.type === 'airport' ? '✈️' : '🏨'} {l.name} ({l.code})
+                      </option>
+                    ))}
                   </select>
                 </div>
 

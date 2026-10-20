@@ -274,8 +274,26 @@ export interface NotificationItem {
   actionLabel?: string;
 }
 
+export type LocationType = 'airport' | 'resort';
+
+// A physical location (airport or resort/hotel) where an agent desk can be
+// stationed. Managed via its own CRUD and used as the single source for the
+// desk "location" dropdown.
+export interface Location {
+  id: string;
+  name: string;
+  nameAr?: string;
+  type: LocationType;
+  code: string;
+  city?: string;
+  address?: string;
+  hotelVendorId?: string;
+  active?: boolean;
+}
+
 export interface AirportDesk {
   id: string;
+  locationId?: string;
   airportCode: string;
   airportName: string;
   deskCode: string;

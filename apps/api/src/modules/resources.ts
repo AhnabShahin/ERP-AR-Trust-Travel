@@ -318,6 +318,7 @@ const resources: ResourceDef[] = [
     searchFields: ['deskCode', 'deskName', 'airportCode'],
     filterFields: ['status'],
     shape: {
+      locationId: str.optional(),
       airportCode: str,
       airportName: str,
       deskCode: str,
@@ -338,6 +339,24 @@ const resources: ResourceDef[] = [
       deskType: str.optional(),
       hotelVendorId: str.optional(),
       hotelName: str.optional(),
+    },
+  },
+  {
+    path: 'locations',
+    name: 'Location',
+    delegate: prisma.location,
+    defaultOrderBy: { name: 'asc' },
+    searchFields: ['name', 'code', 'city'],
+    filterFields: ['type'],
+    shape: {
+      name: str,
+      nameAr: str.optional(),
+      type: str, // 'airport' | 'resort'
+      code: str,
+      city: str.optional(),
+      address: str.optional(),
+      hotelVendorId: str.optional(),
+      active: bool.optional(),
     },
   },
   {
