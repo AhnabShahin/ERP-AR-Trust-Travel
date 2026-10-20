@@ -359,22 +359,8 @@ const resources: ResourceDef[] = [
       active: bool.optional(),
     },
   },
-  {
-    path: 'notifications',
-    name: 'Notification',
-    delegate: prisma.notification,
-    filterFields: ['type', 'read'],
-    shape: {
-      title: str,
-      titleAr: str.optional(),
-      message: str,
-      messageAr: str.optional(),
-      time: str.optional(),
-      type: str,
-      read: bool.optional(),
-      actionLabel: str.optional(),
-    },
-  },
+  // `notifications` is served by its own module (bulk read-all / clear-all +
+  // CRUD) — see modules/notifications/notifications.routes.ts.
   {
     path: 'currency-history',
     name: 'Currency history record',

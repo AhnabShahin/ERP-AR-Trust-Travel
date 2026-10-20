@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import {
   INITIAL_AIRPORT_DESKS,
   INITIAL_BOOKINGS,
@@ -441,6 +441,9 @@ export const AppProvider: React.FC<{
   const [shiftDrawer, setShiftDrawer] = useState<ShiftDrawer>(INITIAL_SHIFT_DRAWER); // hydrated from settings
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [latestToastNotification, setLatestToastNotification] = useState<NotificationItem | null>(null);
+  // Ids we've already surfaced, so the real-time poll only toasts genuinely new
+  // notifications (not our own optimistic creates or the initial backlog).
+  const notifSeenIds = useRef<Set<string>>(new Set());
   const [liveFeedEnabled, setLiveFeedEnabled] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem('artrust_live_feed');
@@ -612,7 +615,11 @@ export const AppProvider: React.FC<{
         if (ad?.length) setAirportDesks(ad);
         if (loc?.length) setLocations(loc);
         if (da?.length) setDeskAssignmentHistory(da);
-        if (notif?.length) setNotifications(notif);
+        if (notif?.length) {
+          setNotifications(notif);
+          // Seed the "seen" set so the first real-time poll doesn't toast the backlog.
+          for (const n of notif) if (n?.id) notifSeenIds.current.add(n.id);
+        }
 
         // Users + payroll/audit lists + fixed role catalogue + singleton config.
         const [usr, sal, com, logs, rol, rt, sd, pc, csm, actCur] = await Promise.all([
@@ -708,70 +715,45 @@ export const AppProvider: React.FC<{
     try { localStorage.setItem('artrust_live_feed', JSON.stringify(liveFeedEnabled)); } catch {}
   }, [liveFeedEnabled]);
 
-  // Real-Time Background Operations Feed Ticker
+  // ---- Real-time notification feed. Polls the API so notifications raised by
+  // any user/session (bookings, approvals, payroll, EOD audits, …) surface
+  // live across every open dashboard. MySQL is the source of truth; the fetched
+  // list replaces local state, and genuinely new unread items pop a toast.
+  // Gated by `liveFeedEnabled` so the toggle controls live updates.
   useEffect(() => {
-    if (!liveFeedEnabled) return;
+    if (!isAuthenticated || !liveFeedEnabled) return;
+    let cancelled = false;
 
-    const operationalAlerts = [
-      {
-        title: 'Qatar Airways QR 004 Landed at HIA',
-        titleAr: 'هبوط رحلة الخطوط القطرية QR 004 في مطار حمد',
-        message: 'Flight QR 004 from London Heathrow (LHR) has landed at Gate A7. 48 transit passengers arriving at Agent Desk Counter 4.',
-        messageAr: 'وصلت الرحلة QR 004 من مطار هيثرو لندن عند البوابة A7، وتوجه الركاب إلى كاونتر 4.',
-        type: 'flight' as const,
-      },
-      {
-        title: 'Walk-In Booking at HIA Counter 4',
-        titleAr: 'حجز فوري في كاونتر 4 بمطار حمد',
-        message: 'Agent Desk Counter 4 issued a Half-Day Desert Safari & Camel Ride for 2 British passengers.',
-        messageAr: 'تم تسجيل حجز جولة صحراوية وركوب جمال لراكبين عبر كاونتر 4.',
-        type: 'booking' as const,
-      },
-      {
-        title: 'Hotel Concierge Limousine Dispatch',
-        titleAr: 'انطلاق سيارة ليموزين فندقية فاخرة',
-        message: 'Katara Towers Fairmont concierge dispatched VIP BMW 7-Series transfer to Pearl-Qatar.',
-        messageAr: 'انطلقت سيارة الليموزين لنزيل في فندق فيرمونت أبراج كتارا باتجاه اللؤلؤة.',
-        type: 'driver' as const,
-      },
-      {
-        title: 'Luxury Hotel Suite Reserved',
-        titleAr: 'تأكيد حجز جناح فندقي فاخر',
-        message: 'Marsa Malaz Kempinski lobby desk booked a Deluxe Arabian Suite for 3 nights.',
-        messageAr: 'تم تأكيد حجز جناح عربي فاخر لمدة 3 ليالٍ في فندق مرسى ملاذ كمبينسكي.',
-        type: 'hotel' as const,
-      },
-      {
-        title: 'QCB Treasury Currency Balance Verified',
-        titleAr: 'مطابقة رصيد الخزينة بالعملات الأجنبية',
-        message: 'Foreign currency cash vault reserves balanced against Qatar Central Bank daily rates.',
-        messageAr: 'تمت مراجعة ومطابقة رصيد النقد بالعملات الأجنبية مع تسعيرة المصرف المركزي.',
-        type: 'cash' as const,
-      },
-    ];
+    const poll = async () => {
+      const rows = await api
+        .get<NotificationItem[]>('/api/notifications?take=50')
+        .catch(() => null);
+      if (cancelled || !rows) return;
 
-    let alertIdx = 0;
-    const interval = setInterval(() => {
-      const alert = operationalAlerts[alertIdx % operationalAlerts.length];
-      alertIdx++;
+      // Normalise nullable Arabic fields the API may return as null.
+      const list = rows.map((n) => ({
+        ...n,
+        titleAr: n.titleAr ?? '',
+        messageAr: n.messageAr ?? '',
+        time: n.time ?? '',
+      }));
 
-      const newNotif: NotificationItem = {
-        id: `notif-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        title: alert.title,
-        titleAr: alert.titleAr,
-        message: alert.message,
-        messageAr: alert.messageAr,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        type: alert.type,
-        read: false,
-      };
+      // Toast the newest notification we haven't surfaced yet (cross-session).
+      const unseen = list.filter((n) => n.id && !notifSeenIds.current.has(n.id));
+      for (const n of list) if (n.id) notifSeenIds.current.add(n.id);
+      const toast = unseen.find((n) => !n.read);
+      if (toast) setLatestToastNotification(toast);
 
-      setNotifications((prev) => [newNotif, ...prev.slice(0, 49)]);
-      setLatestToastNotification(newNotif);
-    }, 45000); // Pulse every 45s
+      setNotifications(list);
+    };
 
-    return () => clearInterval(interval);
-  }, [liveFeedEnabled]);
+    poll();
+    const interval = setInterval(poll, 20000); // refresh every 20s
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [isAuthenticated, liveFeedEnabled]);
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
@@ -1782,8 +1764,7 @@ export const AppProvider: React.FC<{
       status: 'Audited & Closed',
     }));
 
-    const auditNotif: NotificationItem = {
-      id: `notif-${Date.now()}`,
+    addNotification({
       title: 'Shift Audit Closed & Filed (Z-Report)',
       titleAr: 'تم إغلاق الوردية والمصادقة (تقرير Z)',
       message: `Shift HIA-CTR-04 closed by ${roleConfig.userDisplayName}. Notes: ${notes || 'Zero discrepancy.'}`,
@@ -1791,8 +1772,7 @@ export const AppProvider: React.FC<{
       time: 'Just now',
       type: 'cash',
       read: false,
-    };
-    setNotifications((prev) => [auditNotif, ...prev]);
+    });
 
     addAuditLog(
       'EOD Shift Audited & Locked',
@@ -1852,8 +1832,7 @@ export const AppProvider: React.FC<{
 
     // Create notification if status changes to Approved, Paid, or Rejected
     if (status === 'Approved' || status === 'Rejected' || status === 'Paid') {
-      const notif: NotificationItem = {
-        id: `notif-${Date.now()}`,
+      addNotification({
         title: `Expense ${status}: ${target.category}`,
         titleAr: `تم تحديث حالة المصروف: ${target.category}`,
         message: `Expense #${target.id} (${target.amountQAR.toLocaleString()} QAR) was marked as "${status}" by ${roleConfig.userDisplayName}.${approvalNotes ? ` Notes: ${approvalNotes}` : ''}`,
@@ -1861,8 +1840,7 @@ export const AppProvider: React.FC<{
         time: 'Just now',
         type: 'cash',
         read: false,
-      };
-      setNotifications((prev) => [notif, ...prev]);
+      });
     }
 
     addAuditLog(
@@ -2651,6 +2629,10 @@ export const AppProvider: React.FC<{
     return { success: true };
   };
 
+  // Create a notification: optimistic local update + write-through to the API
+  // (MySQL is the source of truth; the client id is honoured server-side so the
+  // optimistic row and the polled row dedupe). Fire-and-forget — the poll
+  // reconciles. Callers across the app use this for every real alert.
   const addNotification = (notif: Omit<NotificationItem, 'id'>) => {
     const newNotif: NotificationItem = {
       ...notif,
@@ -2658,23 +2640,51 @@ export const AppProvider: React.FC<{
       time: notif.time || 'Just now',
       read: false,
     };
+    notifSeenIds.current.add(newNotif.id);
     setNotifications((prev) => [newNotif, ...prev.slice(0, 49)]);
     setLatestToastNotification(newNotif);
+    if (isAuthenticated) {
+      api
+        .post('/api/notifications', {
+          id: newNotif.id,
+          title: newNotif.title,
+          titleAr: newNotif.titleAr || undefined,
+          message: newNotif.message,
+          messageAr: newNotif.messageAr || undefined,
+          time: newNotif.time,
+          type: newNotif.type,
+          read: newNotif.read,
+          actionLabel: newNotif.actionLabel,
+        })
+        .catch(() => {
+          /* offline / not yet authed — local state still shows it */
+        });
+    }
   };
 
   const markNotificationRead = (id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+    if (isAuthenticated) {
+      api.patch(`/api/notifications/${id}`, { read: true }).catch(() => {});
+    }
   };
 
   const markAllNotificationsRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    if (isAuthenticated) {
+      api.patch('/api/notifications/read-all', {}).catch(() => {});
+    }
   };
 
   const clearNotifications = () => {
     setNotifications([]);
     setLatestToastNotification(null);
+    notifSeenIds.current.clear();
+    if (isAuthenticated) {
+      api.delete('/api/notifications/clear-all').catch(() => {});
+    }
   };
 
   const toggleLiveFeed = () => {
