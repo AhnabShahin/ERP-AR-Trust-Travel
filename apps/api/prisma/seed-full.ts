@@ -121,7 +121,8 @@ async function main() {
     ['TourPackage', 'TOUR_PACKAGES'],
     ['AirportDesk', 'INITIAL_AIRPORT_DESKS'],
     ['DeskAssignment', 'INITIAL_DESK_ASSIGNMENT_HISTORY'],
-    ['Notification', 'INITIAL_NOTIFICATIONS'],
+    // Notifications are NOT seeded — the feed is real-time only, populated by
+    // actual business events (bookings, approvals, payroll, EOD audits, …).
     ['SalaryRecord', 'INITIAL_SALARY_RECORDS'],
     ['CommissionRule', 'INITIAL_COMMISSION_RULES'],
     ['SystemAuditLog', 'INITIAL_SYSTEM_LOGS'],

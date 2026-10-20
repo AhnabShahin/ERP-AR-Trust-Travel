@@ -53,6 +53,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
     notifications,
     markNotificationRead,
     markAllNotificationsRead,
+    deleteNotification,
     clearNotifications,
     liveFeedEnabled,
     toggleLiveFeed,
@@ -545,6 +546,16 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
                               </div>
                             )}
                           </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteNotification(notif.id);
+                            }}
+                            className="shrink-0 p-1 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50 dark:text-slate-600 dark:hover:text-rose-400 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                            title={language === 'ar' ? 'حذف التنبيه' : 'Delete notification'}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       );
                     })

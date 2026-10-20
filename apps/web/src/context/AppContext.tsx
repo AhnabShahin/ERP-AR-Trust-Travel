@@ -253,6 +253,7 @@ interface AppContextType {
   addNotification: (notif: Omit<NotificationItem, 'id'>) => void;
   markNotificationRead: (id: string) => void;
   markAllNotificationsRead: () => void;
+  deleteNotification: (id: string) => void;
   clearNotifications: () => void;
   liveFeedEnabled: boolean;
   toggleLiveFeed: () => void;
@@ -2678,6 +2679,16 @@ export const AppProvider: React.FC<{
     }
   };
 
+  // Delete a single notification: optimistic removal + DELETE in the DB.
+  const deleteNotification = (id: string) => {
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    notifSeenIds.current.delete(id);
+    setLatestToastNotification((cur) => (cur?.id === id ? null : cur));
+    if (isAuthenticated) {
+      api.delete(`/api/notifications/${id}`).catch(() => {});
+    }
+  };
+
   const clearNotifications = () => {
     setNotifications([]);
     setLatestToastNotification(null);
@@ -2835,6 +2846,7 @@ export const AppProvider: React.FC<{
         addNotification,
         markNotificationRead,
         markAllNotificationsRead,
+        deleteNotification,
         clearNotifications,
         liveFeedEnabled,
         toggleLiveFeed,
