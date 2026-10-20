@@ -1270,7 +1270,7 @@ export const FleetPersonnelView: React.FC = () => {
                   Languages: <span className="font-medium text-slate-700 dark:text-slate-200">{g.languages.join(', ')}</span>
                 </div>
                 <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-bold">
-                  Accrued Commission: QAR {g.totalCommissionQAR} (★ {g.rating})
+                  Accrued Commission: {convertAmount(g.totalCommissionQAR).formatted} (★ {g.rating})
                 </div>
               </div>
 

@@ -384,7 +384,7 @@ export const VendorsView: React.FC = () => {
             <DollarSign className="w-4 h-4 text-purple-500" />
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white">
-            {totalHotelRevenueQAR.toLocaleString()} <span className="text-xs font-normal text-slate-400">QAR</span>
+            {convertAmount(totalHotelRevenueQAR).formatted}
           </div>
           <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Direct hotel room sales</div>
         </div>
@@ -577,7 +577,7 @@ export const VendorsView: React.FC = () => {
                             {room.roomType}
                           </span>
                           <span className="font-mono font-extrabold text-slate-900 dark:text-white">
-                            {room.ratePerNightQAR} <span className="text-[9px] font-normal text-slate-400">QAR/nt</span>
+                            {convertAmount(room.ratePerNightQAR).formatted} <span className="text-[9px] font-normal text-slate-400">/nt</span>
                           </span>
                         </div>
                       ))}
@@ -614,7 +614,7 @@ export const VendorsView: React.FC = () => {
                     <div>
                       <span className="text-slate-400 block text-[10px]">Gross Sales</span>
                       <span className="font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                        {(liveRevenue > 0 ? liveRevenue : vendor.totalRevenueQAR || 0).toLocaleString()} QAR
+                        {convertAmount(liveRevenue > 0 ? liveRevenue : vendor.totalRevenueQAR || 0).formatted}
                       </span>
                     </div>
                   </div>
@@ -1087,7 +1087,7 @@ export const VendorsView: React.FC = () => {
                       </div>
                       <div className="text-right shrink-0">
                         <div className="font-mono font-black text-sm text-slate-900 dark:text-white">
-                          {room.ratePerNightQAR.toLocaleString()} <span className="text-[10px] font-normal text-slate-400">QAR/night</span>
+                          {convertAmount(room.ratePerNightQAR).formatted} <span className="text-[10px] font-normal text-slate-400">/night</span>
                         </div>
                         <button
                           onClick={() => {

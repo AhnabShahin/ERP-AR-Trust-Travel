@@ -11,6 +11,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { CUSTOMER_REVIEWS, ReviewItem } from '../../../data/websiteData';
+import { imgSrc } from '../../../../lib/uploads';
 import { useWebsiteLanguage } from '../../../context/WebsiteLanguageContext';
 
 interface ReviewsPageViewProps {
@@ -238,7 +239,7 @@ export const ReviewsPageView: React.FC<ReviewsPageViewProps> = ({
               {/* Author footer */}
               <div className="mt-6 pt-4 border-t border-slate-100 dark:border-white/10 flex items-center gap-3">
                 <img
-                  src={rev.avatar}
+                  src={imgSrc(rev.avatar)}
                   alt={rev.author}
                   className="w-11 h-11 rounded-full object-cover border border-[#C0AB6F]/40 shadow-sm"
                   loading="lazy"

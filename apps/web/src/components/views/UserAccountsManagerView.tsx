@@ -26,6 +26,7 @@ import {
   Sliders,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { imgSrc } from '../../../lib/uploads';
 import { UserAccount, UserRole } from '../../types';
 
 export const UserAccountsManagerView: React.FC = () => {
@@ -469,7 +470,7 @@ export const UserAccountsManagerView: React.FC = () => {
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         <img
-                          src={acc.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'}
+                          src={imgSrc(acc.avatar) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'}
                           alt={acc.name}
                           className="w-9 h-9 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0"
                         />

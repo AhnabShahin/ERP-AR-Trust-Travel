@@ -19,6 +19,7 @@ import {
   getSyncedFleet,
 } from '../../data/websiteData';
 import { useApp } from '../../context/AppContext';
+import { imgSrc } from '../../../lib/uploads';
 import { useWebsiteLanguage } from '../../context/WebsiteLanguageContext';
 import { useWebsiteCurrency } from '../../context/WebsiteCurrencyContext';
 
@@ -329,7 +330,7 @@ export const ExploreSearchView: React.FC<ExploreSearchViewProps> = ({
                   {item.image ? (
                     <div className="relative aspect-[16/10] bg-slate-800 overflow-hidden">
                       <img
-                        src={item.image}
+                        src={imgSrc(item.image)}
                         alt={item.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         loading="lazy"

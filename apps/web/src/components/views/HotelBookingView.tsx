@@ -369,7 +369,7 @@ export const HotelBookingView: React.FC = () => {
             <DollarSign className="w-4 h-4 text-purple-500" />
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white">
-            {totalHotelRevenueQAR.toLocaleString()} <span className="text-xs font-normal text-slate-400">QAR</span>
+            {convertAmount(totalHotelRevenueQAR).formatted}
           </div>
           <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Direct hotel room sales</div>
         </div>
@@ -380,7 +380,7 @@ export const HotelBookingView: React.FC = () => {
             <BadgePercent className="w-4 h-4 text-amber-500" />
           </div>
           <div className="text-2xl font-black text-amber-600 dark:text-amber-400">
-            {totalCommissionEarnedQAR.toLocaleString()} <span className="text-xs font-normal text-slate-400">QAR</span>
+            {convertAmount(totalCommissionEarnedQAR).formatted}
           </div>
           <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Accrued agency profit</div>
         </div>
@@ -545,10 +545,10 @@ export const HotelBookingView: React.FC = () => {
                     {/* Total & Commission */}
                     <td className="py-3.5 px-4">
                       <div className="font-mono font-extrabold text-slate-900 dark:text-white">
-                        {booking.totalQAR.toLocaleString()} <span className="text-[10px] font-normal text-slate-400">QAR</span>
+                        {convertAmount(booking.totalQAR).formatted}
                       </div>
                       <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
-                        Comm: +{booking.commissionEarnedQAR.toLocaleString()} QAR ({booking.commissionRate}%)
+                        Comm: +{convertAmount(booking.commissionEarnedQAR).formatted} ({booking.commissionRate}%)
                       </div>
                     </td>
 
@@ -710,7 +710,7 @@ export const HotelBookingView: React.FC = () => {
                     >
                       {availableRooms.map((r, i) => (
                         <option key={i} value={r.roomType}>
-                          {r.roomType} — {r.ratePerNightQAR} QAR/nt (Max {r.maxPax} Pax)
+                          {r.roomType} — {convertAmount(r.ratePerNightQAR).formatted}/nt (Max {r.maxPax} Pax)
                         </option>
                       ))}
                     </select>
@@ -720,7 +720,7 @@ export const HotelBookingView: React.FC = () => {
                 {activeRoomOption && (
                   <div className="text-[11px] text-slate-500 dark:text-slate-400 p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
                     <span className="font-semibold text-slate-700 dark:text-slate-300">Room Details: </span>
-                    {activeRoomOption.description} · Base Rate: <strong className="text-slate-900 dark:text-white font-mono">{activeRoomOption.ratePerNightQAR} QAR</strong> per night.
+                    {activeRoomOption.description} · Base Rate: <strong className="text-slate-900 dark:text-white font-mono">{convertAmount(activeRoomOption.ratePerNightQAR).formatted}</strong> per night.
                   </div>
                 )}
               </div>
@@ -981,25 +981,24 @@ export const HotelBookingView: React.FC = () => {
                   </span>
                   <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-black text-slate-900 dark:text-white font-mono">
-                      {totalPayableQAR.toLocaleString()}
+                      {convertAmount(totalPayableQAR).formatted}
                     </span>
-                    <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300">QAR</span>
                     {vipDiscountPercentage > 0 && (
                       <span className="text-xs text-rose-500 line-through font-mono">
-                        {baseSubtotalQAR.toLocaleString()} QAR
+                        {convertAmount(baseSubtotalQAR).formatted}
                       </span>
                     )}
                   </div>
                   <div className="text-[11px] text-slate-500 dark:text-slate-400">
-                    {nightlyRate} QAR/nt × {calculatedNights} nights × {roomsCount} room(s)
-                    {vipDiscountPercentage > 0 ? ` · ${vipDiscountPercentage}% VIP discount (-${discountAmountQAR} QAR)` : ''}
+                    {convertAmount(nightlyRate).formatted}/nt × {calculatedNights} nights × {roomsCount} room(s)
+                    {vipDiscountPercentage > 0 ? ` · ${vipDiscountPercentage}% VIP discount (-${convertAmount(discountAmountQAR).formatted})` : ''}
                   </div>
                 </div>
 
                 <div className="p-3 rounded-lg bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-800/80 text-right shrink-0">
                   <span className="text-[10px] text-slate-400 block font-semibold">Agency Accrued Commission</span>
                   <span className="text-base font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                    +{commissionEarnedQAR.toLocaleString()} QAR
+                    +{convertAmount(commissionEarnedQAR).formatted}
                   </span>
                   <span className="text-[10px] text-slate-500 block">({commissionPercentage}% contract rate)</span>
                 </div>
@@ -1141,7 +1140,7 @@ export const HotelBookingView: React.FC = () => {
                 <div>
                   <span className="text-[10px] text-slate-400 uppercase font-semibold">Total Paid & Verified</span>
                   <div className="text-xl font-black text-slate-900 dark:text-white font-mono">
-                    {activeVoucherBooking.totalQAR.toLocaleString()} QAR
+                    {convertAmount(activeVoucherBooking.totalQAR).formatted}
                   </div>
                 </div>
                 <div className="text-right">

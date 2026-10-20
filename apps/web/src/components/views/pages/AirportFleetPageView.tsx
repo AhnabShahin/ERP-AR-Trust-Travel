@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { getSyncedFleet, FleetVehicle } from '../../../data/websiteData';
+import { imgSrc } from '../../../../lib/uploads';
 import { useApp } from '../../../context/AppContext';
 import { useWebsiteLanguage } from '../../../context/WebsiteLanguageContext';
 import { useWebsiteCurrency } from '../../../context/WebsiteCurrencyContext';
@@ -149,7 +150,7 @@ export const AirportFleetPageView: React.FC<AirportFleetPageViewProps> = ({
                 {/* Vehicle Image Showroom Stage */}
                 <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden mb-5 border border-slate-200/60 dark:border-white/10 shadow-md bg-slate-900">
                   <img
-                    src={vehicle.image}
+                    src={imgSrc(vehicle.image)}
                     alt={vehicle.name}
                     className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
                     loading="lazy"

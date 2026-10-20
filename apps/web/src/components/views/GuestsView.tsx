@@ -391,9 +391,8 @@ export const GuestsView: React.FC = () => {
           </div>
           <div className="mt-2 flex items-baseline gap-1.5">
             <span className="text-2xl font-black text-slate-900 dark:text-white tabular-nums">
-              {totalLifetimeRevenueQAR.toLocaleString()}
+              {convertAmount(totalLifetimeRevenueQAR).formatted}
             </span>
-            <span className="text-xs font-bold text-slate-400 font-mono">QAR</span>
           </div>
           <p className="text-[10px] text-emerald-600 font-medium mt-1">
             ≈ ${(totalLifetimeRevenueQAR / 3.64).toLocaleString(undefined, { maximumFractionDigits: 0 })} USD equivalent
@@ -568,7 +567,7 @@ export const GuestsView: React.FC = () => {
                   <div>
                     <span className="text-[10px] text-slate-400 block font-mono uppercase">Total Spend</span>
                     <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm tabular-nums font-mono">
-                      {guest.totalSpentQAR.toLocaleString()} QAR
+                      {convertAmount(guest.totalSpentQAR).formatted}
                     </span>
                   </div>
                 </div>
@@ -694,7 +693,7 @@ export const GuestsView: React.FC = () => {
                       </td>
 
                       <td className="py-3.5 px-4 text-right font-mono font-black text-emerald-600 dark:text-emerald-400">
-                        {guest.totalSpentQAR.toLocaleString()} QAR
+                        {convertAmount(guest.totalSpentQAR).formatted}
                       </td>
 
                       <td className="py-3.5 px-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
@@ -867,9 +866,8 @@ export const GuestsView: React.FC = () => {
               </div>
               <div className="mt-2 flex items-baseline gap-1.5">
                 <span className="text-2xl font-black text-slate-900 dark:text-white tabular-nums">
-                  {(activeCustomer?.totalSpentQAR || 4800).toLocaleString()}
+                  {convertAmount(activeCustomer?.totalSpentQAR || 4800).formatted}
                 </span>
-                <span className="text-xs font-bold text-slate-400 font-mono">QAR</span>
               </div>
               <p className="text-[10px] text-emerald-600 font-medium mt-1">VIP Priority Concierge Status</p>
             </div>
@@ -1079,7 +1077,7 @@ export const GuestsView: React.FC = () => {
                   </p>
                 </div>
                 <div className="pt-3 mt-3 border-t border-slate-200/60 dark:border-slate-800 flex items-center justify-between">
-                  <span className="font-mono font-extrabold text-sm text-slate-900 dark:text-white">650 QAR</span>
+                  <span className="font-mono font-extrabold text-sm text-slate-900 dark:text-white">{convertAmount(650).formatted}</span>
                   <button
                     onClick={() => openModal('new-booking')}
                     className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition cursor-pointer"
@@ -1101,7 +1099,7 @@ export const GuestsView: React.FC = () => {
                   </p>
                 </div>
                 <div className="pt-3 mt-3 border-t border-slate-200/60 dark:border-slate-800 flex items-center justify-between">
-                  <span className="font-mono font-extrabold text-sm text-slate-900 dark:text-white">850 QAR</span>
+                  <span className="font-mono font-extrabold text-sm text-slate-900 dark:text-white">{convertAmount(850).formatted}</span>
                   <button
                     onClick={() => openModal('new-booking')}
                     className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition cursor-pointer"
@@ -1123,7 +1121,7 @@ export const GuestsView: React.FC = () => {
                   </p>
                 </div>
                 <div className="pt-3 mt-3 border-t border-slate-200/60 dark:border-slate-800 flex items-center justify-between">
-                  <span className="font-mono font-extrabold text-sm text-slate-900 dark:text-white">750 QAR</span>
+                  <span className="font-mono font-extrabold text-sm text-slate-900 dark:text-white">{convertAmount(750).formatted}</span>
                   <button
                     onClick={() => openModal('new-booking')}
                     className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition cursor-pointer"
@@ -1183,7 +1181,7 @@ export const GuestsView: React.FC = () => {
                 <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-200/80 dark:border-slate-800">
                   <span className="text-[10px] text-slate-400 uppercase font-mono block">Lifetime Spend</span>
                   <span className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
-                    {selectedGuest.totalSpentQAR.toLocaleString()} QAR
+                    {convertAmount(selectedGuest.totalSpentQAR).formatted}
                   </span>
                   <span className="text-[10px] text-slate-500 block mt-0.5">
                     ≈ ${(selectedGuest.totalSpentQAR / 3.64).toFixed(0)} USD
@@ -1270,7 +1268,7 @@ export const GuestsView: React.FC = () => {
 
                         <div className="text-right sm:shrink-0 flex sm:flex-col items-center sm:items-end justify-between gap-1">
                           <span className="font-extrabold font-mono text-sm text-slate-900 dark:text-white">
-                            {bkg.totalQAR.toLocaleString()} QAR
+                            {convertAmount(bkg.totalQAR).formatted}
                           </span>
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                             {bkg.qrStatus}
@@ -1701,7 +1699,7 @@ export const GuestsView: React.FC = () => {
                             </p>
                             {tier.minSpendQAR !== undefined && tier.minSpendQAR > 0 && (
                               <span className="text-[10px] font-mono text-purple-600 dark:text-purple-400 block mt-0.5">
-                                Min Spend: {tier.minSpendQAR.toLocaleString()} QAR
+                                Min Spend: {convertAmount(tier.minSpendQAR).formatted}
                               </span>
                             )}
                           </div>

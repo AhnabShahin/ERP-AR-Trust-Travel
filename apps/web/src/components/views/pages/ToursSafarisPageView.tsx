@@ -14,6 +14,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { WEBSITE_TOURS, WebsiteTour, getSyncedWebsiteTours } from '../../../data/websiteData';
+import { imgSrc } from '../../../../lib/uploads';
 import { useApp } from '../../../context/AppContext';
 import { useWebsiteLanguage } from '../../../context/WebsiteLanguageContext';
 import { useWebsiteCurrency } from '../../../context/WebsiteCurrencyContext';
@@ -146,7 +147,7 @@ export const ToursSafarisPageView: React.FC<ToursSafarisPageViewProps> = ({
                   {/* Image container */}
                   <div className="relative aspect-[16/10] overflow-hidden">
                     <img
-                      src={tour.image}
+                      src={imgSrc(tour.image)}
                       alt={tour.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       loading="lazy"

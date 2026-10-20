@@ -663,9 +663,8 @@ export const AirportDeskPOSView: React.FC = () => {
               </div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">
-                  {totalDrawerCashSum.toLocaleString()}
+                  {convertAmount(totalDrawerCashSum).formatted}
                 </span>
-                <span className="text-xs font-bold text-slate-400 font-mono">QAR</span>
               </div>
               <div className="mt-1 text-[11px] text-slate-400 font-mono">
                 Petty cash across all drawers
@@ -679,9 +678,9 @@ export const AirportDeskPOSView: React.FC = () => {
               </div>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400 font-mono">
-                  {totalDailyTargetSum.toLocaleString()}
+                  {convertAmount(totalDailyTargetSum).formatted}
                 </span>
-                <span className="text-xs font-bold text-slate-400 font-mono">QAR / Day</span>
+                <span className="text-xs font-bold text-slate-400 font-mono">/ Day</span>
               </div>
               <div className="mt-1 text-[11px] text-slate-400 font-mono">
                 Aggregate target across counters
@@ -874,14 +873,14 @@ export const AirportDeskPOSView: React.FC = () => {
                     <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
                       <span className="text-[10px] text-slate-400 block font-mono">Drawer Cash:</span>
                       <span className="font-mono font-bold text-slate-900 dark:text-white">
-                        {(desk.currentDrawerCashQAR || 0).toLocaleString()} QAR
+                        {convertAmount(desk.currentDrawerCashQAR || 0).formatted}
                       </span>
                     </div>
 
                     <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
                       <span className="text-[10px] text-slate-400 block font-mono">Daily Target:</span>
                       <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                        {(desk.dailyTargetQAR || 0).toLocaleString()} QAR
+                        {convertAmount(desk.dailyTargetQAR || 0).formatted}
                       </span>
                     </div>
                   </div>
@@ -1017,11 +1016,11 @@ export const AirportDeskPOSView: React.FC = () => {
                         </td>
 
                         <td className="py-3.5 px-4 text-right font-mono font-black text-emerald-600 dark:text-emerald-400">
-                          {(desk.currentDrawerCashQAR || 0).toLocaleString()} QAR
+                          {convertAmount(desk.currentDrawerCashQAR || 0).formatted}
                         </td>
 
                         <td className="py-3.5 px-4 text-right font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                          {(desk.dailyTargetQAR || 0).toLocaleString()} QAR
+                          {convertAmount(desk.dailyTargetQAR || 0).formatted}
                         </td>
 
                         <td className="py-3.5 px-4 font-mono text-[11px] text-slate-500 dark:text-slate-400">
@@ -1539,7 +1538,7 @@ export const AirportDeskPOSView: React.FC = () => {
                           {pkg.category}
                         </span>
                         <span className="text-xs font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
-                          {pkg.priceQAR} QAR
+                          {convertAmount(pkg.priceQAR).formatted}
                         </span>
                       </div>
 
@@ -1579,7 +1578,7 @@ export const AirportDeskPOSView: React.FC = () => {
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-slate-900 dark:text-white">{selectedPkg.name}</span>
                 <span className="font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
-                  {selectedPkg.priceQAR} QAR / Pax
+                  {convertAmount(selectedPkg.priceQAR).formatted} / Pax
                 </span>
               </div>
 
@@ -1950,14 +1949,14 @@ export const AirportDeskPOSView: React.FC = () => {
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/30 border border-slate-200/60 dark:border-slate-800">
                 <span className="text-slate-400 font-mono text-[10px] block">Current Drawer Cash:</span>
                 <span className="font-mono font-black text-emerald-600 dark:text-emerald-400 text-sm mt-0.5 block">
-                  {(inspectingDesk.currentDrawerCashQAR || 0).toLocaleString()} QAR
+                  {convertAmount(inspectingDesk.currentDrawerCashQAR || 0).formatted}
                 </span>
               </div>
 
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/30 border border-slate-200/60 dark:border-slate-800">
                 <span className="text-slate-400 font-mono text-[10px] block">Daily Sales Target:</span>
                 <span className="font-mono font-black text-indigo-600 dark:text-indigo-400 text-sm mt-0.5 block">
-                  {(inspectingDesk.dailyTargetQAR || 0).toLocaleString()} QAR
+                  {convertAmount(inspectingDesk.dailyTargetQAR || 0).formatted}
                 </span>
               </div>
 
@@ -2107,7 +2106,7 @@ export const AirportDeskPOSView: React.FC = () => {
                   <option value="">-- No Staff Assigned / Counter Closed --</option>
                   {employees.map((emp) => (
                     <option key={emp.id} value={emp.id}>
-                      {emp.name} ({emp.role}) - Base Salary: {emp.baseSalaryMonthlyQAR} QAR
+                      {emp.name} ({emp.role}) - Base Salary: {convertAmount(emp.baseSalaryMonthlyQAR).formatted}
                     </option>
                   ))}
                 </select>
@@ -2308,7 +2307,7 @@ export const AirportDeskPOSView: React.FC = () => {
                   <option value="">-- Leave Unassigned for Now --</option>
                   {employees.map((emp) => (
                     <option key={emp.id} value={emp.id}>
-                      {emp.name} ({emp.role}) - Base Salary: {emp.baseSalaryMonthlyQAR} QAR
+                      {emp.name} ({emp.role}) - Base Salary: {convertAmount(emp.baseSalaryMonthlyQAR).formatted}
                     </option>
                   ))}
                 </select>

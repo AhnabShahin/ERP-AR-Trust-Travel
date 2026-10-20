@@ -26,6 +26,7 @@ import {
   ExperienceItem,
 } from '../../data/websiteData';
 import { useApp } from '../../context/AppContext';
+import { imgSrc } from '../../../lib/uploads';
 import { useWebsiteCurrency } from '../../context/WebsiteCurrencyContext';
 
 interface InteractiveCalendarBookingEngineProps {
@@ -289,7 +290,7 @@ export const InteractiveCalendarBookingEngine: React.FC<InteractiveCalendarBooki
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="relative shrink-0 w-full sm:w-36 h-28 rounded-xl overflow-hidden border border-[#C0AB6F]/30 shadow-md">
                 <img
-                  src={selectedExperience.image}
+                  src={imgSrc(selectedExperience.image)}
                   alt={selectedExperience.title}
                   className="w-full h-full object-cover"
                 />
@@ -366,7 +367,7 @@ export const InteractiveCalendarBookingEngine: React.FC<InteractiveCalendarBooki
                           : 'bg-[#05161D]/80 border-white/10 hover:border-[#C0AB6F]/40 text-slate-300'
                       }`}
                     >
-                      <img src={item.image} alt={item.title} className="w-10 h-10 rounded-lg object-cover shrink-0" />
+                      <img src={imgSrc(item.image)} alt={item.title} className="w-10 h-10 rounded-lg object-cover shrink-0" />
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-bold truncate text-white">{item.title}</div>
                         <div className="text-[10px] text-[#E7CF8A] font-semibold">

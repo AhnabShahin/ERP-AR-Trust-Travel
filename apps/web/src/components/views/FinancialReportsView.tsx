@@ -324,7 +324,7 @@ export const FinancialReportsView: React.FC = () => {
               Airport Transit Desk Agent Production & Commission Statements
             </h3>
             <span className="font-mono text-xs text-slate-400">
-              Rule: QAR 25.00 Incentive per Walk-In Transit Booking
+              Rule: {convertAmount(25).formatted} Incentive per Walk-In Transit Booking
             </span>
           </div>
 
@@ -345,9 +345,9 @@ export const FinancialReportsView: React.FC = () => {
                 <td className="py-3 px-4 font-sans font-bold text-slate-900 dark:text-white">Zaid Qasim</td>
                 <td className="py-3 px-4 text-slate-500 font-sans">HIA Counter 4 Arrivals</td>
                 <td className="py-3 px-4 text-center font-bold text-blue-600 dark:text-blue-400">75 Bookings</td>
-                <td className="py-3 px-4 text-right rtl:text-left">QAR 48,900</td>
+                <td className="py-3 px-4 text-right rtl:text-left">{convertAmount(48900).formatted}</td>
                 <td className="py-3 px-4 text-right rtl:text-left font-black text-emerald-600 dark:text-emerald-400">
-                  +QAR 1,875.00
+                  +{convertAmount(1875).formatted}
                 </td>
                 <td className="py-3 px-4 text-center">
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold">
@@ -359,9 +359,9 @@ export const FinancialReportsView: React.FC = () => {
                 <td className="py-3 px-4 font-sans font-bold text-slate-900 dark:text-white">Maryam Al-Kuwari</td>
                 <td className="py-3 px-4 text-slate-500 font-sans">HIA Counter 7 VIP Lounge</td>
                 <td className="py-3 px-4 text-center font-bold text-blue-600 dark:text-blue-400">42 Bookings</td>
-                <td className="py-3 px-4 text-right rtl:text-left">QAR 34,200</td>
+                <td className="py-3 px-4 text-right rtl:text-left">{convertAmount(34200).formatted}</td>
                 <td className="py-3 px-4 text-right rtl:text-left font-black text-emerald-600 dark:text-emerald-400">
-                  +QAR 1,050.00
+                  +{convertAmount(1050).formatted}
                 </td>
                 <td className="py-3 px-4 text-center">
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 font-bold">

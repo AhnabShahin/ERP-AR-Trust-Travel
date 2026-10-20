@@ -425,12 +425,11 @@ export const VendorDashboardView: React.FC = () => {
             </span>
             <div className="flex items-baseline gap-1.5 mt-1.5">
               <span className="text-2xl font-black text-purple-700 dark:text-purple-300 font-mono">
-                {metrics.revenue.toLocaleString()}
+                {convertAmount(metrics.revenue).formatted}
               </span>
-              <span className="text-[11px] text-purple-600/80 font-mono font-bold">QAR</span>
             </div>
             <span className="text-[10px] text-purple-600/80 block mt-1 font-mono font-medium">
-              Net Payout: {metrics.netPayout.toLocaleString()} QAR
+              Net Payout: {convertAmount(metrics.netPayout).formatted}
             </span>
           </div>
         </div>
@@ -774,7 +773,7 @@ export const VendorDashboardView: React.FC = () => {
                       Billing & Settlement
                     </span>
                     <span className="font-extrabold text-slate-900 dark:text-white text-base font-mono">
-                      {scannedResult.totalQAR.toLocaleString()} QAR
+                      {convertAmount(scannedResult.totalQAR).formatted}
                     </span>
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block mt-0.5">
                       ✓ {scannedResult.paymentStatus} ({scannedResult.paymentMethod})
@@ -1039,7 +1038,7 @@ export const VendorDashboardView: React.FC = () => {
 
                         {/* Total QAR & Payment */}
                         <td className="py-3 px-4 font-mono font-bold text-slate-900 dark:text-white">
-                          <div>{b.totalQAR.toLocaleString()} QAR</div>
+                          <div>{convertAmount(b.totalQAR).formatted}</div>
                           <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-sans font-medium block mt-0.5">
                             ✓ {b.paymentStatus}
                           </span>
@@ -1129,7 +1128,7 @@ export const VendorDashboardView: React.FC = () => {
                   <BedDouble className="w-4 h-4" />
                 </span>
                 <span className="font-mono font-bold text-slate-900 dark:text-white text-base">
-                  {room.ratePerNightQAR} QAR <span className="text-xs text-slate-400 font-normal">/ night</span>
+                  {convertAmount(room.ratePerNightQAR).formatted} <span className="text-xs text-slate-400 font-normal">/ night</span>
                 </span>
               </div>
 

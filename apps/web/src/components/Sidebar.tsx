@@ -28,6 +28,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { imgSrc } from '../../lib/uploads';
 import { BrandLogo } from './common/BrandLogo';
 import { getRoleDashboardSlug } from '../utils/roleSlugs';
 
@@ -552,7 +553,7 @@ export const Sidebar: React.FC = () => {
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="relative shrink-0">
                     <img
-                      src={currentUser?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'}
+                      src={imgSrc(currentUser?.avatar) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'}
                       alt={currentUser?.name || 'User'}
                       className="w-8 h-8 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0"
                     />

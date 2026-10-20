@@ -57,7 +57,7 @@ export const DriverPortalView: React.FC = () => {
           </div>
           <div className="text-right font-mono">
             <span className="text-[10px] text-slate-400 block uppercase">Daily Commission</span>
-            <span className="text-lg font-extrabold text-emerald-400">QAR 380</span>
+            <span className="text-lg font-extrabold text-emerald-400">{convertAmount(380).formatted}</span>
           </div>
         </div>
 

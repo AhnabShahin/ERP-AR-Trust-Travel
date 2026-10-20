@@ -160,13 +160,13 @@ export const PayrollCommissionView: React.FC = () => {
                     {s.roleTitle} · <span className="font-semibold text-slate-700 dark:text-slate-300">{s.department}</span>
                   </td>
                   <td className="py-3 px-4 text-right rtl:text-left font-semibold text-slate-800 dark:text-slate-200">
-                    QAR {s.fixedBaseMonthlyQAR.toLocaleString()}
+                    {convertAmount(s.fixedBaseMonthlyQAR).formatted}
                   </td>
                   <td className="py-3 px-4 text-right rtl:text-left font-bold text-emerald-600 dark:text-emerald-400">
-                    +QAR {s.accruedCommissionQAR.toLocaleString()}
+                    +{convertAmount(s.accruedCommissionQAR).formatted}
                   </td>
                   <td className="py-3 px-4 text-right rtl:text-left font-black text-slate-900 dark:text-white">
-                    QAR {s.netPayableQAR.toLocaleString()}
+                    {convertAmount(s.netPayableQAR).formatted}
                   </td>
                   <td className="py-3 px-4 text-center">
                     <span
@@ -259,7 +259,7 @@ export const PayrollCommissionView: React.FC = () => {
               <span>Daily Operational Expense Journal (Fuel, Maintenance, Airport Fees)</span>
             </h3>
             <span className="font-mono text-xs text-rose-600 dark:text-rose-400 font-bold">
-              Total Logged: QAR {expenses.reduce((s, e) => s + e.amountQAR, 0).toLocaleString()}
+              Total Logged: {convertAmount(expenses.reduce((s, e) => s + e.amountQAR, 0)).formatted}
             </span>
           </div>
 
@@ -286,7 +286,7 @@ export const PayrollCommissionView: React.FC = () => {
                     {e.description}
                   </td>
                   <td className="py-3 px-4 text-right rtl:text-left font-black text-rose-600 dark:text-rose-400">
-                    QAR {e.amountQAR.toLocaleString()}
+                    {convertAmount(e.amountQAR).formatted}
                   </td>
                   <td className="py-3 px-4 font-sans text-slate-500 text-[11px]">
                     {e.paymentMethod}

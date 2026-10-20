@@ -951,9 +951,8 @@ export const ServicesManagementView: React.FC = () => {
               <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-xs text-slate-400 font-mono">QAR</span>
                     <span className="text-lg font-black text-slate-900 dark:text-white tabular-nums">
-                      {pkg.priceQAR.toLocaleString()}
+                      {convertAmount(pkg.priceQAR).formatted}
                     </span>
                   </div>
                   <div className="text-[10px] text-slate-400 font-mono tabular-nums">
@@ -1096,7 +1095,7 @@ export const ServicesManagementView: React.FC = () => {
                       </td>
 
                       <td className="py-3.5 px-4 text-right font-mono font-black text-emerald-600 dark:text-emerald-400 text-sm">
-                        {pkg.priceQAR.toLocaleString()} QAR
+                        {convertAmount(pkg.priceQAR).formatted}
                       </td>
 
                       <td className="py-3.5 px-4 text-right font-mono text-[11px] text-slate-500 dark:text-slate-400">

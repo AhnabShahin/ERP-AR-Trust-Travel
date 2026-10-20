@@ -46,6 +46,7 @@ import { PublicPageSlug } from '../common/WebsiteHeader';
 import { useWebsiteLanguage } from '../../context/WebsiteLanguageContext';
 import { useWebsiteCurrency } from '../../context/WebsiteCurrencyContext';
 import { useApp } from '../../context/AppContext';
+import { imgSrc } from '../../../lib/uploads';
 import { usePublicUI } from './PublicUIProvider';
 import {
   CUSTOMER_REVIEWS,
@@ -428,7 +429,7 @@ export default function HomePage() {
               {/* Image Container */}
               <div className="relative aspect-[4/3] overflow-hidden bg-slate-800">
                 <img
-                  src={tour.image}
+                  src={imgSrc(tour.image)}
                   alt={tour.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   loading="lazy"
@@ -596,7 +597,7 @@ export default function HomePage() {
                   {/* Vehicle Image Showroom Stage */}
                   <div className="relative aspect-[16/10] w-full rounded-2xl overflow-hidden mb-5 border border-slate-200/60 dark:border-white/10 shadow-md bg-slate-900">
                     <img
-                      src={vehicle.image}
+                      src={imgSrc(vehicle.image)}
                       alt={vehicle.name}
                       className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
                       loading="lazy"
@@ -692,7 +693,7 @@ export default function HomePage() {
                 {/* Header Graphic */}
                 <div className="relative aspect-[16/9] overflow-hidden bg-slate-800">
                   <img
-                    src={pkg.image}
+                    src={imgSrc(pkg.image)}
                     alt={pkg.title}
                     className="w-full h-full object-cover"
                     loading="lazy"
@@ -938,7 +939,7 @@ export default function HomePage() {
 
                 <div className="pt-4 border-t border-slate-100 dark:border-white/10 flex items-center gap-3">
                   <img
-                    src={rev.avatar}
+                    src={imgSrc(rev.avatar)}
                     alt={rev.author}
                     className="w-10 h-10 rounded-full object-cover border border-[#C0AB6F]/40"
                     loading="lazy"
@@ -976,7 +977,7 @@ export default function HomePage() {
 
                   <div className="pt-3 border-t border-slate-100 dark:border-white/10 flex items-center gap-2.5">
                     <img
-                      src={rev.avatar}
+                      src={imgSrc(rev.avatar)}
                       alt={rev.author}
                       className="w-9 h-9 rounded-full object-cover border border-[#C0AB6F]/40 shrink-0"
                       loading="lazy"
@@ -1011,7 +1012,7 @@ export default function HomePage() {
 
                   <div className="pt-3 border-t border-slate-100 dark:border-white/10 flex items-center gap-2.5">
                     <img
-                      src={rev.avatar}
+                      src={imgSrc(rev.avatar)}
                       alt={rev.author}
                       className="w-9 h-9 rounded-full object-cover border border-[#C0AB6F]/40 shrink-0"
                       loading="lazy"

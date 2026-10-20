@@ -43,7 +43,7 @@ export const CommissionPayrollView: React.FC = () => {
           <div className="text-right font-mono">
             <span className="text-[10px] text-slate-400 block">TOTAL PAYOUT DUE TODAY</span>
             <span className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">
-              QAR {totalCommissionsQAR.toLocaleString()}
+              {convertAmount(totalCommissionsQAR).formatted}
             </span>
           </div>
           <button
@@ -88,13 +88,13 @@ export const CommissionPayrollView: React.FC = () => {
                     {row.safariTrips} Safari / {row.airportTransfers} HIA
                   </td>
                   <td className="py-3 px-4 text-right rtl:text-left font-semibold text-slate-900 dark:text-white">
-                    QAR {row.earnedCommissionQAR}
+                    {convertAmount(row.earnedCommissionQAR).formatted}
                   </td>
                   <td className="py-3 px-4 text-right rtl:text-left text-emerald-600 dark:text-emerald-400">
-                    +QAR {row.bonusQAR}
+                    +{convertAmount(row.bonusQAR).formatted}
                   </td>
                   <td className="py-3 px-4 text-right rtl:text-left font-extrabold text-slate-900 dark:text-white">
-                    QAR {row.earnedCommissionQAR + row.bonusQAR}
+                    {convertAmount(row.earnedCommissionQAR + row.bonusQAR).formatted}
                   </td>
                   <td className="py-3 px-4 text-center">
                     <span

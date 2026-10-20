@@ -42,6 +42,7 @@ export const MyAccountView: React.FC = () => {
     roleConfig,
     currentRole,
     bookings,
+    convertAmount,
     openModal,
     language,
     t,
@@ -896,7 +897,7 @@ export const MyAccountView: React.FC = () => {
 
                         <div className="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
                           <span className="font-extrabold text-sm text-slate-900 dark:text-white">
-                            QAR {b.totalQAR}
+                            {convertAmount(b.totalQAR).formatted}
                           </span>
                           <button
                             onClick={() => openModal('qr-voucher', b)}

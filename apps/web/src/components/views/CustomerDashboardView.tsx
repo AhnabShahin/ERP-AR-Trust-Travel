@@ -27,6 +27,7 @@ import {
   Eye,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { imgSrc } from '../../../lib/uploads';
 import { Booking, HotelBooking } from '../../types';
 
 export const CustomerDashboardView: React.FC = () => {
@@ -34,6 +35,7 @@ export const CustomerDashboardView: React.FC = () => {
     bookings,
     hotelBookings,
     currentUser,
+    convertAmount,
     language,
     openModal,
     setActiveTab,
@@ -138,7 +140,7 @@ export const CustomerDashboardView: React.FC = () => {
           <div className="flex items-start gap-4">
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#D4AF37] to-[#8C6D23] p-0.5 shadow-lg shadow-[#D4AF37]/20 shrink-0">
               <img
-                src={currentUser?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'}
+                src={imgSrc(currentUser?.avatar) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'}
                 alt={currentUser?.name || 'Customer'}
                 className="w-full h-full object-cover rounded-[14px]"
               />
@@ -263,12 +265,11 @@ export const CustomerDashboardView: React.FC = () => {
             </div>
             <div className="flex items-baseline gap-1.5 mt-1.5">
               <span className="text-2xl font-black font-mono text-[#E7CF8A]">
-                {totalSpendQAR.toLocaleString()}
+                {convertAmount(totalSpendQAR).formatted}
               </span>
-              <span className="text-[11px] text-[#C0AB6F] font-mono">QAR</span>
             </div>
             <span className="text-[10px] text-slate-400 block mt-1 font-mono">
-              Tour: {totalTourSpend.toLocaleString()} | Hotel: {totalHotelSpend.toLocaleString()}
+              Tour: {convertAmount(totalTourSpend).formatted} | Hotel: {convertAmount(totalHotelSpend).formatted}
             </span>
           </div>
         </div>
@@ -405,7 +406,7 @@ export const CustomerDashboardView: React.FC = () => {
                   <div>
                     <span className="text-[10px] text-slate-400 block font-mono">Amount Paid</span>
                     <span className="font-mono font-black text-slate-900 dark:text-white text-sm">
-                      {b.totalQAR.toLocaleString()} QAR
+                      {convertAmount(b.totalQAR).formatted}
                     </span>
                   </div>
 
@@ -470,7 +471,7 @@ export const CustomerDashboardView: React.FC = () => {
                   <div>
                     <span className="text-[10px] text-slate-400 block font-mono">Total Rate</span>
                     <span className="font-mono font-black text-slate-900 dark:text-white">
-                      {h.totalQAR.toLocaleString()} QAR
+                      {convertAmount(h.totalQAR).formatted}
                     </span>
                   </div>
 
@@ -519,7 +520,7 @@ export const CustomerDashboardView: React.FC = () => {
                 </p>
                 <div className="flex items-center justify-between pt-2">
                   <span className="font-mono font-extrabold text-sm text-slate-900 dark:text-white">
-                    450 QAR <span className="text-xs text-slate-400 font-normal">/ person</span>
+                    {convertAmount(450).formatted} <span className="text-xs text-slate-400 font-normal">/ person</span>
                   </span>
                   <button
                     onClick={() => {
@@ -555,7 +556,7 @@ export const CustomerDashboardView: React.FC = () => {
                 </p>
                 <div className="flex items-center justify-between pt-2">
                   <span className="font-mono font-extrabold text-sm text-slate-900 dark:text-white">
-                    280 QAR <span className="text-xs text-slate-400 font-normal">/ person</span>
+                    {convertAmount(280).formatted} <span className="text-xs text-slate-400 font-normal">/ person</span>
                   </span>
                   <button
                     onClick={() => {
@@ -591,7 +592,7 @@ export const CustomerDashboardView: React.FC = () => {
                 </p>
                 <div className="flex items-center justify-between pt-2">
                   <span className="font-mono font-extrabold text-sm text-slate-900 dark:text-white">
-                    350 QAR <span className="text-xs text-slate-400 font-normal">/ transfer</span>
+                    {convertAmount(350).formatted} <span className="text-xs text-slate-400 font-normal">/ transfer</span>
                   </span>
                   <button
                     onClick={() => {

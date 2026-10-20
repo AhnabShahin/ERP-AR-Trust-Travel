@@ -23,6 +23,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { imgSrc } from '../../../lib/uploads';
 import { BrandLogo } from '../common/BrandLogo';
 
 export interface AuthDrawerProps {
@@ -295,7 +296,7 @@ export const AuthDrawer: React.FC<AuthDrawerProps> = ({
                 <div className="flex items-start gap-4">
                   {currentUser.avatar ? (
                     <img
-                      src={currentUser.avatar}
+                      src={imgSrc(currentUser.avatar)}
                       alt={currentUser.name}
                       className="w-14 h-14 rounded-2xl object-cover border-2 border-[#D4AF37] shadow-lg shrink-0"
                     />

@@ -12,6 +12,7 @@ import {
   Star,
 } from 'lucide-react';
 import { MULTI_DAY_PACKAGES, MultiDayPackage, getSyncedHolidayPackages } from '../../../data/websiteData';
+import { imgSrc } from '../../../../lib/uploads';
 import { useApp } from '../../../context/AppContext';
 import { useWebsiteLanguage } from '../../../context/WebsiteLanguageContext';
 import { useWebsiteCurrency } from '../../../context/WebsiteCurrencyContext';
@@ -74,7 +75,7 @@ export const HolidayPackagesPageView: React.FC<HolidayPackagesPageViewProps> = (
               {/* Left Image & Summary */}
               <div className="lg:col-span-5 relative min-h-[300px] lg:min-h-full">
                 <img
-                  src={pkg.image}
+                  src={imgSrc(pkg.image)}
                   alt={pkg.title}
                   className="w-full h-full object-cover"
                 />

@@ -484,9 +484,8 @@ export const EmployeesView: React.FC = () => {
           </div>
           <div className="mt-2 flex items-baseline gap-1.5">
             <span className="text-2xl font-black text-slate-900 dark:text-white tabular-nums">
-              {totalBasePayroll.toLocaleString()}
+              {convertAmount(totalBasePayroll).formatted}
             </span>
-            <span className="text-xs font-bold text-slate-400 font-mono">QAR</span>
           </div>
           <p className="text-[10px] text-slate-400 mt-1">Fixed monthly contractual base</p>
         </div>
@@ -499,9 +498,8 @@ export const EmployeesView: React.FC = () => {
           </div>
           <div className="mt-2 flex items-baseline gap-1.5">
             <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400 tabular-nums">
-              +{totalAccruedCommissionCurrentMonth.toLocaleString()}
+              +{convertAmount(totalAccruedCommissionCurrentMonth).formatted}
             </span>
-            <span className="text-xs font-bold text-slate-400 font-mono">QAR</span>
           </div>
           <p className="text-[10px] text-indigo-500 dark:text-indigo-400 font-medium mt-1">Earned on excess services</p>
         </div>
@@ -727,7 +725,7 @@ export const EmployeesView: React.FC = () => {
                         </span>
                       )}
                       <span className="font-mono text-slate-500 font-bold">
-                        +{emp.commissionPerServiceQAR} QAR / service after target
+                        +{convertAmount(emp.commissionPerServiceQAR).formatted} / service after target
                       </span>
                     </div>
                   </div>
@@ -737,28 +735,28 @@ export const EmployeesView: React.FC = () => {
                     <div className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40">
                       <span className="text-[10px] text-slate-400 block font-medium">Base Salary</span>
                       <span className="font-extrabold text-slate-900 dark:text-white tabular-nums text-xs">
-                        {emp.baseSalaryMonthlyQAR.toLocaleString()} QAR
+                        {convertAmount(emp.baseSalaryMonthlyQAR).formatted}
                       </span>
                     </div>
 
                     <div className="p-2 rounded-xl bg-indigo-50/60 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/40">
                       <span className="text-[10px] text-indigo-600 dark:text-indigo-400 block font-medium">Accrued Commission</span>
                       <span className="font-extrabold text-indigo-700 dark:text-indigo-300 tabular-nums text-xs">
-                        +{currentRec?.commissionEarnedQAR || 0} QAR
+                        +{convertAmount(currentRec?.commissionEarnedQAR || 0).formatted}
                       </span>
                     </div>
 
                     <div className="p-2 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40">
                       <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block font-medium">Amount Paid (Paice)</span>
                       <span className="font-extrabold text-emerald-700 dark:text-emerald-300 tabular-nums text-xs">
-                        {currentRec?.amountPaidQAR.toLocaleString() || 0} QAR
+                        {convertAmount(currentRec?.amountPaidQAR || 0).formatted}
                       </span>
                     </div>
 
                     <div className="p-2 rounded-xl bg-amber-50/60 dark:bg-amber-950/40 border border-amber-100 dark:border-amber-900/40">
                       <span className="text-[10px] text-amber-600 dark:text-amber-400 block font-medium">Balance Due (Baki)</span>
                       <span className="font-extrabold text-amber-700 dark:text-amber-300 tabular-nums text-xs">
-                        {currentRec?.amountDueQAR.toLocaleString() || 0} QAR
+                        {convertAmount(currentRec?.amountDueQAR || 0).formatted}
                       </span>
                     </div>
                   </div>
@@ -912,19 +910,19 @@ export const EmployeesView: React.FC = () => {
                         </td>
 
                         <td className="py-3.5 px-4 text-right font-mono font-semibold text-slate-900 dark:text-white">
-                          {emp.baseSalaryMonthlyQAR.toLocaleString()} QAR
+                          {convertAmount(emp.baseSalaryMonthlyQAR).formatted}
                         </td>
 
                         <td className="py-3.5 px-4 text-right font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                          +{currentRec?.commissionEarnedQAR || 0} QAR
+                          +{convertAmount(currentRec?.commissionEarnedQAR || 0).formatted}
                         </td>
 
                         <td className="py-3.5 px-4 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                          {currentRec?.amountPaidQAR.toLocaleString() || 0} QAR
+                          {convertAmount(currentRec?.amountPaidQAR || 0).formatted}
                         </td>
 
                         <td className="py-3.5 px-4 text-right font-mono font-black text-amber-600 dark:text-amber-400">
-                          {currentRec?.amountDueQAR.toLocaleString() || 0} QAR
+                          {convertAmount(currentRec?.amountDueQAR || 0).formatted}
                         </td>
 
                         <td className="py-3.5 px-4 text-right">
@@ -1198,7 +1196,7 @@ export const EmployeesView: React.FC = () => {
                         <span className="text-[10px] text-slate-400 font-mono block">{emp.assignedDeskName || 'Unallocated'}</span>
                       </td>
                       <td className="px-3 py-3 text-right font-mono tabular-nums font-medium">
-                        {emp.baseSalaryMonthlyQAR.toLocaleString()} QAR
+                        {convertAmount(emp.baseSalaryMonthlyQAR).formatted}
                       </td>
                       <td className="px-3 py-3 text-center font-mono">
                         <span className={`px-2 py-0.5 rounded font-bold ${completed >= target ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'}`}>
@@ -1206,22 +1204,22 @@ export const EmployeesView: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-3 py-3 text-right font-mono text-slate-500">
-                        {emp.commissionPerServiceQAR} QAR
+                        {convertAmount(emp.commissionPerServiceQAR).formatted}
                       </td>
                       <td className="px-3 py-3 text-right font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                        +{earnedComm.toLocaleString()} QAR
+                        +{convertAmount(earnedComm).formatted}
                       </td>
                       <td className="px-3 py-3 text-right font-mono text-slate-600 dark:text-slate-300">
-                        {expenses.toLocaleString()} QAR
+                        {convertAmount(expenses).formatted}
                       </td>
                       <td className="px-3 py-3 text-right font-mono font-extrabold text-slate-900 dark:text-white">
-                        {gross.toLocaleString()} QAR
+                        {convertAmount(gross).formatted}
                       </td>
                       <td className="px-3 py-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                        {paid.toLocaleString()} QAR
+                        {convertAmount(paid).formatted}
                       </td>
                       <td className="px-3 py-3 text-right font-mono font-extrabold text-amber-600 dark:text-amber-400">
-                        {due.toLocaleString()} QAR
+                        {convertAmount(due).formatted}
                       </td>
                       <td className="px-3 py-3 text-center">
                         <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
@@ -1330,7 +1328,7 @@ export const EmployeesView: React.FC = () => {
                   <div className="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-blue-100 dark:border-blue-900/40">
                     <span className="text-[10px] text-slate-400 block">Contract Base Salary</span>
                     <span className="font-extrabold text-sm text-slate-900 dark:text-white font-mono">
-                      {selectedEmployee.baseSalaryMonthlyQAR.toLocaleString()} QAR
+                      {convertAmount(selectedEmployee.baseSalaryMonthlyQAR).formatted}
                     </span>
                   </div>
                   <div className="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-blue-100 dark:border-blue-900/40">
@@ -1342,12 +1340,12 @@ export const EmployeesView: React.FC = () => {
                   <div className="bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-blue-100 dark:border-blue-900/40">
                     <span className="text-[10px] text-slate-400 block">Commission After Target</span>
                     <span className="font-extrabold text-sm text-emerald-600 dark:text-emerald-400 font-mono">
-                      +{selectedEmployee.commissionPerServiceQAR} QAR / Service
+                      +{convertAmount(selectedEmployee.commissionPerServiceQAR).formatted} / Service
                     </span>
                   </div>
                 </div>
                 <p className="text-[11px] text-slate-500 mt-2">
-                  * Note: For every booking/service completed exceeding the target of {selectedEmployee.monthlyServiceTarget}, the system awards an automated bonus of {selectedEmployee.commissionPerServiceQAR} QAR per service directly added to the monthly payroll ledger.
+                  * Note: For every booking/service completed exceeding the target of {selectedEmployee.monthlyServiceTarget}, the system awards an automated bonus of {convertAmount(selectedEmployee.commissionPerServiceQAR).formatted} per service directly added to the monthly payroll ledger.
                 </p>
               </div>
 
@@ -1400,17 +1398,17 @@ export const EmployeesView: React.FC = () => {
                         <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
                           <span className="text-[10px] text-slate-400 block">Commission Earned</span>
                           <span className="text-lg font-black font-mono text-indigo-600 dark:text-indigo-400">
-                            +{currentMonthRec.commissionEarnedQAR} QAR
+                            +{convertAmount(currentMonthRec.commissionEarnedQAR).formatted}
                           </span>
                           <span className="text-[10px] text-slate-500 block mt-0.5 font-mono">
-                            {currentMonthRec.excessServices} × {currentMonthRec.commissionRatePerService} QAR
+                            {currentMonthRec.excessServices} × {convertAmount(currentMonthRec.commissionRatePerService).formatted}
                           </span>
                         </div>
 
                         <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
                           <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block font-bold">Amount Paid (Koto paice)</span>
                           <span className="text-lg font-black font-mono text-emerald-600 dark:text-emerald-400">
-                            {currentMonthRec.amountPaidQAR.toLocaleString()} QAR
+                            {convertAmount(currentMonthRec.amountPaidQAR).formatted}
                           </span>
                           <span className="text-[10px] text-slate-400 block mt-0.5 truncate">
                             {currentMonthRec.paidDate || 'No payment recorded'}
@@ -1420,7 +1418,7 @@ export const EmployeesView: React.FC = () => {
                         <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
                           <span className="text-[10px] text-amber-600 dark:text-amber-400 block font-bold">Balance Due (Koto baki ache)</span>
                           <span className="text-lg font-black font-mono text-amber-600 dark:text-amber-400">
-                            {currentMonthRec.amountDueQAR.toLocaleString()} QAR
+                            {convertAmount(currentMonthRec.amountDueQAR).formatted}
                           </span>
                           <span className="text-[10px] text-slate-400 block mt-0.5">
                             Status: {currentMonthRec.status}
@@ -1432,14 +1430,14 @@ export const EmployeesView: React.FC = () => {
                       <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
                         <div className="flex items-center gap-2 font-mono">
                           <span className="text-slate-500">Gross Equation:</span>
-                          <span>Base ({currentMonthRec.baseSalaryQAR})</span>
+                          <span>Base ({convertAmount(currentMonthRec.baseSalaryQAR).formatted})</span>
                           <span>+</span>
-                          <span className="text-indigo-600 font-bold">Commission ({currentMonthRec.commissionEarnedQAR})</span>
+                          <span className="text-indigo-600 font-bold">Commission ({convertAmount(currentMonthRec.commissionEarnedQAR).formatted})</span>
                           <span>+</span>
-                          <span className="text-slate-600">Expenses ({currentMonthRec.expensesReimbursedQAR})</span>
+                          <span className="text-slate-600">Expenses ({convertAmount(currentMonthRec.expensesReimbursedQAR).formatted})</span>
                           <span>=</span>
                           <span className="text-sm font-extrabold text-slate-900 dark:text-white">
-                            {currentMonthRec.grossPayableQAR.toLocaleString()} QAR
+                            {convertAmount(currentMonthRec.grossPayableQAR).formatted}
                           </span>
                         </div>
 
@@ -1505,17 +1503,17 @@ export const EmployeesView: React.FC = () => {
                       {selectedEmployee.monthlyRecords.map((m) => (
                         <tr key={m.month} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
                           <td className="px-3 py-2.5 font-bold">{m.month}</td>
-                          <td className="px-3 py-2.5 text-right font-mono">{m.baseSalaryQAR.toLocaleString()} QAR</td>
+                          <td className="px-3 py-2.5 text-right font-mono">{convertAmount(m.baseSalaryQAR).formatted}</td>
                           <td className="px-3 py-2.5 text-center font-mono">
                             {m.completedServices} / {m.targetServices}
                           </td>
                           <td className="px-3 py-2.5 text-right font-mono font-bold text-indigo-600 dark:text-indigo-400">
-                            +{m.commissionEarnedQAR} QAR
+                            +{convertAmount(m.commissionEarnedQAR).formatted}
                           </td>
-                          <td className="px-3 py-2.5 text-right font-mono">{m.expensesReimbursedQAR} QAR</td>
-                          <td className="px-3 py-2.5 text-right font-mono font-extrabold">{m.grossPayableQAR.toLocaleString()} QAR</td>
-                          <td className="px-3 py-2.5 text-right font-mono font-bold text-emerald-600">{m.amountPaidQAR.toLocaleString()} QAR</td>
-                          <td className="px-3 py-2.5 text-right font-mono font-bold text-amber-600">{m.amountDueQAR.toLocaleString()} QAR</td>
+                          <td className="px-3 py-2.5 text-right font-mono">{convertAmount(m.expensesReimbursedQAR).formatted}</td>
+                          <td className="px-3 py-2.5 text-right font-mono font-extrabold">{convertAmount(m.grossPayableQAR).formatted}</td>
+                          <td className="px-3 py-2.5 text-right font-mono font-bold text-emerald-600">{convertAmount(m.amountPaidQAR).formatted}</td>
+                          <td className="px-3 py-2.5 text-right font-mono font-bold text-amber-600">{convertAmount(m.amountDueQAR).formatted}</td>
                           <td className="px-3 py-2.5 text-center font-bold">
                             <span className={`px-2 py-0.5 rounded text-[10px] ${m.status === 'Fully Paid' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}`}>
                               {m.status}

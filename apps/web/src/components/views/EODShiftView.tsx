@@ -295,9 +295,8 @@ export const EODShiftView: React.FC = () => {
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">
-              {totalNetworkCashDrawer.toLocaleString()}
+              {convertAmount(totalNetworkCashDrawer).formatted}
             </span>
-            <span className="text-xs font-bold text-slate-400 font-mono">QAR</span>
           </div>
           <div className="mt-1 text-[11px] text-slate-400 font-mono flex items-center justify-between">
             <span>Physical currency across desks</span>
@@ -313,9 +312,8 @@ export const EODShiftView: React.FC = () => {
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-black text-blue-600 dark:text-blue-400 font-mono">
-              {totalNetworkPosCard.toLocaleString()}
+              {convertAmount(totalNetworkPosCard).formatted}
             </span>
-            <span className="text-xs font-bold text-slate-400 font-mono">QAR</span>
           </div>
           <div className="mt-1 text-[11px] text-slate-400 font-mono">
             QNB NAPS, Visa, Mastercard settled
@@ -474,14 +472,14 @@ export const EODShiftView: React.FC = () => {
                 <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
                   <span>Cash Drawer:</span>
                   <span className="font-bold text-slate-900 dark:text-white">
-                    {desk.totalPhysicalDrawerCash.toLocaleString()} QAR
+                    {convertAmount(desk.totalPhysicalDrawerCash).formatted}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
                   <span>POS Card (NAPS):</span>
                   <span className="font-bold text-blue-600 dark:text-blue-400">
-                    {desk.totalPosCardToday.toLocaleString()} QAR
+                    {convertAmount(desk.totalPosCardToday).formatted}
                   </span>
                 </div>
 
@@ -612,7 +610,7 @@ export const EODShiftView: React.FC = () => {
                     <span>QNB NAPS / Visa / Mastercard Card Terminals:</span>
                   </div>
                   <span className="font-bold text-slate-900 dark:text-white">
-                    {selectedDesk.totalPosCardToday.toLocaleString()} QAR
+                    {convertAmount(selectedDesk.totalPosCardToday).formatted}
                   </span>
                 </div>
 
@@ -622,7 +620,7 @@ export const EODShiftView: React.FC = () => {
                     <span>WhatsApp / Online Payment Links:</span>
                   </div>
                   <span className="font-bold text-slate-900 dark:text-white">
-                    {selectedDesk.totalPaymentLinksToday.toLocaleString()} QAR
+                    {convertAmount(selectedDesk.totalPaymentLinksToday).formatted}
                   </span>
                 </div>
               </div>
@@ -634,7 +632,7 @@ export const EODShiftView: React.FC = () => {
                 <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                   <span>Daily Shift Revenue Target</span>
                   <span className="font-mono text-indigo-600 dark:text-indigo-400 text-[11px]">
-                    Goal: {(selectedDesk.dailyTargetQAR || 15000).toLocaleString()} QAR
+                    Goal: {convertAmount(selectedDesk.dailyTargetQAR || 15000).formatted}
                   </span>
                 </h4>
 
@@ -642,7 +640,7 @@ export const EODShiftView: React.FC = () => {
                   <div className="flex items-center justify-between text-xs font-mono mb-1">
                     <span className="text-slate-500">Total Net Revenue Today:</span>
                     <span className="font-black text-slate-900 dark:text-white">
-                      {(selectedDesk.totalCashSalesToday + selectedDesk.totalPosCardToday).toLocaleString()} QAR
+                      {convertAmount(selectedDesk.totalCashSalesToday + selectedDesk.totalPosCardToday).formatted}
                     </span>
                   </div>
                   <div className="w-full h-3 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
