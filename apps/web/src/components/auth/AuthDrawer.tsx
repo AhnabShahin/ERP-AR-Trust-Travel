@@ -77,6 +77,12 @@ export const AuthDrawer: React.FC<AuthDrawerProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [forgotPasswordMessage, setForgotPasswordMessage] = useState<string | null>(null);
 
+  // Auth state comes from localStorage (client-only), so gate the
+  // logged-in vs login-form branch behind `mounted`: the server and the first
+  // client render both show the login form, avoiding a hydration mismatch.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   // Sync mode with prop when opened
   useEffect(() => {
     if (isOpen) {
@@ -280,7 +286,7 @@ export const AuthDrawer: React.FC<AuthDrawerProps> = ({
           {/* ════════════════════════════════════════════════════════════════ */}
           {/* STATE 1: ALREADY AUTHENTICATED / LOGGED IN                     */}
           {/* ════════════════════════════════════════════════════════════════ */}
-          {isAuthenticated && currentUser ? (
+          {mounted && isAuthenticated && currentUser ? (
             <div className="space-y-5 py-2 animate-in fade-in duration-300">
               {/* Profile Card */}
               <div className="p-5 rounded-2xl bg-[#0D3A48]/70 border border-[#C0AB6F]/40 shadow-xl relative overflow-hidden">
