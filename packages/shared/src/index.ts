@@ -17,6 +17,7 @@ export type UserRole =
   | 'driver-guide'
   | 'finance-accountant'
   | 'vendor-partner'
+  | 'staff'
   | 'customer';
 
 export type BookingStatus =

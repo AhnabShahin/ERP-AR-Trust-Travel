@@ -26,6 +26,7 @@ enum UserRole {
   driver_guide       @map("driver-guide")
   finance_accountant @map("finance-accountant")
   vendor_partner     @map("vendor-partner")
+  staff
   customer
 }
 
@@ -75,10 +76,57 @@ model User {
   companyName     String?
   bio             String?  @db.Text
 
+  // Staff-profile fields — only meaningful when role = staff. They let a staff
+  // member's desk assignment, salary and target live on the user record, so the
+  // "Staff" screen reads directly from the users table.
+  jobTitle                String?
+  assignedAirport         String?
+  assignedDeskId          String?
+  assignedDeskName        String?
+  staffStatus             String? // On Duty | Available | On Leave | Off Duty
+  hireDate                String?
+  baseSalaryMonthlyQAR    Float   @default(0)
+  monthlyServiceTarget    Int     @default(0)
+  commissionPerServiceQAR Float   @default(0)
+  rating                  Float   @default(0)
+  totalExpensesQAR        Float   @default(0)
+
+  // Per-month salary / commission ledger for this staff member.
+  ledgerEntries StaffLedgerEntry[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("users")
+}
+
+// One row per staff member per month — the salary & commission ledger that was
+// previously an embedded JSON array on the Employee model.
+model StaffLedgerEntry {
+  id                       String   @id @default(cuid())
+  userId                   String
+  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month                    String   @db.VarChar(40) // e.g. 'October 2026'
+  baseSalaryQAR            Float    @default(0)
+  targetServices           Int      @default(0)
+  completedServices        Int      @default(0)
+  excessServices           Int      @default(0)
+  commissionRatePerService Float    @default(0)
+  commissionEarnedQAR      Float    @default(0)
+  expensesReimbursedQAR    Float    @default(0)
+  deductionsQAR            Float    @default(0)
+  grossPayableQAR          Float    @default(0)
+  amountPaidQAR            Float    @default(0)
+  amountDueQAR             Float    @default(0)
+  status                   String   @default("Pending Payout") // Fully Paid | Partially Paid | Pending Payout | Approved
+  paidDate                 String?
+  notes                    String?  @db.Text
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  @@unique([userId, month])
+  @@index([userId])
+  @@map("staff_ledger_entries")
 }
 
 // ---------------------------------------------------------------------

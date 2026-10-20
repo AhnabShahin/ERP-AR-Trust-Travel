@@ -236,7 +236,7 @@ export const Sidebar: React.FC = () => {
       items: [
         {
           id: 'employees',
-          label: language === 'ar' ? 'الكوادر وموظفو الكاونترات' : 'Employees & Desk Staff',
+          label: language === 'ar' ? 'الموظفون' : 'Staff',
           icon: Users,
           badge: 'Staff',
         },

@@ -17,6 +17,7 @@ export type RoleKey =
   | 'driver-guide'
   | 'finance-accountant'
   | 'vendor-partner'
+  | 'staff'
   | 'customer';
 
 export interface RoleDefinition {
@@ -113,6 +114,17 @@ export const ROLES: RoleDefinition[] = [
       'واجهة مخصصة للفندق الشريك لمتابعة حجوزات الغرف، النزلاء القادمين، نسب الإشغال، ومسح وتأكيد قسائم النزلاء عبر رمز QR أو رقم الحجز.',
     defaultTab: 'dashboard',
     dashboardSlug: '/vendor-dashboard',
+  },
+  {
+    key: 'staff',
+    title: 'Staff / Desk Agent',
+    titleAr: 'موظف / وكيل كاونتر',
+    description:
+      'Operational desk/field staff member with a salary & commission ledger. Self-service access to view their own monthly salary, targets and payouts.',
+    descriptionAr:
+      'موظف تشغيلي بكاونتر أو ميداني مع سجل راتب وعمولات. وصول ذاتي لعرض راتبه الشهري وأهدافه ومستحقاته.',
+    defaultTab: 'my-account',
+    dashboardSlug: '/staff-dashboard',
   },
   {
     key: 'customer',

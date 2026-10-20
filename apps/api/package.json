@@ -12,6 +12,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:deploy": "prisma migrate deploy",
     "create-superadmin": "tsx src/scripts/create-superadmin.ts",
+    "migrate:staff": "tsx src/scripts/migrate-employees-to-staff.ts",
     "prisma:seed": "tsx prisma/seed.ts",
     "prisma:seed:data": "tsx prisma/seed-full.ts",
     "prisma:studio": "prisma studio"

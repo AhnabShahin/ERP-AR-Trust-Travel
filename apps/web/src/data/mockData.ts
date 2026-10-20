@@ -1698,6 +1698,31 @@ export const ROLE_CONFIGS: Record<import('../types').UserRole, import('../types'
       canManageFleet: false,
     },
   },
+  'staff': {
+    id: 'staff',
+    title: 'Staff / Desk Agent',
+    titleAr: 'موظف / وكيل كاونتر',
+    userDisplayName: 'Staff Member',
+    userDisplayNameAr: 'عضو الفريق',
+    scopeSummary:
+      'Operational desk/field staff member with a salary & commission ledger. Self-service access to view their own monthly salary, targets and payouts.',
+    scopeSummaryAr:
+      'موظف تشغيلي بكاونتر أو ميداني مع سجل راتب وعمولات. وصول ذاتي لعرض راتبه الشهري وأهدافه ومستحقاته.',
+    defaultTab: 'my-account',
+    allowedTabs: ['dashboard', 'my-account'],
+    permissions: {
+      canViewAllFinancials: false,
+      canEditExchangeRates: false,
+      canApprovePayouts: false,
+      canAssignDrivers: false,
+      canAuditShifts: false,
+      canIssueVouchers: false,
+      canViewDriverTrips: false,
+      canViewSystemLogs: false,
+      canManageServices: false,
+      canManageFleet: false,
+    },
+  },
   'customer': {
     id: 'customer',
     title: 'Customer / Traveler',

@@ -6,6 +6,7 @@ import { authRouter } from './modules/auth/auth.routes.js';
 import { bookingsRouter } from './modules/bookings/bookings.routes.js';
 import { registerResourceRoutes, resourcePaths } from './modules/resources.js';
 import { rolesRouter } from './modules/roles/roles.routes.js';
+import { staffRouter } from './modules/staff/staff.routes.js';
 import { settingsRouter } from './modules/settings/settings.routes.js';
 import { usersRouter } from './modules/users/users.routes.js';
 
@@ -27,6 +28,7 @@ export function createApp() {
   app.use('/api/auth', authRouter);
   app.use('/api/users', usersRouter);
   app.use('/api/roles', rolesRouter);
+  app.use('/api/staff', staffRouter);
   app.use('/api/bookings', bookingsRouter);
 
   // Generated CRUD modules (fleet, drivers, guests, hotels, finance, …).

@@ -571,7 +571,9 @@ export const AppProvider: React.FC<{
             load<GuestTier>('guest-tiers'),
             load<HotelVendor>('hotel-vendors'),
             load<HotelBooking>('hotel-bookings'),
-            load<Employee>('employees'),
+            // Staff are users (role=staff) + their ledger; the API returns them
+            // in the legacy Employee shape so this view stays unchanged.
+            load<Employee>('staff'),
             load<FinanceExpense>('expenses'),
             load<CurrencyItem>('currencies'),
             load<CurrencyHistoryRecord>('currency-history'),
@@ -659,7 +661,8 @@ export const AppProvider: React.FC<{
   useResourceSync('guest-tiers', guestTiers as never, dataHydrated, notifySyncError);
   useResourceSync('hotel-vendors', hotelVendors as never, dataHydrated, notifySyncError);
   useResourceSync('hotel-bookings', hotelBookings as never, dataHydrated, notifySyncError);
-  useResourceSync('employees', employees as never, dataHydrated, notifySyncError);
+  // The `employees` collection is backed by the staff endpoint (users + ledger).
+  useResourceSync('staff', employees as never, dataHydrated, notifySyncError);
   useResourceSync('expenses', expenses as never, dataHydrated, notifySyncError);
   useResourceSync('currencies', currencies as never, dataHydrated, notifySyncError);
   useResourceSync('currency-history', currencyHistory as never, dataHydrated, notifySyncError);

@@ -9,6 +9,7 @@ export const ROLE_DASHBOARD_SLUGS: Record<UserRole, string> = {
   'transit-agent': '/agent-dashboard',
   'driver-guide': '/driver-dashboard',
   'finance-accountant': '/finance-dashboard',
+  'staff': '/staff-dashboard',
 };
 
 export const SLUG_TO_ROLE: Record<string, UserRole> = {
@@ -25,6 +26,7 @@ export const SLUG_TO_ROLE: Record<string, UserRole> = {
   'driver-dashboard': 'driver-guide',
   'finance-dashboard': 'finance-accountant',
   'accountant-dashboard': 'finance-accountant',
+  'staff-dashboard': 'staff',
 };
 
 export const getRoleDashboardSlug = (role: UserRole): string => {
