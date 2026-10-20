@@ -643,3 +643,22 @@ model AppSetting {
 
   @@map("app_settings")
 }
+
+// ---------------------------------------------------------------------
+// Uploaded & optimized images, stored as binary IN the database so the
+// reference persisted on records (avatars, fleet/vehicle, hotel, package
+// photos) never contains a host name — only "/api/uploads/<id>". That keeps
+// image links stable when the production host changes.
+// ---------------------------------------------------------------------
+
+model Upload {
+  id        String   @id @default(cuid())
+  mime      String // e.g. image/webp
+  bytes     Bytes    @db.LongBlob
+  width     Int?
+  height    Int?
+  size      Int // byte length of the stored (optimized) image
+  createdAt DateTime @default(now())
+
+  @@map("uploads")
+}

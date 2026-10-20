@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { BrandLogo } from '../common/BrandLogo';
+import { parseVoucherCode } from '../../utils/voucher';
 
 export const QRVerificationModal: React.FC = () => {
   const {
@@ -30,23 +31,18 @@ export const QRVerificationModal: React.FC = () => {
     language,
   } = useApp();
 
-  const [scanCode, setScanCode] = useState<string>('QA-29311');
+  const [scanCode, setScanCode] = useState<string>('');
   const [isScanning, setIsScanning] = useState<boolean>(false);
   const [verificationResult, setVerificationResult] = useState<{
     found: boolean;
     type?: 'tour' | 'hotel';
     data?: any;
     redeemed?: boolean;
-  } | null>(() => {
-    // Default preview with first booking
-    if (bookings.length > 0) {
-      return { found: true, type: 'tour', data: bookings[0], redeemed: bookings[0].qrStatus === 'checked-in' };
-    }
-    return null;
-  });
+  } | null>(null);
 
   const handleVerify = (codeToVerify: string) => {
-    const clean = codeToVerify.trim().toUpperCase();
+    // Accept a raw PNR/confirmation code or a full scanned verification URL.
+    const clean = parseVoucherCode(codeToVerify);
     if (!clean) return;
 
     setIsScanning(true);

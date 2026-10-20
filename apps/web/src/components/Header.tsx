@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Currency, UserRole } from '../types';
+import { imgSrc } from '../../lib/uploads';
 
 export interface HeaderProps {
   onNavigateToHome?: () => void;
@@ -48,7 +49,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
     toggleTheme,
     searchQuery,
     setSearchQuery,
-    rates,
+    currencies,
     notifications,
     markNotificationRead,
     markAllNotificationsRead,
@@ -69,7 +70,16 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const currencyOptions: Currency[] = ['QAR', 'USD', 'EUR', 'GBP'];
+  // Currency options are driven by the live Currency CRUD list (QAR always
+  // first as the base). Falls back to QAR before the list hydrates.
+  const sortedCurrencies = [...currencies].sort((a, b) =>
+    a.code === 'QAR' ? -1 : b.code === 'QAR' ? 1 : a.code.localeCompare(b.code)
+  );
+  const currencyOptions: Currency[] = sortedCurrencies.length
+    ? sortedCurrencies.map((c) => c.code)
+    : ['QAR'];
+  // Non-base currencies with a positive QAR rate, for the FX peg ticker.
+  const tickerCurrencies = sortedCurrencies.filter((c) => c.code !== 'QAR' && c.rateToQAR > 0);
 
   return (
     <header className="h-16 px-3 sm:px-5 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md flex items-center justify-between gap-2 sm:gap-3 sticky top-0 z-30 transition-colors select-none">
@@ -125,20 +135,19 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
         </div>
 
         <div className="flex items-center gap-3 font-mono text-[11px] text-slate-600 dark:text-slate-300">
-          <div className="flex items-center gap-1">
-            <span className="text-slate-400">1 USD =</span>
-            <span className="font-semibold text-slate-900 dark:text-white tabular-nums">{rates.USD} QAR</span>
-          </div>
-          <span className="text-slate-300 dark:text-slate-700">|</span>
-          <div className="flex items-center gap-1">
-            <span className="text-slate-400">1 EUR =</span>
-            <span className="font-semibold text-slate-900 dark:text-white tabular-nums">{rates.EUR} QAR</span>
-          </div>
-          <span className="text-slate-300 dark:text-slate-700">|</span>
-          <div className="flex items-center gap-1">
-            <span className="text-slate-400">1 GBP =</span>
-            <span className="font-semibold text-slate-900 dark:text-white tabular-nums">{rates.GBP} QAR</span>
-          </div>
+          {tickerCurrencies.length === 0 ? (
+            <span className="text-slate-400">QAR base · no FX pairs</span>
+          ) : (
+            tickerCurrencies.slice(0, 4).map((c, i) => (
+              <React.Fragment key={c.code}>
+                {i > 0 && <span className="text-slate-300 dark:text-slate-700">|</span>}
+                <div className="flex items-center gap-1">
+                  <span className="text-slate-400">1 {c.code} =</span>
+                  <span className="font-semibold text-slate-900 dark:text-white tabular-nums">{c.rateToQAR} QAR</span>
+                </div>
+              </React.Fragment>
+            ))
+          )}
         </div>
       </div>
 
@@ -152,7 +161,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
             title="User Account & Role Scope"
           >
             <img
-              src={currentUser?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'}
+              src={imgSrc(currentUser?.avatar) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'}
               alt={currentUser?.name || 'User'}
               className="w-6 h-6 rounded-lg object-cover border border-blue-300 dark:border-blue-700 shrink-0"
             />
@@ -173,7 +182,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
               <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 mb-2">
                 <div className="flex items-center gap-2.5">
                   <img
-                    src={currentUser?.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'}
+                    src={imgSrc(currentUser?.avatar) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&auto=format&fit=crop&q=80'}
                     alt={currentUser?.name || 'User'}
                     className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0"
                   />

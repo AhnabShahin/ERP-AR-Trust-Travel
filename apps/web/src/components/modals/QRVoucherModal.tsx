@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   QrCode,
@@ -17,13 +17,27 @@ import {
 import { useApp } from '../../context/AppContext';
 import { Booking } from '../../types';
 import { BrandLogo } from '../common/BrandLogo';
+import { QrCodeImage } from '../common/QrCodeImage';
+import { buildVoucherPayload } from '../../utils/voucher';
 
 export const QRVoucherModal: React.FC = () => {
-  const { modalData, closeModal, updateBookingStatus, toggleVoucherSent, convertAmount, language } = useApp();
+  const { modalData, closeModal, updateBookingStatus, updateBooking, toggleVoucherSent, convertAmount, language } = useApp();
   const [copied, setCopied] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
 
   const booking: Booking = modalData;
+
+  // Real scannable payload: a verification URL carrying the PNR.
+  const voucherPayload = booking ? buildVoucherPayload(booking.pnr) : '';
+
+  // Persist the encoded QR payload on the booking the first time its voucher is
+  // opened, so the DB record carries the voucher reference.
+  useEffect(() => {
+    if (booking && !booking.qrCodeUrl && voucherPayload) {
+      updateBooking(booking.id, { qrCodeUrl: voucherPayload });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [booking?.id]);
 
   if (!booking) return null;
 
@@ -140,56 +154,18 @@ export const QRVoucherModal: React.FC = () => {
               </div>
             </div>
 
-            {/* High-Resolution QR Code Block */}
+            {/* Real scannable QR Code Block */}
             <div className="mt-4 flex flex-col items-center justify-center p-4 rounded-xl bg-white text-slate-950 border border-slate-200 shadow-sm">
-              {/* Stylized QR Matrix */}
               <div className="relative p-2 bg-white rounded-lg">
-                <svg className="w-36 h-36" viewBox="0 0 120 120">
-                  {/* Outer corner anchors */}
-                  <rect x="10" y="10" width="30" height="30" fill="none" stroke="#0f172a" strokeWidth="6" />
-                  <rect x="19" y="19" width="12" height="12" fill="#0f172a" />
-
-                  <rect x="80" y="10" width="30" height="30" fill="none" stroke="#0f172a" strokeWidth="6" />
-                  <rect x="89" y="19" width="12" height="12" fill="#0f172a" />
-
-                  <rect x="10" y="80" width="30" height="30" fill="none" stroke="#0f172a" strokeWidth="6" />
-                  <rect x="19" y="89" width="12" height="12" fill="#0f172a" />
-
-                  {/* QR Data Pattern Grid */}
-                  <rect x="48" y="15" width="8" height="8" fill="#059669" />
-                  <rect x="62" y="15" width="8" height="8" fill="#0f172a" />
-                  <rect x="48" y="28" width="8" height="8" fill="#0f172a" />
-                  <rect x="62" y="28" width="8" height="8" fill="#2563eb" />
-
-                  <rect x="15" y="48" width="8" height="8" fill="#0f172a" />
-                  <rect x="28" y="48" width="8" height="8" fill="#059669" />
-                  <rect x="48" y="48" width="24" height="24" fill="#0f172a" rx="3" />
-                  <rect x="80" y="48" width="8" height="8" fill="#0f172a" />
-                  <rect x="95" y="48" width="8" height="8" fill="#2563eb" />
-
-                  <rect x="15" y="62" width="8" height="8" fill="#2563eb" />
-                  <rect x="28" y="62" width="8" height="8" fill="#0f172a" />
-                  <rect x="80" y="62" width="8" height="8" fill="#059669" />
-                  <rect x="95" y="62" width="8" height="8" fill="#0f172a" />
-
-                  <rect x="48" y="80" width="8" height="8" fill="#0f172a" />
-                  <rect x="62" y="80" width="8" height="8" fill="#0f172a" />
-                  <rect x="48" y="95" width="8" height="8" fill="#059669" />
-                  <rect x="62" y="95" width="8" height="8" fill="#2563eb" />
-                  <rect x="80" y="80" width="8" height="8" fill="#0f172a" />
-                  <rect x="95" y="95" width="8" height="8" fill="#0f172a" />
-
-                  {/* Center Emblem */}
-                  <circle cx="60" cy="60" r="6" fill="#10b981" />
-                </svg>
+                <QrCodeImage value={voucherPayload} size={150} className="w-36 h-36" />
               </div>
 
               <div className="mt-1 text-center font-mono">
                 <span className="text-[11px] font-bold text-slate-800 tracking-wider">
                   SCAN FOR INSTANT HIA GATE CLEARANCE
                 </span>
-                <p className="text-[10px] text-slate-500">
-                  Encrypted Token: {booking.pnr}-DOH-VERIFIED
+                <p className="text-[10px] text-slate-500 break-all px-2">
+                  {voucherPayload}
                 </p>
               </div>
             </div>

@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Currency, TourPackage, AirportDesk, Employee, DeskAssignmentRecord, ServiceMainType, Location } from '../../types';
+import { MoneyInput } from '../common/MoneyInput';
 import { getServiceTypeForCategory } from '../../data/mockData';
 import { DateFilterBar } from '../common/DateFilterBar';
 import { matchesDateFilter } from '../../utils/dateFilter';
@@ -49,6 +50,7 @@ export const AirportDeskPOSView: React.FC = () => {
     categoryServiceMap,
     addBooking,
     convertAmount,
+    currency,
     rates,
     drivers,
     flights,
@@ -2034,7 +2036,7 @@ export const AirportDeskPOSView: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSaveEditDesk} className="space-y-3.5">
+            <form onSubmit={handleSaveEditDesk} className="p-5 space-y-3.5 overflow-y-auto">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
@@ -2140,24 +2142,22 @@ export const AirportDeskPOSView: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Daily Sales Target (QAR)
+                    Daily Sales Target ({currency})
                   </label>
-                  <input
-                    type="number"
-                    value={editingDesk.dailyTargetQAR || 0}
-                    onChange={(e) => setEditingDesk({ ...editingDesk, dailyTargetQAR: Number(e.target.value) })}
+                  <MoneyInput
+                    valueQAR={editingDesk.dailyTargetQAR || 0}
+                    onChangeQAR={(qar) => setEditingDesk({ ...editingDesk, dailyTargetQAR: qar })}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 dark:text-slate-100"
                   />
                 </div>
 
                 <div>
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Drawer Cash (QAR)
+                    Drawer Cash ({currency})
                   </label>
-                  <input
-                    type="number"
-                    value={editingDesk.currentDrawerCashQAR || 0}
-                    onChange={(e) => setEditingDesk({ ...editingDesk, currentDrawerCashQAR: Number(e.target.value) })}
+                  <MoneyInput
+                    valueQAR={editingDesk.currentDrawerCashQAR || 0}
+                    onChangeQAR={(qar) => setEditingDesk({ ...editingDesk, currentDrawerCashQAR: qar })}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 dark:text-slate-100"
                   />
                 </div>
@@ -2239,7 +2239,7 @@ export const AirportDeskPOSView: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleCreateDesk} className="space-y-3.5">
+            <form onSubmit={handleCreateDesk} className="p-5 space-y-3.5 overflow-y-auto">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
@@ -2343,24 +2343,22 @@ export const AirportDeskPOSView: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Daily Sales Target (QAR)
+                    Daily Sales Target ({currency})
                   </label>
-                  <input
-                    type="number"
-                    value={newDailyTargetQAR}
-                    onChange={(e) => setNewDailyTargetQAR(Number(e.target.value))}
+                  <MoneyInput
+                    valueQAR={newDailyTargetQAR}
+                    onChangeQAR={setNewDailyTargetQAR}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 dark:text-slate-100"
                   />
                 </div>
 
                 <div>
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Initial Drawer Cash (QAR)
+                    Initial Drawer Cash ({currency})
                   </label>
-                  <input
-                    type="number"
-                    value={newDrawerCashQAR}
-                    onChange={(e) => setNewDrawerCashQAR(Number(e.target.value))}
+                  <MoneyInput
+                    valueQAR={newDrawerCashQAR}
+                    onChangeQAR={setNewDrawerCashQAR}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 dark:text-slate-100"
                   />
                 </div>

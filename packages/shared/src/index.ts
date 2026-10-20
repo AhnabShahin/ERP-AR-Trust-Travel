@@ -6,7 +6,11 @@
 
 // ---- Primitives / enums -------------------------------------------------
 
-export type Currency = 'QAR' | 'USD' | 'EUR' | 'GBP';
+// A currency is identified by its ISO-style code. The well-known codes are kept
+// as literals for autocomplete, but any code managed via the Currency CRUD is
+// valid — the active/display currency is driven by the live `currencies` list,
+// not a fixed union. Base currency is always QAR (rateToQAR = 1).
+export type Currency = 'QAR' | 'USD' | 'EUR' | 'GBP' | (string & {});
 export type Language = 'en' | 'ar';
 
 export type UserRole =

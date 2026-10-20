@@ -8,13 +8,15 @@ import { registerResourceRoutes, resourcePaths } from './modules/resources.js';
 import { rolesRouter } from './modules/roles/roles.routes.js';
 import { staffRouter } from './modules/staff/staff.routes.js';
 import { settingsRouter } from './modules/settings/settings.routes.js';
+import { uploadsRouter } from './modules/uploads/uploads.routes.js';
 import { usersRouter } from './modules/users/users.routes.js';
 
 export function createApp() {
   const app = express();
 
   app.use(cors({ origin: env.corsOrigin, credentials: true }));
-  app.use(express.json({ limit: '2mb' }));
+  // 16mb to accommodate base64 image uploads (optimized again server-side).
+  app.use(express.json({ limit: '16mb' }));
 
   // Health check for uptime monitors / Hostinger.
   app.get('/health', (_req, res) => res.json({ ok: true, data: 'healthy' }));
@@ -36,6 +38,9 @@ export function createApp() {
 
   // Key/value settings (exchange rates, shift drawer, config…).
   app.use('/api/settings', settingsRouter);
+
+  // Image uploads (optimized, DB-backed, host-less refs).
+  app.use('/api/uploads', uploadsRouter);
 
   app.use(notFound);
   app.use(errorHandler);

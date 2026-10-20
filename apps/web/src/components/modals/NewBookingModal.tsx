@@ -23,9 +23,9 @@ export const NewBookingModal: React.FC = () => {
     addBooking,
     drivers,
     flights,
-    rates,
     convertAmount,
     currency,
+    currencies,
     language,
     t,
   } = useApp();
@@ -341,10 +341,11 @@ export const NewBookingModal: React.FC = () => {
                     onChange={(e) => setPaymentCurrency(e.target.value as Currency)}
                     className="w-28 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-2 font-mono font-bold text-slate-900 dark:text-white"
                   >
-                    <option value="QAR">QAR (ر.ق)</option>
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="GBP">GBP (£)</option>
+                    {(currencies.length ? currencies : [{ code: 'QAR', symbol: 'ر.ق' }]).map((c) => (
+                      <option key={c.code} value={c.code}>
+                        {c.code} ({c.symbol})
+                      </option>
+                    ))}
                   </select>
 
                   <select

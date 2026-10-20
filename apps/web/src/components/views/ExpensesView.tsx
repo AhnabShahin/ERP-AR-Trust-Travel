@@ -27,6 +27,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { FinanceExpense, ExpenseCategory, ExpenseStatus } from '../../types';
 import { DateFilterBar } from '../common/DateFilterBar';
+import { MoneyInput } from '../common/MoneyInput';
 import { matchesDateFilter } from '../../utils/dateFilter';
 
 export const ExpensesView: React.FC = () => {
@@ -39,7 +40,8 @@ export const ExpensesView: React.FC = () => {
     airportDesks,
     roleConfig,
     currentRole,
-    rates,
+    convertAmount,
+    currency,
     language,
     dateFilter,
     setDateFilter,
@@ -307,13 +309,12 @@ export const ExpensesView: React.FC = () => {
           </div>
           <div className="mt-2.5 flex items-baseline gap-2">
             <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">
-              {totalAmountQAR.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {convertAmount(totalAmountQAR).formatted}
             </span>
-            <span className="text-xs font-bold text-slate-400 font-mono">QAR</span>
           </div>
           <div className="mt-2 text-[11px] text-slate-500 flex items-center justify-between font-mono">
             <span>{expenses.length} total vouchers</span>
-            <span>≈ ${(totalAmountQAR / rates.USD).toFixed(0)} USD</span>
+            {currency !== 'QAR' && <span>Base: {totalAmountQAR.toLocaleString('en-US', { maximumFractionDigits: 0 })} QAR</span>}
           </div>
         </div>
 
@@ -560,7 +561,7 @@ export const ExpensesView: React.FC = () => {
                       {/* Right Amount & Status */}
                       <div className="text-right shrink-0">
                         <div className="text-sm font-black font-mono text-slate-900 dark:text-white">
-                          {expense.amountQAR.toLocaleString('en-US', { minimumFractionDigits: 2 })} QAR
+                          {convertAmount(expense.amountQAR).formatted}
                         </div>
                         <div className="mt-1">
                           <span
@@ -648,12 +649,11 @@ export const ExpensesView: React.FC = () => {
                     Total Expense Amount
                   </span>
                   <div className="text-2xl font-black font-mono text-slate-900 dark:text-white mt-0.5">
-                    {selectedExpense.amountQAR.toLocaleString('en-US', { minimumFractionDigits: 2 })} QAR
+                    {convertAmount(selectedExpense.amountQAR).formatted}
                   </div>
                 </div>
                 <div className="text-right font-mono text-xs text-slate-500">
-                  <div>≈ ${(selectedExpense.amountQAR / rates.USD).toFixed(2)} USD</div>
-                  <div>≈ €{(selectedExpense.amountQAR / rates.EUR).toFixed(2)} EUR</div>
+                  <div>Base: {selectedExpense.amountQAR.toLocaleString('en-US', { minimumFractionDigits: 2 })} QAR</div>
                 </div>
               </div>
 
@@ -872,15 +872,13 @@ export const ExpensesView: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Amount (QAR) *
+                    Amount ({currency}) *
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="1"
+                  <MoneyInput
+                    valueQAR={newAmountQAR}
+                    onChangeQAR={setNewAmountQAR}
                     required
-                    value={newAmountQAR}
-                    onChange={(e) => setNewAmountQAR(Number(e.target.value))}
+                    min={1}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none"
                   />
                 </div>
@@ -1040,15 +1038,13 @@ export const ExpensesView: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 block mb-1">
-                    Amount (QAR)
+                    Amount ({currency})
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="1"
+                  <MoneyInput
+                    valueQAR={editingExpense.amountQAR}
+                    onChangeQAR={(qar) => setEditingExpense({ ...editingExpense, amountQAR: qar })}
                     required
-                    value={editingExpense.amountQAR}
-                    onChange={(e) => setEditingExpense({ ...editingExpense, amountQAR: Number(e.target.value) })}
+                    min={1}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-mono font-bold text-slate-900 dark:text-slate-100 focus:outline-none"
                   />
                 </div>

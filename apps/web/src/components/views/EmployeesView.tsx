@@ -34,6 +34,7 @@ import { useApp } from '../../context/AppContext';
 import { AirportDesk, Employee, EmployeeMonthlyRecord } from '../../types';
 import { DateFilterBar } from '../common/DateFilterBar';
 import { matchesDateFilter } from '../../utils/dateFilter';
+import { MoneyInput } from '../common/MoneyInput';
 
 export const EmployeesView: React.FC = () => {
   const {
@@ -50,6 +51,7 @@ export const EmployeesView: React.FC = () => {
     roleConfig,
     currentRole,
     convertAmount,
+    currency,
     language,
     dateFilter,
     setDateFilter,
@@ -1654,14 +1656,12 @@ export const EmployeesView: React.FC = () => {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 mb-1">Base Monthly Salary (QAR) *</label>
-                    <input
-                      type="number"
+                    <label className="block text-[10px] font-bold text-slate-500 mb-1">Base Monthly Salary ({currency}) *</label>
+                    <MoneyInput
+                      valueQAR={empBaseSalary}
+                      onChangeQAR={setEmpBaseSalary}
                       required
-                      min={1000}
-                      step={100}
-                      value={empBaseSalary}
-                      onChange={(e) => setEmpBaseSalary(Number(e.target.value))}
+                      min={0}
                       className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-mono font-bold"
                     />
                   </div>
@@ -1679,14 +1679,12 @@ export const EmployeesView: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-emerald-600 mb-1">Commission Per Service (QAR)</label>
-                    <input
-                      type="number"
+                    <label className="block text-[10px] font-bold text-emerald-600 mb-1">Commission Per Service ({currency})</label>
+                    <MoneyInput
+                      valueQAR={empCommissionPerService}
+                      onChangeQAR={setEmpCommissionPerService}
                       required
                       min={0}
-                      step={5}
-                      value={empCommissionPerService}
-                      onChange={(e) => setEmpCommissionPerService(Number(e.target.value))}
                       className="w-full px-3 py-2 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 font-mono font-bold"
                     />
                   </div>
@@ -2121,11 +2119,10 @@ export const EmployeesView: React.FC = () => {
 
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Base Salary (QAR)</label>
-                  <input
-                    type="number"
-                    value={editingEmployee.baseSalaryMonthlyQAR}
-                    onChange={(e) => setEditingEmployee({ ...editingEmployee, baseSalaryMonthlyQAR: Number(e.target.value) })}
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 mb-1">Base Salary ({currency})</label>
+                  <MoneyInput
+                    valueQAR={editingEmployee.baseSalaryMonthlyQAR}
+                    onChangeQAR={(qar) => setEditingEmployee({ ...editingEmployee, baseSalaryMonthlyQAR: qar })}
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 font-mono text-slate-900 dark:text-white"
                   />
                 </div>
@@ -2139,11 +2136,10 @@ export const EmployeesView: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-bold text-emerald-600 mb-1">Commission/Service</label>
-                  <input
-                    type="number"
-                    value={editingEmployee.commissionPerServiceQAR}
-                    onChange={(e) => setEditingEmployee({ ...editingEmployee, commissionPerServiceQAR: Number(e.target.value) })}
+                  <label className="block text-[11px] font-bold text-emerald-600 mb-1">Commission/Service ({currency})</label>
+                  <MoneyInput
+                    valueQAR={editingEmployee.commissionPerServiceQAR}
+                    onChangeQAR={(qar) => setEditingEmployee({ ...editingEmployee, commissionPerServiceQAR: qar })}
                     className="w-full px-3 py-2 rounded-xl border border-emerald-300 dark:border-emerald-700 bg-white dark:bg-slate-950 font-mono text-emerald-600 dark:text-emerald-400 font-bold"
                   />
                 </div>

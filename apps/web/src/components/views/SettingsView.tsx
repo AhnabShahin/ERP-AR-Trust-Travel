@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Settings,
   Building2,
@@ -12,23 +12,63 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserAccountsManagerView } from './UserAccountsManagerView';
+import { api } from '../../../lib/api';
+
+const DEFAULT_WHATSAPP_TEMPLATE =
+  'Marhaba {passenger_name}! Welcome to Doha. Your AR Trust driver {driver_name} ({driver_vehicle}) is awaiting you at Hamad International Airport {pickup_bay}. PNR: {pnr}';
+
+interface AgencyProfile {
+  agencyName: string;
+  crNumber: string;
+  tourismLicense: string;
+}
 
 export const SettingsView: React.FC = () => {
-  const { language, rates, currentRole } = useApp();
+  const { language, currentRole } = useApp();
 
   const [activeSubTab, setActiveSubTab] = useState<'general' | 'accounts'>('general');
   const [agencyName, setAgencyName] = useState('AR Trust Travel & Tourism W.L.L.');
   const [crNumber, setCrNumber] = useState('CR-QA-109482');
   const [tourismLicense, setTourismLicense] = useState('QTA-DMC-8819');
-  const [whatsappTemplate, setWhatsappTemplate] = useState(
-    'Marhaba {passenger_name}! Welcome to Doha. Your AR Trust driver {driver_name} ({driver_vehicle}) is awaiting you at Hamad International Airport {pickup_bay}. PNR: {pnr}'
-  );
+  const [whatsappTemplate, setWhatsappTemplate] = useState(DEFAULT_WHATSAPP_TEMPLATE);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  const handleSave = (e: React.FormEvent) => {
+  // Hydrate the persisted agency profile + WhatsApp template from the settings
+  // store (MySQL) so the form reflects the saved config, not placeholders.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [profile, tpl] = await Promise.all([
+        api.get<AgencyProfile | null>('/api/settings/agencyProfile').catch(() => null),
+        api.get<string | null>('/api/settings/whatsappTemplate').catch(() => null),
+      ]);
+      if (cancelled) return;
+      if (profile) {
+        if (profile.agencyName) setAgencyName(profile.agencyName);
+        if (profile.crNumber) setCrNumber(profile.crNumber);
+        if (profile.tourismLicense) setTourismLicense(profile.tourismLicense);
+      }
+      if (tpl && typeof tpl === 'string') setWhatsappTemplate(tpl);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    setSaveError(null);
+    try {
+      await Promise.all([
+        api.put('/api/settings/agencyProfile', { value: { agencyName, crNumber, tourismLicense } }),
+        api.put('/api/settings/whatsappTemplate', { value: whatsappTemplate }),
+      ]);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setSaveError((err as Error).message || 'Could not save settings');
+    }
   };
 
   return (
@@ -81,6 +121,9 @@ export const SettingsView: React.FC = () => {
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Settings Saved</span>
               </span>
+            )}
+            {saveError && (
+              <span className="text-xs font-semibold text-rose-600 dark:text-rose-400 font-mono">{saveError}</span>
             )}
           </div>
 

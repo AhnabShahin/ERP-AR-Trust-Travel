@@ -32,6 +32,8 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { UserAccount, UserRole } from '../../types';
+import { ImageUploadField } from '../common/ImageUploadField';
+import { imgSrc } from '../../../lib/uploads';
 
 export const MyAccountView: React.FC = () => {
   const {
@@ -337,7 +339,7 @@ export const MyAccountView: React.FC = () => {
           <div className="relative group shrink-0">
             <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl p-1 bg-gradient-to-tr from-[#D4AF37] via-[#C0AB6F] to-emerald-400 shadow-xl">
               <img
-                src={currentUser.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80'}
+                src={imgSrc(currentUser.avatar) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80'}
                 alt={currentUser.name}
                 className="w-full h-full object-cover rounded-[22px] bg-slate-900"
               />
@@ -623,45 +625,16 @@ export const MyAccountView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Avatar URL & Preset Selector */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  {isRtl ? 'رابط الصورة الرمزية (Avatar URL)' : 'Avatar Image URL'}
-                </label>
-                <input
-                  type="text"
-                  value={avatar}
-                  onChange={(e) => setAvatar(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* Quick Avatar Presets */}
-            <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block mb-2.5">
-                {isRtl ? 'أو اختر صورة جاهزة:' : 'Or choose a preset luxury avatar:'}
-              </span>
-              <div className="flex flex-wrap items-center gap-3">
-                {presetAvatars.map((preset, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setAvatar(preset.url)}
-                    className={`flex items-center gap-2 p-1.5 rounded-2xl border transition-all cursor-pointer ${
-                      avatar === preset.url
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/40 ring-2 ring-blue-500/30'
-                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-400'
-                    }`}
-                  >
-                    <img src={preset.url} alt={preset.label} className="w-8 h-8 rounded-xl object-cover" />
-                    <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 pr-1">
-                      {preset.label}
-                    </span>
-                  </button>
-                ))}
-              </div>
+              {/* Avatar upload + preset selector */}
+              <ImageUploadField
+                value={avatar}
+                onChange={(ref) => setAvatar(ref || '')}
+                variant="avatar"
+                shape="round"
+                label={isRtl ? 'الصورة الرمزية (Avatar)' : 'Avatar Image'}
+                hint={isRtl ? 'ارفع صورة أو اختر صورة جاهزة بالأسفل' : 'Upload a photo, or pick a preset below'}
+                presets={presetAvatars.map((p) => ({ url: p.url, label: p.label }))}
+              />
             </div>
 
             {/* Address & Location */}

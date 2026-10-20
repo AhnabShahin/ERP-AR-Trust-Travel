@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { HotelRoomOption } from '../../types';
+import { MoneyInput } from '../common/MoneyInput';
 
 export const AddHotelRoomModal: React.FC = () => {
   const {
@@ -22,6 +23,7 @@ export const AddHotelRoomModal: React.FC = () => {
     addRoomOptionToVendor,
     addAuditLog,
     addNotification,
+    currency,
   } = useApp();
 
   const initialVendorId = modalData?.vendorId || hotelVendors[0]?.id || '';
@@ -183,22 +185,15 @@ export const AddHotelRoomModal: React.FC = () => {
 
             <div>
               <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1.5">
-                Nightly Rate (QAR) *
+                Nightly Rate ({currency}) *
               </label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 font-mono font-bold">
-                  QAR
-                </span>
-                <input
-                  type="number"
-                  required
-                  min="100"
-                  max="50000"
-                  value={pricePerNightQAR}
-                  onChange={(e) => setPricePerNightQAR(Number(e.target.value))}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 pl-14 text-slate-900 dark:text-white font-mono font-bold outline-none focus:border-[#D4AF37]"
-                />
-              </div>
+              <MoneyInput
+                valueQAR={pricePerNightQAR}
+                onChangeQAR={setPricePerNightQAR}
+                required
+                min={0}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2.5 text-slate-900 dark:text-white font-mono font-bold outline-none focus:border-[#D4AF37]"
+              />
             </div>
           </div>
 

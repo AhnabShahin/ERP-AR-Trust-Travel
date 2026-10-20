@@ -119,6 +119,9 @@ interface AppContextType {
   rates: ExchangeRates;
   updateRates: (newRates: Partial<ExchangeRates>) => void;
   convertAmount: (amountQAR: number, targetCurrency?: Currency) => { amount: number; formatted: string; symbol: string };
+  /** Convert an amount entered in the active display currency back to the QAR
+   *  base for storage. Identity when the active currency is QAR. */
+  toQAR: (amountInActiveCurrency: number, sourceCurrency?: Currency) => number;
 
   // Bookings
   bookings: Booking[];
@@ -612,7 +615,7 @@ export const AppProvider: React.FC<{
         if (notif?.length) setNotifications(notif);
 
         // Users + payroll/audit lists + fixed role catalogue + singleton config.
-        const [usr, sal, com, logs, rol, rt, sd, pc, csm] = await Promise.all([
+        const [usr, sal, com, logs, rol, rt, sd, pc, csm, actCur] = await Promise.all([
           load<UserAccount>('users'),
           load<SalaryRecord>('salary-records'),
           load<CommissionRule>('commission-rules'),
@@ -622,6 +625,7 @@ export const AppProvider: React.FC<{
           api.get<ShiftDrawer>('/api/settings/shiftDrawer').catch(() => null),
           api.get<string[]>('/api/settings/packageCategories').catch(() => null),
           api.get<Record<string, ServiceMainType>>('/api/settings/categoryServiceMap').catch(() => null),
+          api.get<string | null>('/api/settings/activeCurrency').catch(() => null),
         ]);
         if (cancelled) return;
         if (usr?.length) setUserAccounts(usr);
@@ -633,6 +637,7 @@ export const AppProvider: React.FC<{
         if (sd) setShiftDrawer(sd);
         if (pc?.length) setPackageCategories(pc);
         if (csm && Object.keys(csm).length) setCategoryServiceMap(csm);
+        if (actCur && typeof actCur === 'string') setCurrency(actCur as Currency);
       } catch (e) {
         console.error('[hydrate] failed, using local fallback:', (e as Error).message);
       } finally {
@@ -687,6 +692,9 @@ export const AppProvider: React.FC<{
   useResourceSync('commission-rules', commissionRules as never, dataHydrated, notifySyncError);
   useResourceSync('audit-logs', systemLogs as never, dataHydrated, notifySyncError);
   useSettingSync('rates', rates, dataHydrated, notifySyncError);
+  // Single global active display currency — persisted so every console shows
+  // the same currency and the choice survives reloads.
+  useSettingSync('activeCurrency', currency, dataHydrated, notifySyncError);
   useSettingSync('shiftDrawer', shiftDrawer, dataHydrated, notifySyncError);
   useSettingSync('packageCategories', packageCategories, dataHydrated, notifySyncError);
   useSettingSync('categoryServiceMap', categoryServiceMap, dataHydrated, notifySyncError);
@@ -1049,11 +1057,26 @@ export const AppProvider: React.FC<{
     return key;
   };
 
+  // How many QAR one unit of `curr` is worth. Driven by the live Currency CRUD
+  // list (`rateToQAR`); falls back to the legacy fixed `rates` for the original
+  // codes, then to 1 (treat unknown as parity with QAR).
   const getCurrencyRate = (curr: Currency): number => {
-    if (curr === 'USD') return rates.USD;
-    if (curr === 'EUR') return rates.EUR;
-    if (curr === 'GBP') return rates.GBP;
+    if (curr === 'QAR') return 1;
+    const item = currencies.find((c) => c.code === curr);
+    if (item && item.rateToQAR > 0) return item.rateToQAR;
+    const legacy = (rates as unknown as Record<string, number>)[curr as string];
+    if (typeof legacy === 'number' && legacy > 0) return legacy;
     return 1;
+  };
+
+  // Resolve the display symbol for a currency from the CRUD list, with sensible
+  // fallbacks for the well-known codes.
+  const getCurrencySymbol = (curr: Currency): string => {
+    if (curr === 'QAR') return language === 'ar' ? 'ر.ق' : 'QAR';
+    const item = currencies.find((c) => c.code === curr);
+    if (item?.symbol) return item.symbol;
+    const fallback: Record<string, string> = { USD: '$', EUR: '€', GBP: '£' };
+    return fallback[curr as string] ?? (curr as string);
   };
 
   const updateRates = (newRates: Partial<ExchangeRates>) => {
@@ -1065,36 +1088,24 @@ export const AppProvider: React.FC<{
     addAuditLog('Exchange Rates Modified', 'FINANCE', `Rates updated: USD: ${newRates.USD ?? rates.USD}, EUR: ${newRates.EUR ?? rates.EUR}`);
   };
 
+  // Convert a stored QAR amount into the target (default: active) currency for
+  // display. QAR is the base, so target = amountQAR / rateToQAR(target).
   const convertAmount = (amountQAR: number, targetCurrency: Currency = currency) => {
-    let rate = 1;
-    let symbol = 'QAR';
-
-    switch (targetCurrency) {
-      case 'USD':
-        rate = 1 / rates.USD;
-        symbol = '$';
-        break;
-      case 'EUR':
-        rate = 1 / rates.EUR;
-        symbol = '€';
-        break;
-      case 'GBP':
-        rate = 1 / rates.GBP;
-        symbol = '£';
-        break;
-      case 'QAR':
-      default:
-        rate = 1;
-        symbol = language === 'ar' ? 'ر.ق' : 'QAR';
-        break;
-    }
-
-    const calculated = amountQAR * rate;
+    const rateToQAR = getCurrencyRate(targetCurrency);
+    const symbol = getCurrencySymbol(targetCurrency);
+    const calculated = (Number(amountQAR) || 0) / (rateToQAR || 1);
     return {
       amount: calculated,
       formatted: `${symbol} ${calculated.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`,
       symbol,
     };
+  };
+
+  // Convert an amount the user typed in the active (or given) display currency
+  // back into the QAR base for storage. Identity when the source is QAR.
+  const toQAR = (amountInActiveCurrency: number, sourceCurrency: Currency = currency): number => {
+    const rateToQAR = getCurrencyRate(sourceCurrency);
+    return (Number(amountInActiveCurrency) || 0) * (rateToQAR || 1);
   };
 
   // Multi-Currency Treasury Management Methods
@@ -1104,13 +1115,34 @@ export const AppProvider: React.FC<{
     if (currencies.some((c) => c.code === cleanCode)) {
       return { success: false, error: `Currency ${cleanCode} already exists.` };
     }
+    // A new currency MUST declare its value against the QAR base. QAR itself is
+    // always parity (1.0) and never needs a user-supplied rate.
+    const rate = Number(item.rateToQAR);
+    if (cleanCode !== 'QAR' && (!Number.isFinite(rate) || rate <= 0)) {
+      return { success: false, error: `A positive rate to QAR is required for ${cleanCode}.` };
+    }
     const cleanItem: CurrencyItem = {
       ...item,
       code: cleanCode,
-      rateToQAR: Number(item.rateToQAR) || 1.0,
+      rateToQAR: cleanCode === 'QAR' ? 1.0 : rate,
       cashVaultBalance: Number(item.cashVaultBalance) || 0,
     };
-    setCurrencies((prev) => [...prev, cleanItem]);
+
+    // Fresh-project guard: QAR is the sovereign base every rate references, so
+    // if it isn't registered yet, seed the canonical QAR row first (it syncs to
+    // the DB via useResourceSync like any other currency).
+    const needsQarSeed = cleanCode !== 'QAR' && !currencies.some((c) => c.code === 'QAR');
+    const qarBase: CurrencyItem = {
+      code: 'QAR',
+      name: 'Qatari Riyal (Base Currency)',
+      symbol: 'ر.ق',
+      rateToQAR: 1.0,
+      isPegged: true,
+      peggedNote: 'QCB Sovereign Base Currency',
+      cashVaultBalance: 0,
+    } as CurrencyItem;
+
+    setCurrencies((prev) => [...(needsQarSeed ? [qarBase] : []), ...prev, cleanItem]);
     updateRates({ [cleanCode]: cleanItem.rateToQAR } as any);
 
     // Auto-record in currency history
@@ -1176,6 +1208,9 @@ export const AppProvider: React.FC<{
   const deleteCurrencyItem = (code: string): { success: boolean; error?: string } => {
     if (code === 'QAR') {
       return { success: false, error: 'Cannot remove sovereign base currency QAR.' };
+    }
+    if (code === currency) {
+      return { success: false, error: `${code} is the active display currency. Switch the active currency first.` };
     }
     const target = currencies.find((c) => c.code === code);
     if (!target) return { success: false, error: 'Currency not found.' };
@@ -2694,6 +2729,7 @@ export const AppProvider: React.FC<{
         rates,
         updateRates,
         convertAmount,
+        toQAR,
         bookings,
         addBooking,
         updateBooking,

@@ -33,6 +33,9 @@ import {
 import { useApp } from '../../context/AppContext';
 import { TourPackage, ServiceMainType } from '../../types';
 import { DEFAULT_SERVICE_TYPE_CATEGORIES, getServiceTypeForCategory } from '../../data/mockData';
+import { MoneyInput } from '../common/MoneyInput';
+import { ImageUploadField } from '../common/ImageUploadField';
+import { imgSrc } from '../../../lib/uploads';
 
 export const ServicesManagementView: React.FC = () => {
   const {
@@ -48,6 +51,7 @@ export const ServicesManagementView: React.FC = () => {
     roleConfig,
     language,
     convertAmount,
+    currency,
     setActiveTab,
   } = useApp();
 
@@ -826,7 +830,7 @@ export const ServicesManagementView: React.FC = () => {
                 {pkg.image ? (
                   <div className="relative -mx-5 -mt-5 mb-4 h-44 overflow-hidden bg-slate-950">
                     <img
-                      src={pkg.image}
+                      src={imgSrc(pkg.image)}
                       alt={pkg.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
@@ -1030,7 +1034,7 @@ export const ServicesManagementView: React.FC = () => {
                         <div className="flex items-center gap-3">
                           {pkg.image ? (
                             <img
-                              src={pkg.image}
+                              src={imgSrc(pkg.image)}
                               alt={pkg.name}
                               className="w-12 h-12 rounded-xl object-cover shrink-0 border border-slate-200 dark:border-slate-700 shadow-xs"
                             />
@@ -1388,22 +1392,15 @@ export const ServicesManagementView: React.FC = () => {
 
                 <div>
                   <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
-                    Price in QAR *
+                    Price in {currency} *
                   </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      required
-                      min={50}
-                      step={10}
-                      value={priceQAR}
-                      onChange={(e) => setPriceQAR(Number(e.target.value))}
-                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-bold font-mono"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-mono text-[11px]">
-                      QAR
-                    </span>
-                  </div>
+                  <MoneyInput
+                    valueQAR={priceQAR}
+                    onChangeQAR={setPriceQAR}
+                    required
+                    min={0}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-bold font-mono"
+                  />
                 </div>
               </div>
 
@@ -1476,67 +1473,21 @@ export const ServicesManagementView: React.FC = () => {
                   </span>
                 </div>
 
-                {/* Image URL & Thumbnail Preview */}
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
-                    Website Showcase Image URL
-                  </label>
-                  <div className="flex items-start gap-3">
-                    <div className="flex-1 space-y-2">
-                      <input
-                        type="url"
-                        value={image}
-                        onChange={(e) => setImage(e.target.value)}
-                        placeholder="https://artrusttravel.com/... or https://..."
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2 text-slate-900 dark:text-white font-mono text-[11px]"
-                      />
-                      {/* Image Presets */}
-                      <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
-                        <span className="text-slate-400">Presets:</span>
-                        <button
-                          type="button"
-                          onClick={() => setImage('https://artrusttravel.com/wp-content/uploads/2026/01/Half-Day-City-Tour-With-Dhow-Boat-Cruise-Adventure-1000x1000.jpg')}
-                          className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-400 text-slate-600 dark:text-slate-300 cursor-pointer"
-                        >
-                          City Dhow
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setImage('https://artrusttravel.com/wp-content/uploads/2026/01/Doha-Desert-Safari_-Dune-Bashing-Inland-Sea-Adventure-2-1000x1000.jpg')}
-                          className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-400 text-slate-600 dark:text-slate-300 cursor-pointer"
-                        >
-                          Desert Safari
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setImage('https://artrusttravel.com/wp-content/uploads/2026/01/Transit-Doha-City-Tour-Private-Quick-Highlights-with-Airport-Pickup-2-1000x1000.jpg')}
-                          className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-400 text-slate-600 dark:text-slate-300 cursor-pointer"
-                        >
-                          Transit Pickup
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setImage('https://artrusttravel.com/wp-content/uploads/2026/01/Qatar-Sunset-Desert-Safari-by-Dune-Buggy-Riding.jpg')}
-                          className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-400 text-slate-600 dark:text-slate-300 cursor-pointer"
-                        >
-                          Dune Buggy
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setImage('https://artrusttravel.com/wp-content/uploads/2026/04/Mercedes-Benz-V-Class-1000x1296.png')}
-                          className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-400 text-slate-600 dark:text-slate-300 cursor-pointer"
-                        >
-                          Mercedes V-Class
-                        </button>
-                      </div>
-                    </div>
-                    {image && (
-                      <div className="w-16 h-16 rounded-xl overflow-hidden border border-slate-300 dark:border-slate-700 shrink-0 bg-slate-950 shadow-xs">
-                        <img src={image} alt="Preview" className="w-full h-full object-cover" />
-                      </div>
-                    )}
-                  </div>
-                </div>
+                {/* Website showcase image upload + presets */}
+                <ImageUploadField
+                  value={image}
+                  onChange={(ref) => setImage(ref || '')}
+                  variant="default"
+                  label="Website Showcase Image"
+                  hint="Upload a photo or pick a preset. Shown on the public website."
+                  presets={[
+                    { url: 'https://artrusttravel.com/wp-content/uploads/2026/01/Half-Day-City-Tour-With-Dhow-Boat-Cruise-Adventure-1000x1000.jpg', label: 'City Dhow' },
+                    { url: 'https://artrusttravel.com/wp-content/uploads/2026/01/Doha-Desert-Safari_-Dune-Bashing-Inland-Sea-Adventure-2-1000x1000.jpg', label: 'Desert Safari' },
+                    { url: 'https://artrusttravel.com/wp-content/uploads/2026/01/Transit-Doha-City-Tour-Private-Quick-Highlights-with-Airport-Pickup-2-1000x1000.jpg', label: 'Transit Pickup' },
+                    { url: 'https://artrusttravel.com/wp-content/uploads/2026/01/Qatar-Sunset-Desert-Safari-by-Dune-Buggy-Riding.jpg', label: 'Dune Buggy' },
+                    { url: 'https://artrusttravel.com/wp-content/uploads/2026/04/Mercedes-Benz-V-Class-1000x1296.png', label: 'Mercedes V-Class' },
+                  ]}
+                />
 
                 {/* Badge, Group Size, Departure */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

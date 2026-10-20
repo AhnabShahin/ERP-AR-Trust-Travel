@@ -1,4 +1,6 @@
-export type Currency = 'QAR' | 'USD' | 'EUR' | 'GBP';
+// Open currency code: well-known codes kept as literals for autocomplete, but
+// any code from the Currency CRUD is valid. Base currency is always QAR.
+export type Currency = 'QAR' | 'USD' | 'EUR' | 'GBP' | (string & {});
 
 export type Language = 'en' | 'ar';
 
