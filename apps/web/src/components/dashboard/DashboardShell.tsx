@@ -10,7 +10,7 @@
 // its `role`, which selects the active role in AppContext.
 // =====================================================================
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Globe } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
@@ -56,27 +56,33 @@ export default function DashboardShell({ role }: { role?: UserRole }) {
   } = useApp();
   const router = useRouter();
 
+  // Auth state lives in localStorage (client-only). Gate everything behind
+  // `mounted` so the server render and the first client render both show the
+  // loader — otherwise the two renders disagree and React throws a hydration
+  // mismatch.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   // Guard: the console requires a logged-in user. Anonymous visitors are
   // bounced to the login screen (client-side; the public site is the SSR part).
   useEffect(() => {
-    if (!isAuthenticated) router.replace('/login');
-  }, [isAuthenticated, router]);
+    if (mounted && !isAuthenticated) router.replace('/login');
+  }, [mounted, isAuthenticated, router]);
 
   // Enforce one-user-one-role: a user's role is fixed on their account, so if
   // the URL points at a different role's dashboard than the signed-in user's,
   // send them to their own. (No runtime role switching.)
   useEffect(() => {
-    if (!isAuthenticated || !currentUser) return;
+    if (!mounted || !isAuthenticated || !currentUser) return;
     if (role && currentUser.role !== role) {
       router.replace(getRoleDashboardSlug(currentUser.role));
     }
-  }, [role, currentUser, isAuthenticated, router]);
+  }, [mounted, role, currentUser, isAuthenticated, router]);
 
-  if (!isAuthenticated) return null;
-
-  // Authenticated but ERP data still loading from the API — show a loader
-  // instead of rendering views against empty collections.
-  if (!dataHydrated) {
+  // Until mounted + authenticated + data loaded, show a stable loader (also
+  // what the server renders), so hydration matches and no view renders against
+  // empty collections or for an anonymous visitor.
+  if (!mounted || !isAuthenticated || !dataHydrated) {
     return (
       <div className="h-screen w-full flex flex-col items-center justify-center gap-4 bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
         <div className="w-10 h-10 rounded-full border-2 border-teal-500/30 border-t-teal-500 animate-spin" />
