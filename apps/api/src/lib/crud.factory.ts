@@ -29,6 +29,12 @@ export interface CrudOptions {
   defaultOrderBy?: Record<string, 'asc' | 'desc'>;
   /** When true, GET routes are public (no token); writes still require auth. */
   publicRead?: boolean;
+  /**
+   * When true (default), create/update stamp who did it onto the row
+   * (createdBy / createdByName / updatedBy / updatedByName) from the
+   * authenticated user. Set false for models that don't have those columns.
+   */
+  audit?: boolean;
 }
 
 /**
@@ -50,7 +56,24 @@ export function createCrudRouter(opts: CrudOptions): Router {
     filterFields = [],
     defaultOrderBy = { createdAt: 'desc' },
     publicRead = false,
+    audit = true,
   } = opts;
+
+  // Stamp audit columns from the authenticated user. `created` also sets the
+  // updated-* fields so a freshly-created row shows a last-editor immediately.
+  const stampAudit = (
+    data: Record<string, unknown>,
+    user: { id: string; username: string } | undefined,
+    kind: 'create' | 'update'
+  ) => {
+    if (!audit || !user) return;
+    if (kind === 'create') {
+      data.createdBy = user.id;
+      data.createdByName = user.username;
+    }
+    data.updatedBy = user.id;
+    data.updatedByName = user.username;
+  };
 
   const router = Router();
   // Reads may be public (catalogue data for the website); writes never are.
@@ -101,6 +124,7 @@ export function createCrudRouter(opts: CrudOptions): Router {
       // Honour a client-supplied id so the frontend and DB stay in sync.
       const bodyId = (req.body as { id?: unknown })?.id;
       if (typeof bodyId === 'string' && bodyId) data.id = bodyId;
+      stampAudit(data, req.user, 'create');
       const created = await delegate.create({ data });
       res.status(201).json({ ok: true, data: created });
     })
@@ -110,9 +134,10 @@ export function createCrudRouter(opts: CrudOptions): Router {
     '/:id',
     authenticate,
     asyncHandler(async (req, res) => {
-      const data = updateSchema.parse(req.body);
+      const data = updateSchema.parse(req.body) as Record<string, unknown>;
       const existing = await delegate.findUnique({ where: { id: req.params.id } });
       if (!existing) throw new HttpError(404, `${name} not found`);
+      stampAudit(data, req.user, 'update');
       const updated = await delegate.update({ where: { id: req.params.id }, data });
       res.json({ ok: true, data: updated });
     })

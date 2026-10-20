@@ -202,6 +202,13 @@ staffRouter.post(
         : undefined,
     };
     if (typeof b.id === 'string' && b.id) (data as Record<string, unknown>).id = b.id;
+    if (req.user) {
+      const d = data as Record<string, unknown>;
+      d.createdBy = req.user.id;
+      d.createdByName = req.user.username;
+      d.updatedBy = req.user.id;
+      d.updatedByName = req.user.username;
+    }
 
     try {
       await prisma.user.create({ data });
@@ -230,6 +237,10 @@ staffRouter.patch(
 
     const userData = staffUserFields(b);
     if (b.email) userData.email = String(b.email).toLowerCase();
+    if (req.user) {
+      (userData as Record<string, unknown>).updatedBy = req.user.id;
+      (userData as Record<string, unknown>).updatedByName = req.user.username;
+    }
 
     await prisma.user.update({ where: { id: existing.id }, data: userData });
 

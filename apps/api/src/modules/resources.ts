@@ -24,6 +24,8 @@ interface ResourceDef {
   filterFields?: string[];
   defaultOrderBy?: Record<string, 'asc' | 'desc'>;
   publicRead?: boolean;
+  /** Set false for models without the createdBy/updatedBy audit columns. */
+  audit?: boolean;
 }
 
 // One definition per entity. `shape` is the create schema; update is derived
@@ -439,6 +441,7 @@ const resources: ResourceDef[] = [
     path: 'audit-logs',
     name: 'Audit log',
     delegate: prisma.systemAuditLog,
+    audit: false, // SystemAuditLog has no createdBy/updatedBy columns (it IS the log)
     searchFields: ['actor', 'action', 'details'],
     filterFields: ['category', 'status'],
     shape: {
@@ -468,6 +471,7 @@ export function registerResourceRoutes(app: Express) {
         filterFields: def.filterFields,
         defaultOrderBy: def.defaultOrderBy,
         publicRead: def.publicRead,
+        audit: def.audit,
       })
     );
   }

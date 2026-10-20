@@ -50,12 +50,22 @@ export async function create(req: Request, res: Response) {
   // Honour a client-supplied id so the frontend and DB stay in sync.
   const bodyId = (req.body as { id?: unknown })?.id;
   if (typeof bodyId === 'string' && bodyId) input.id = bodyId;
+  if (req.user) {
+    input.createdBy = req.user.id;
+    input.createdByName = req.user.username;
+    input.updatedBy = req.user.id;
+    input.updatedByName = req.user.username;
+  }
   res.status(201).json({ ok: true, data: await service.create(input as never) });
 }
 
 export async function update(req: Request, res: Response) {
-  const input = updateSchema.parse(req.body);
-  res.json({ ok: true, data: await service.update(req.params.id, input) });
+  const input = updateSchema.parse(req.body) as Record<string, unknown>;
+  if (req.user) {
+    input.updatedBy = req.user.id;
+    input.updatedByName = req.user.username;
+  }
+  res.json({ ok: true, data: await service.update(req.params.id, input as never) });
 }
 
 export async function remove(req: Request, res: Response) {

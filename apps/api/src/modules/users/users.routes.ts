@@ -73,6 +73,13 @@ usersRouter.post(
     };
     for (const k of EDITABLE) if (b[k] !== undefined) (data as Record<string, unknown>)[k] = b[k];
     if (typeof b.id === 'string' && b.id) (data as Record<string, unknown>).id = b.id;
+    if (req.user) {
+      const d = data as Record<string, unknown>;
+      d.createdBy = req.user.id;
+      d.createdByName = req.user.username;
+      d.updatedBy = req.user.id;
+      d.updatedByName = req.user.username;
+    }
     try {
       const user = await prisma.user.create({ data });
       res.status(201).json({ ok: true, data: toPublicUser(user) });
@@ -140,6 +147,12 @@ usersRouter.patch(
         throw new HttpError(403, 'Not allowed to change this password');
       }
       data.passwordHash = await bcrypt.hash(String(b.password), 10);
+    }
+
+    if (req.user) {
+      const d = data as Record<string, unknown>;
+      d.updatedBy = req.user.id;
+      d.updatedByName = req.user.username;
     }
 
     const user = await prisma.user.update({ where: { id: req.params.id }, data });

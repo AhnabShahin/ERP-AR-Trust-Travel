@@ -1,3 +1,16 @@
+// Audit metadata stamped by the API on every create/update: who added the row
+// and who last changed it (user id + display name). Entity records carry these
+// optionally; the server is authoritative. `createdAt`/`updatedAt` come from the
+// DB. Use the `LastUpdatedBy` component to render them.
+export interface AuditMeta {
+  createdBy?: string;
+  createdByName?: string;
+  updatedBy?: string;
+  updatedByName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 // Open currency code: well-known codes kept as literals for autocomplete, but
 // any code from the Currency CRUD is valid. Base currency is always QAR.
 export type Currency = 'QAR' | 'USD' | 'EUR' | 'GBP' | (string & {});
