@@ -52,7 +52,6 @@ import { useReviews } from '../../hooks/useReviews';
 import { useSiteContent } from '../../context/SiteContentContext';
 import type { HeroSlideText } from '../../data/siteContent';
 import {
-  CORE_SERVICES,
   findExperienceItem,
   getSyncedWebsiteTours,
   getSyncedHolidayPackages,
@@ -119,6 +118,8 @@ export default function HomePage() {
   const { packages, fleetVehicles } = useApp();
   const reviews = useReviews();
   const { c } = useSiteContent();
+  // Service cards are editable from the dashboard (home.services); empty when unseeded.
+  const services = c<Array<{ id: string; title: string; titleAr?: string; icon: string; description: string; benefits: string[] }>>('home.services', []);
   const { t: tWeb, websiteLang } = useWebsiteLanguage();
   const { formatPrice, selectedCurrency } = useWebsiteCurrency();
   const router = useRouter();
@@ -803,7 +804,7 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {CORE_SERVICES.map((srv) => (
+            {services.map((srv) => (
               <div
                 key={srv.id}
                 className="bg-[#09232C] border border-[#C0AB6F]/30 rounded-3xl p-6 hover:border-[#D4AF37] transition-all flex flex-col justify-between"

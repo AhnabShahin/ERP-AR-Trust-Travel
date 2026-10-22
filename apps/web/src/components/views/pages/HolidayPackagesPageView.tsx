@@ -11,7 +11,7 @@ import {
   Compass,
   Star,
 } from 'lucide-react';
-import { MULTI_DAY_PACKAGES, MultiDayPackage, getSyncedHolidayPackages } from '../../../data/websiteData';
+import { MultiDayPackage, getSyncedHolidayPackages } from '../../../data/websiteData';
 import { imgSrc } from '../../../../lib/uploads';
 import { useApp } from '../../../context/AppContext';
 import { useWebsiteLanguage } from '../../../context/WebsiteLanguageContext';

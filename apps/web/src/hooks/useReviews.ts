@@ -1,12 +1,13 @@
 'use client';
 
-// Public customer reviews, loaded from /api/reviews (public endpoint) with the
-// built-in CUSTOMER_REVIEWS as the SSR / offline fallback. Only reviews flagged
-// showOnWebsite are returned, ordered by the dashboard's sortOrder.
+// Public customer reviews — DB-driven, loaded from /api/reviews (public). Only
+// reviews flagged showOnWebsite are returned, ordered by the dashboard's
+// sortOrder. An empty / unseeded reviews table yields an empty list (no static
+// demo reviews); run `npm run db:seed` for demo data.
 
 import { useEffect, useState } from 'react';
 import { api } from '../../lib/api';
-import { CUSTOMER_REVIEWS, type ReviewItem } from '../data/websiteData';
+import { type ReviewItem } from '../data/websiteData';
 
 interface ApiReview {
   id: string;
@@ -21,14 +22,14 @@ interface ApiReview {
 }
 
 export function useReviews(): ReviewItem[] {
-  const [reviews, setReviews] = useState<ReviewItem[]>(CUSTOMER_REVIEWS);
+  const [reviews, setReviews] = useState<ReviewItem[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const data = await api.get<ApiReview[]>('/api/reviews?take=200');
-        if (cancelled || !Array.isArray(data) || data.length === 0) return;
+        if (cancelled || !Array.isArray(data)) return;
         setReviews(
           data
             .filter((r) => r.showOnWebsite !== false)

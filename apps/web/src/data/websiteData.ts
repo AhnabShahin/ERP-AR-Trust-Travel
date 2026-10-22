@@ -34,10 +34,11 @@ export interface WebsiteTour {
 }
 
 export function getSyncedFleet(customFleet?: FleetVehicle[]): FleetVehicle[] {
+  // DB-driven: empty fleet table → no vehicles shown on the website.
   if (customFleet && customFleet.length > 0) {
     return customFleet.filter((v) => v.showOnWebsite !== false);
   }
-  return WEBSITE_FLEET;
+  return [];
 }
 
 export interface MultiDayPackage {
@@ -463,12 +464,15 @@ export interface ExperienceItem {
  * Any edits made in the Dashboard are immediately reflected on the frontend.
  */
 export function getSyncedWebsiteTours(packages?: TourPackage[]): WebsiteTour[] {
-  if (!packages || packages.length === 0) return WEBSITE_TOURS;
+  // DB-driven: the website shows exactly what the database holds. An empty /
+  // unseeded catalogue yields an empty list (run `npm run db:seed` for demo
+  // data). WEBSITE_TOURS is only used to enrich matching rows (images, etc.).
+  if (!packages || packages.length === 0) return [];
 
   // Filter packages that are tours (not multi-day holiday packages)
   const tourPkgs = packages.filter((p) => !p.isMultiDay && p.category !== 'Holiday Package');
 
-  if (tourPkgs.length === 0) return WEBSITE_TOURS;
+  if (tourPkgs.length === 0) return [];
 
   return tourPkgs.map((p) => {
     const staticMatch = WEBSITE_TOURS.find(
@@ -509,11 +513,12 @@ export function getSyncedWebsiteTours(packages?: TourPackage[]): WebsiteTour[] {
  * Synchronize holiday packages with dynamic packages from AppContext (Dashboard Catalog).
  */
 export function getSyncedHolidayPackages(packages?: TourPackage[]): MultiDayPackage[] {
-  if (!packages || packages.length === 0) return MULTI_DAY_PACKAGES;
+  // DB-driven: empty catalogue → no holiday packages shown.
+  if (!packages || packages.length === 0) return [];
 
   const holidayPkgs = packages.filter((p) => p.isMultiDay || p.category === 'Holiday Package');
 
-  if (holidayPkgs.length === 0) return MULTI_DAY_PACKAGES;
+  if (holidayPkgs.length === 0) return [];
 
   return holidayPkgs.map((p) => {
     const staticMatch = MULTI_DAY_PACKAGES.find(

@@ -2,15 +2,17 @@
 
 // =====================================================================
 // Website content provider. Loads the editable CMS content map from
-// /api/site-content once (public endpoint) and exposes `c(key)` to read a
-// value, falling back to the built-in defaults in data/siteContent.ts so the
-// site always renders. First client render uses the defaults (matching SSR),
-// then re-renders with the saved values after the fetch resolves.
+// /api/site-content once (public endpoint) and exposes `c(key, fallback)` to
+// read a value. The site is DB-driven: a value comes from the database, else the
+// per-call fallback the component passes — the built-in defaults in
+// data/siteContent.ts are ONLY the seed/editor catalogue, never a runtime
+// fallback, so an empty (unseeded) database renders empty rather than showing
+// static demo content.
 // =====================================================================
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from '../../lib/api';
-import { SITE_CONTENT_DEFAULTS, defaultContent } from '../data/siteContent';
+import { SITE_CONTENT_DEFAULTS } from '../data/siteContent';
 
 interface SiteContentValue {
   /** Read a content value by key (saved value, else built-in default). */
@@ -47,7 +49,8 @@ export function SiteContentProvider({ children }: { children: React.ReactNode })
   }, []);
 
   const value = useMemo<SiteContentValue>(() => {
-    const get = (key: string): unknown => (key in map ? map[key] : defaultContent(key));
+    // DB-driven: a key resolves to its saved value, else the per-call fallback.
+    const get = (key: string): unknown => (key in map ? map[key] : undefined);
     return {
       map,
       loaded,
@@ -74,23 +77,14 @@ export function useSiteContent(): SiteContentValue {
   const ctx = useContext(SiteContentContext);
   if (ctx) return ctx;
   // Safe fallback if a component renders outside the provider (e.g. isolated
-  // previews): serve the built-in defaults only.
+  // previews): no saved data, so every call resolves to its own fallback.
   return {
     map: {},
     loaded: true,
     refresh: async () => {},
-    c: <T,>(key: string, fallback?: T): T => {
-      const v = defaultContent(key);
-      return (v === undefined || v === null ? fallback : v) as T;
-    },
-    cs: (key: string, fallback = '') => {
-      const v = defaultContent(key);
-      return typeof v === 'string' ? v : v == null ? fallback : String(v);
-    },
-    cl: (key: string, fallback: string[] = []) => {
-      const v = defaultContent(key);
-      return Array.isArray(v) ? (v as string[]) : fallback;
-    },
+    c: <T,>(_key: string, fallback?: T): T => fallback as T,
+    cs: (_key: string, fallback = '') => fallback,
+    cl: (_key: string, fallback: string[] = []) => fallback,
   };
 }
 

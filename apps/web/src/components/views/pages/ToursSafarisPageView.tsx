@@ -13,7 +13,7 @@ import {
   MapPin,
   Calendar,
 } from 'lucide-react';
-import { WEBSITE_TOURS, WebsiteTour, getSyncedWebsiteTours } from '../../../data/websiteData';
+import { WebsiteTour, getSyncedWebsiteTours } from '../../../data/websiteData';
 import { imgSrc } from '../../../../lib/uploads';
 import { useApp } from '../../../context/AppContext';
 import { useWebsiteLanguage } from '../../../context/WebsiteLanguageContext';

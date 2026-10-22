@@ -11,6 +11,8 @@
 // `kind` tells the editor how to render it: text | textarea | list | json | image.
 // =====================================================================
 
+import { CORE_SERVICES } from './websiteData';
+
 export type ContentKind = 'text' | 'textarea' | 'list' | 'json' | 'image';
 
 export interface ContentDef {
@@ -92,6 +94,7 @@ export const SITE_CONTENT_DEFAULTS: Record<string, ContentDef> = {
   'home.fleet.subtitle': { value: 'Mercedes V-Class, Land Cruisers & VIP vans with professional drivers.', group: 'Homepage · Sections', label: 'Fleet subheading', kind: 'textarea' },
   'home.services.title': { value: 'Our Core Services', group: 'Homepage · Sections', label: 'Services heading', kind: 'text' },
   'home.services.subtitle': { value: 'End-to-end travel management for Qatar and beyond.', group: 'Homepage · Sections', label: 'Services subheading', kind: 'textarea' },
+  'home.services': { value: CORE_SERVICES, group: 'Homepage · Services', label: 'Service cards', kind: 'json' },
   'home.reviews.title': { value: 'What Our Travelers Say', group: 'Homepage · Sections', label: 'Reviews heading', kind: 'text' },
   'home.reviews.subtitle': { value: 'Real reviews from guests across the world.', group: 'Homepage · Sections', label: 'Reviews subheading', kind: 'textarea' },
   'home.cta.title': { value: 'Ready to Explore Qatar?', group: 'Homepage · CTA', label: 'CTA heading', kind: 'text' },
