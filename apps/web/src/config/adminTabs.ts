@@ -5,10 +5,10 @@
 // adminRoutes.ts and reuses these.
 // =====================================================================
 
-/** The overview tab shown at /admin (role-adaptive via DashboardView). */
+/** The overview tab shown at /dashboard (role-adaptive via DashboardView). */
 export const DEFAULT_TAB = 'dashboard';
 
-/** Every menu/route slug (URL segment after /admin/). Keep in sync with ADMIN_VIEWS. */
+/** Every menu/route slug (URL segment after /dashboard/). Keep in sync with ADMIN_VIEWS. */
 export const KNOWN_TABS = [
   'dashboard',
   'bookings',
@@ -40,14 +40,14 @@ export function isKnownTab(slug: string | undefined | null): slug is string {
   return !!slug && TAB_SET.has(slug);
 }
 
-/** Build the console URL for a tab id. The overview tab lives at /admin. */
+/** Build the console URL for a tab id. The overview tab lives at /dashboard. */
 export function adminPath(tab: string): string {
-  return tab === DEFAULT_TAB ? '/admin' : `/admin/${tab}`;
+  return tab === DEFAULT_TAB ? '/dashboard' : `/dashboard/${tab}`;
 }
 
-/** Derive the active tab id from a pathname (…/admin or …/admin/<tab>/…). */
+/** Derive the active tab id from a pathname (…/dashboard or …/dashboard/<tab>/…). */
 export function tabFromPath(pathname: string | null | undefined): string {
-  if (!pathname || !pathname.startsWith('/admin')) return DEFAULT_TAB;
+  if (!pathname || !pathname.startsWith('/dashboard')) return DEFAULT_TAB;
   const seg = pathname.split('/')[2]; // '', 'bookings', 'guests', …
   return isKnownTab(seg) ? seg : DEFAULT_TAB;
 }

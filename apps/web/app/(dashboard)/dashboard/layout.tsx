@@ -1,14 +1,14 @@
 'use client';
 
 // =====================================================================
-// Unified admin console chrome. Every console page lives under /admin/<tab>
+// Unified admin console chrome. Every console page lives under /dashboard/<tab>
 // (route-based, so a reload or shared link lands on the exact page). This
 // layout renders the persistent shell — Sidebar, Header, notification toast and
 // the shared modals — and gates everything behind an authenticated, hydrated
 // session. The individual route pages render into {children}.
 //
 // Replaces the old state-switching DashboardShell; role landing is handled by
-// DashboardView (role-adaptive) at /admin.
+// DashboardView (role-adaptive) at /dashboard.
 // =====================================================================
 
 import React, { useEffect, useState } from 'react';

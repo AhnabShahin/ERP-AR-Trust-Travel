@@ -17,6 +17,10 @@ next-env.d.ts
 apps/api/prisma/*.db
 apps/api/prisma/migrations/dev.db*
 
+# Uploaded files (stored on disk, served host-less) — keep the folder, not its files
+apps/api/uploads/*
+!apps/api/uploads/.gitkeep
+
 # Turbo / misc
 .turbo/
 *.tsbuildinfo

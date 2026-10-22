@@ -69,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const q = searchQuery.trim();
-    if (q) router.push(`/admin/search?q=${encodeURIComponent(q)}`);
+    if (q) router.push(`/dashboard/search?q=${encodeURIComponent(q)}`);
   };
 
   const [showNotifications, setShowNotifications] = useState(false);

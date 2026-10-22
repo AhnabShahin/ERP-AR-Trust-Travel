@@ -364,7 +364,7 @@ export const Sidebar: React.FC = () => {
   };
 
   const handleNavClick = (tabId: string) => {
-    // URL-backed navigation: setActiveTab pushes /admin/<tabId>.
+    // URL-backed navigation: setActiveTab pushes /dashboard/<tabId>.
     setActiveTab(tabId);
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
       toggleSidebar();

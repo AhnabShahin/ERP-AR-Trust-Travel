@@ -1,7 +1,7 @@
-import { redirect } from 'next/navigation';
+import AdminTabView from '@/components/dashboard/AdminTabView';
 
-// Legacy role-dashboard slug — the console is now unified under /admin
-// (role-adaptive). Redirect so old links/bookmarks keep working.
+// /dashboard — the console overview. With no <tab> segment, AdminTabView renders the
+// default (DashboardView), which is role-adaptive so each role lands on its home.
 export default function Page() {
-  redirect('/admin');
+  return <AdminTabView />;
 }

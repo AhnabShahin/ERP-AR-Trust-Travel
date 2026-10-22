@@ -1,12 +1,12 @@
 // =====================================================================
 // Admin console route registry — the single source of truth mapping a URL
-// slug (the segment after /admin/) to the view component that renders it.
+// slug (the segment after /dashboard/) to the view component that renders it.
 // Navigation, the [tab] route page, and activeTab derivation all use this so
-// every menu item is a real, reload-stable URL under /admin/<slug>.
+// every menu item is a real, reload-stable URL under /dashboard/<slug>.
 //
 // The slug is identical to the legacy `activeTab` id, so the ~11 existing
 // setActiveTab(tabId) call sites keep working unchanged — setActiveTab now just
-// pushes /admin/<tabId> (see AppContext).
+// pushes /dashboard/<tabId> (see AppContext).
 // =====================================================================
 
 import type { ComponentType } from 'react';
@@ -35,7 +35,7 @@ import { UserAccountsManagerView } from '../components/views/UserAccountsManager
 import { SettingsView } from '../components/views/SettingsView';
 import { GlobalSearchView } from '../components/views/GlobalSearchView';
 
-/** slug (URL segment after /admin/) -> view component. */
+/** slug (URL segment after /dashboard/) -> view component. */
 export const ADMIN_VIEWS: Record<string, ComponentType> = {
   dashboard: DashboardView,
   bookings: UnifiedBookingsView,

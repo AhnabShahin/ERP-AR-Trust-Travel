@@ -428,7 +428,7 @@ export const AppProvider: React.FC<{
   const [theme, setTheme] = useState<Theme>('dark');
   const themeHydrated = React.useRef(false);
   // Navigation is URL-backed: the active console tab is derived from the current
-  // /admin/<tab> path, and switching tabs is a real route push — so every menu
+  // /dashboard/<tab> path, and switching tabs is a real route push — so every menu
   // item has its own URL and a reload (or shared link) lands on the same page.
   const pathname = usePathname();
   const router = useRouter();
@@ -1019,7 +1019,7 @@ export const AppProvider: React.FC<{
     }
 
     // Navigation to the role's default tab is handled by setActiveTab above
-    // (URL-backed, pushes /admin/<defaultTab>).
+    // (URL-backed, pushes /dashboard/<defaultTab>).
 
     // Add log
     addAuditLog('Role Context Switched', 'SECURITY', `User role switched to ${targetConfig.title}`);

@@ -61,21 +61,21 @@ export const MyAccountView: React.FC = () => {
   const [phone, setPhone] = useState(currentUser?.phone || '');
   const [avatar, setAvatar] = useState(currentUser?.avatar || '');
   const [address, setAddress] = useState(currentUser?.address || '');
-  const [city, setCity] = useState(currentUser?.city || 'Doha');
-  const [country, setCountry] = useState(currentUser?.country || 'Qatar');
+  const [city, setCity] = useState(currentUser?.city || '');
+  const [country, setCountry] = useState(currentUser?.country || '');
   const [bio, setBio] = useState(currentUser?.bio || '');
   const [emergencyContact, setEmergencyContact] = useState(currentUser?.emergencyContact || '');
   const [emergencyPhone, setEmergencyPhone] = useState(currentUser?.emergencyPhone || '');
 
   // Role-Specific & Customer fields
-  const [nationality, setNationality] = useState(currentUser?.nationality || 'Qatar');
+  const [nationality, setNationality] = useState(currentUser?.nationality || '');
   const [passportNumber, setPassportNumber] = useState(currentUser?.passportNumber || '');
   const [passportExpiry, setPassportExpiry] = useState(currentUser?.passportExpiry || '');
-  const [preferredLanguage, setPreferredLanguage] = useState(currentUser?.preferredLanguage || 'English');
+  const [preferredLanguage, setPreferredLanguage] = useState(currentUser?.preferredLanguage || '');
   const [dietaryNotes, setDietaryNotes] = useState(currentUser?.dietaryNotes || '');
   const [licenseNumber, setLicenseNumber] = useState(currentUser?.licenseNumber || '');
-  const [licenseCategory, setLicenseCategory] = useState(currentUser?.licenseCategory || 'Light Vehicle & Desert 4x4');
-  const [experienceYears, setExperienceYears] = useState(currentUser?.experienceYears || 5);
+  const [licenseCategory, setLicenseCategory] = useState(currentUser?.licenseCategory || '');
+  const [experienceYears, setExperienceYears] = useState<number | ''>(currentUser?.experienceYears ?? '');
 
   // Password Change state
   const [currentPasswordInput, setCurrentPasswordInput] = useState('');
@@ -105,19 +105,19 @@ export const MyAccountView: React.FC = () => {
       setPhone(currentUser.phone || '');
       setAvatar(currentUser.avatar || '');
       setAddress(currentUser.address || '');
-      setCity(currentUser.city || 'Doha');
-      setCountry(currentUser.country || 'Qatar');
+      setCity(currentUser.city || '');
+      setCountry(currentUser.country || '');
       setBio(currentUser.bio || '');
       setEmergencyContact(currentUser.emergencyContact || '');
       setEmergencyPhone(currentUser.emergencyPhone || '');
-      setNationality(currentUser.nationality || 'Qatar');
+      setNationality(currentUser.nationality || '');
       setPassportNumber(currentUser.passportNumber || '');
       setPassportExpiry(currentUser.passportExpiry || '');
-      setPreferredLanguage(currentUser.preferredLanguage || 'English');
+      setPreferredLanguage(currentUser.preferredLanguage || '');
       setDietaryNotes(currentUser.dietaryNotes || '');
       setLicenseNumber(currentUser.licenseNumber || '');
-      setLicenseCategory(currentUser.licenseCategory || 'Light Vehicle & Desert 4x4');
-      setExperienceYears(currentUser.experienceYears || 5);
+      setLicenseCategory(currentUser.licenseCategory || '');
+      setExperienceYears(currentUser.experienceYears ?? '');
     }
   }, [currentUser]);
 
@@ -801,6 +801,7 @@ export const MyAccountView: React.FC = () => {
                       onChange={(e) => setPreferredLanguage(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-900 dark:text-white"
                     >
+                      <option value="">{isRtl ? 'اختر اللغة' : 'Select language'}</option>
                       <option value="English">English</option>
                       <option value="Arabic">Arabic (العربية)</option>
                       <option value="French">French</option>
@@ -954,7 +955,7 @@ export const MyAccountView: React.FC = () => {
                   <input
                     type="number"
                     value={experienceYears}
-                    onChange={(e) => setExperienceYears(Number(e.target.value))}
+                    onChange={(e) => setExperienceYears(e.target.value === '' ? '' : Number(e.target.value))}
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-900 dark:text-white font-mono"
                     min={1}
                     max={40}

@@ -19,10 +19,10 @@ function LoginInner() {
   const { isAuthenticated } = useApp();
   const router = useRouter();
 
-  // Unified console: everyone lands on /admin, which is role-adaptive.
+  // Unified console: everyone lands on /dashboard, which is role-adaptive.
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace('/admin');
+      router.replace('/dashboard');
     }
   }, [isAuthenticated, router]);
 

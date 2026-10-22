@@ -49,7 +49,7 @@ export const GlobalSearchView: React.FC = () => {
           id: b.id,
           title: `${b.passengerName} · ${b.pnr}`,
           subtitle: `${b.flightNumber || ''} ${b.packageName || ''}`.trim(),
-          href: `/admin/bookings/${b.id}`,
+          href: `/dashboard/bookings/${b.id}`,
         }))
     );
     push(
@@ -60,38 +60,38 @@ export const GlobalSearchView: React.FC = () => {
           id: g.id,
           title: g.name,
           subtitle: (g as { nationality?: string }).nationality || g.id,
-          href: `/admin/guests/${g.id}`,
+          href: `/dashboard/guests/${g.id}`,
         }))
     );
     push(
       'Hotel Vendors',
       hotelVendors
         .filter((v) => has(v.name, v.id, (v as { zone?: string }).zone))
-        .map((v) => ({ id: v.id, title: v.name, subtitle: (v as { zone?: string }).zone || '', href: `/admin/vendors/${v.id}` }))
+        .map((v) => ({ id: v.id, title: v.name, subtitle: (v as { zone?: string }).zone || '', href: `/dashboard/vendors/${v.id}` }))
     );
     push(
       'Fleet',
       fleetVehicles
         .filter((f) => has(f.name, (f as { plateNumber?: string }).plateNumber, f.category, f.id))
-        .map((f) => ({ id: f.id, title: f.name, subtitle: (f as { plateNumber?: string }).plateNumber || f.category || '', href: `/admin/dispatch/${f.id}` }))
+        .map((f) => ({ id: f.id, title: f.name, subtitle: (f as { plateNumber?: string }).plateNumber || f.category || '', href: `/dashboard/dispatch/${f.id}` }))
     );
     push(
       'Hotel Bookings',
       hotelBookings
         .filter((h) => has((h as { guestName?: string }).guestName, (h as { hotelName?: string }).hotelName, h.id))
-        .map((h) => ({ id: h.id, title: (h as { guestName?: string }).guestName || h.id, subtitle: (h as { hotelName?: string }).hotelName || '', href: `/admin/hotel-bookings/${h.id}` }))
+        .map((h) => ({ id: h.id, title: (h as { guestName?: string }).guestName || h.id, subtitle: (h as { hotelName?: string }).hotelName || '', href: `/dashboard/hotel-bookings/${h.id}` }))
     );
     push(
       'Packages & Services',
       packages
         .filter((p) => has(p.name, (p as { category?: string }).category, p.id))
-        .map((p) => ({ id: p.id, title: p.name, subtitle: (p as { category?: string }).category || '', href: `/admin/services/${p.id}` }))
+        .map((p) => ({ id: p.id, title: p.name, subtitle: (p as { category?: string }).category || '', href: `/dashboard/services/${p.id}` }))
     );
     push(
       'Staff',
       employees
         .filter((e) => has(e.name, (e as { phone?: string }).phone, (e as { role?: string }).role, e.id))
-        .map((e) => ({ id: e.id, title: e.name, subtitle: (e as { role?: string }).role || '', href: `/admin/employees/${e.id}` }))
+        .map((e) => ({ id: e.id, title: e.name, subtitle: (e as { role?: string }).role || '', href: `/dashboard/employees/${e.id}` }))
     );
 
     return out;

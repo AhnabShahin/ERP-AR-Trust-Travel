@@ -786,7 +786,7 @@ model AppSetting {
 model Upload {
   id        String   @id @default(cuid())
   mime      String // e.g. image/webp
-  bytes     Bytes    @db.LongBlob
+  path      String // disk filename under UPLOAD_DIR, host-less (e.g. "<id>.webp")
   width     Int?
   height    Int?
   size      Int // byte length of the stored (optimized) image

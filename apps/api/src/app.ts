@@ -43,7 +43,7 @@ export function createApp() {
   // Key/value settings (exchange rates, shift drawer, config…).
   app.use('/api/settings', settingsRouter);
 
-  // Image uploads (optimized, DB-backed, host-less refs).
+  // Image uploads (optimized, stored on disk under UPLOAD_DIR, host-less refs).
   app.use('/api/uploads', uploadsRouter);
 
   app.use(notFound);

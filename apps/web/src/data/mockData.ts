@@ -1610,7 +1610,7 @@ export const ROLE_CONFIGS: Record<import('../types').UserRole, import('../types'
     userDisplayNameAr: 'زيد قاسم (كاونتر 4 والفنادق)',
     scopeSummary: 'Enters walk-in transit passenger bookings, hotel room reservations, collects payments, and issues vouchers.',
     scopeSummaryAr: 'إدخال حجوزات ركاب الترانزيت وحجوزات الفنادق، وتحصيل المدفوعات، وإصدار القسائم، وعرض عمولاته وجرد الصندوق.',
-    defaultTab: 'pos',
+    defaultTab: 'dashboard',
     allowedTabs: ['dashboard', 'pos', 'my-account', 'hotel-bookings', 'vendors', 'bookings', 'guests', 'services', 'eod', 'payroll'],
     permissions: {
       canViewAllFinancials: false,
@@ -1636,7 +1636,7 @@ export const ROLE_CONFIGS: Record<import('../types').UserRole, import('../types'
     userDisplayNameAr: 'طارق الكواري (لاند كروزر #84920)',
     scopeSummary: 'Simplified mobile view/interface to check daily assigned trips, pickup points, guest lists, and completed trip logs.',
     scopeSummaryAr: 'واجهة مخصصة ومبسطة لمتابعة الرحلات اليومية الموكلة، ونقاط الالتقاء بالمطار، وقوائم الضيوف، وسجل الإنجاز.',
-    defaultTab: 'driver-portal',
+    defaultTab: 'dashboard',
     allowedTabs: ['dashboard', 'driver-portal', 'my-account'],
     permissions: {
       canViewAllFinancials: false,
@@ -1708,7 +1708,7 @@ export const ROLE_CONFIGS: Record<import('../types').UserRole, import('../types'
       'Operational desk/field staff member with a salary & commission ledger. Self-service access to view their own monthly salary, targets and payouts.',
     scopeSummaryAr:
       'موظف تشغيلي بكاونتر أو ميداني مع سجل راتب وعمولات. وصول ذاتي لعرض راتبه الشهري وأهدافه ومستحقاته.',
-    defaultTab: 'my-account',
+    defaultTab: 'dashboard',
     allowedTabs: ['dashboard', 'my-account'],
     permissions: {
       canViewAllFinancials: false,
