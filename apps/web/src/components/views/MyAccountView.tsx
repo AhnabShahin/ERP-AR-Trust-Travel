@@ -181,7 +181,7 @@ export const MyAccountView: React.FC = () => {
       username: username.trim() || currentUser.username,
       email: email.trim(),
       phone: phone.trim(),
-      avatar: avatar.trim() || currentUser.avatar,
+      avatar: avatar.trim(), // allow empty: Remove must actually clear the avatar
       address: address.trim(),
       city: city.trim(),
       country: country.trim(),
@@ -340,8 +340,8 @@ export const MyAccountView: React.FC = () => {
           <div className="relative group shrink-0">
             <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl p-1 bg-gradient-to-tr from-[#D4AF37] via-[#C0AB6F] to-emerald-400 shadow-xl">
               <img
-                src={imgSrc(currentUser.avatar) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80'}
-                alt={currentUser.name}
+                src={imgSrc(avatar) || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80'}
+                alt={name || currentUser.name}
                 className="w-full h-full object-cover rounded-[22px] bg-slate-900"
               />
             </div>
@@ -366,21 +366,21 @@ export const MyAccountView: React.FC = () => {
           <div className="flex-1 text-center md:text-left rtl:md:text-right min-w-0">
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 mb-1.5">
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white truncate">
-                {currentUser.name}
+                {name || currentUser.name}
               </h1>
-              {currentUser.nameAr && (
+              {(nameAr || currentUser.nameAr) && (
                 <span className="text-sm font-semibold text-[#E7CF8A] font-sans">
-                  ({currentUser.nameAr})
+                  ({nameAr || currentUser.nameAr})
                 </span>
               )}
             </div>
 
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 text-xs text-slate-300 mb-4">
-              <span className="font-mono text-[#D4AF37] font-bold">@{currentUser.username}</span>
+              <span className="font-mono text-[#D4AF37] font-bold">@{username || currentUser.username}</span>
               <span className="text-slate-600">|</span>
               <span className="flex items-center gap-1">
                 <Mail className="w-3.5 h-3.5 text-slate-400" />
-                <span>{currentUser.email}</span>
+                <span>{email || currentUser.email}</span>
               </span>
               <span className="text-slate-600">|</span>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/10 text-white border border-white/20">
@@ -665,14 +665,14 @@ export const MyAccountView: React.FC = () => {
                     type="text"
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
-                    placeholder="Doha"
+                    placeholder={isRtl ? 'المدينة' : 'City'}
                     className="w-1/2 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-900 dark:text-white"
                   />
                   <input
                     type="text"
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
-                    placeholder="Qatar"
+                    placeholder={isRtl ? 'الدولة' : 'Country'}
                     className="w-1/2 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-xs text-slate-900 dark:text-white"
                   />
                 </div>
