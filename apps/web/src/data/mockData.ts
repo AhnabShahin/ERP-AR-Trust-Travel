@@ -1528,7 +1528,7 @@ export const ROLE_CONFIGS: Record<import('../types').UserRole, import('../types'
     scopeSummary: 'Full access to financial reports, salary configurations, commission rates, exchange rate settings, tour services creation, and system logs.',
     scopeSummaryAr: 'وصول شامل للتقارير المالية، وهيكل الرواتب، ونسب العمولات، وأسعار الصرف، وإنشاء وتعديل باقات الخدمات السياحية، وسجلات النظام الكاملة.',
     defaultTab: 'dashboard',
-    allowedTabs: ['dashboard', 'my-account', 'bookings', 'hotel-bookings', 'vendors', 'guests', 'services', 'pos', 'employees', 'dispatch', 'eod', 'payroll', 'expenses', 'ledger', 'audit-logs', 'settings'],
+    allowedTabs: ['dashboard', 'my-account', 'bookings', 'hotel-bookings', 'vendors', 'guests', 'services', 'pos', 'employees', 'dispatch', 'eod', 'payroll', 'expenses', 'ledger', 'audit-logs', 'settings', 'website-content', 'reviews'],
     permissions: {
       canViewAllFinancials: true,
       canEditExchangeRates: true,
@@ -1557,7 +1557,7 @@ export const ROLE_CONFIGS: Record<import('../types').UserRole, import('../types'
     scopeSummaryAr:
       'صلاحية إدارية كاملة لجميع العمليات مثل المدير العام، باستثناء أن هذا الحساب يمكن تعطيله أو حذفه من قبل المدير العام أو مدير آخر.',
     defaultTab: 'dashboard',
-    allowedTabs: ['dashboard', 'my-account', 'bookings', 'hotel-bookings', 'vendors', 'guests', 'services', 'pos', 'employees', 'dispatch', 'eod', 'payroll', 'expenses', 'ledger', 'audit-logs', 'settings'],
+    allowedTabs: ['dashboard', 'my-account', 'bookings', 'hotel-bookings', 'vendors', 'guests', 'services', 'pos', 'employees', 'dispatch', 'eod', 'payroll', 'expenses', 'ledger', 'audit-logs', 'settings', 'website-content', 'reviews'],
     permissions: {
       canViewAllFinancials: true,
       canEditExchangeRates: true,

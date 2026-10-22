@@ -454,6 +454,25 @@ const resources: ResourceDef[] = [
       status: str.optional(),
     },
   },
+  {
+    path: 'reviews',
+    name: 'Review',
+    delegate: prisma.review,
+    publicRead: true,
+    defaultOrderBy: { sortOrder: 'asc' },
+    searchFields: ['author', 'country', 'tour', 'comment'],
+    shape: {
+      author: str,
+      country: str.optional(),
+      rating: num.int().optional(),
+      date: str.optional(),
+      tour: str.optional(),
+      comment: str,
+      avatar: str.optional(),
+      showOnWebsite: bool.optional(),
+      sortOrder: num.int().optional(),
+    },
+  },
 ];
 
 /** Mounts every resource router under /api/<path>. */

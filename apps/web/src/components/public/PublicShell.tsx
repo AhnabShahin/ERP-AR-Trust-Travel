@@ -17,6 +17,7 @@ import { AppProvider, InitialCatalog, useApp } from '../../context/AppContext';
 import { WebsiteLanguageProvider, useWebsiteLanguage } from '../../context/WebsiteLanguageContext';
 import { WebsiteCurrencyProvider } from '../../context/WebsiteCurrencyContext';
 import { PublicUIProvider, usePublicUI } from './PublicUIProvider';
+import { SiteContentProvider } from '../../context/SiteContentContext';
 import { WebsiteHeader, PublicPageSlug } from '../common/WebsiteHeader';
 import { WebsiteFooter } from '../common/WebsiteFooter';
 import { getRoleDashboardSlug } from '../../utils/roleSlugs';
@@ -82,13 +83,15 @@ export default function PublicShell({
 }) {
   return (
     <AppProvider initialCatalog={catalog}>
-      <WebsiteLanguageProvider>
-        <WebsiteCurrencyProvider>
-          <PublicUIProvider>
-            <PublicChrome>{children}</PublicChrome>
-          </PublicUIProvider>
-        </WebsiteCurrencyProvider>
-      </WebsiteLanguageProvider>
+      <SiteContentProvider>
+        <WebsiteLanguageProvider>
+          <WebsiteCurrencyProvider>
+            <PublicUIProvider>
+              <PublicChrome>{children}</PublicChrome>
+            </PublicUIProvider>
+          </WebsiteCurrencyProvider>
+        </WebsiteLanguageProvider>
+      </SiteContentProvider>
     </AppProvider>
   );
 }

@@ -26,7 +26,10 @@ import { Prisma, PrismaClient, UserRole } from '@prisma/client';
 
 const prisma = new PrismaClient();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const mockPath = path.resolve(__dirname, '../../web/src/data/mockData.ts');
+const webDataDir = path.resolve(__dirname, '../../web/src/data');
+const mockPath = path.join(webDataDir, 'mockData.ts');
+const websitePath = path.join(webDataDir, 'websiteData.ts');
+const siteContentPath = path.join(webDataDir, 'siteContent.ts');
 
 const toPrismaRole = (r: string): UserRole => r.replace(/-/g, '_') as UserRole;
 
@@ -78,16 +81,17 @@ const imageStub: esbuild.Plugin = {
   },
 };
 
-async function loadMockData(): Promise<Record<string, unknown>> {
-  const outFile = path.join(os.tmpdir(), `artrust-mock-${Date.now()}.mjs`);
+async function loadBundle(entry: string): Promise<Record<string, unknown>> {
+  const outFile = path.join(os.tmpdir(), `artrust-bundle-${Date.now()}-${Math.random().toString(36).slice(2)}.mjs`);
   await esbuild.build({
-    entryPoints: [mockPath], bundle: true, format: 'esm', platform: 'node',
+    entryPoints: [entry], bundle: true, format: 'esm', platform: 'node',
     outfile: outFile, plugins: [imageStub], logLevel: 'silent',
   });
   const mod = await import('file://' + outFile.replace(/\\/g, '/'));
   try { fs.unlinkSync(outFile); } catch { /* ignore */ }
   return mod as Record<string, unknown>;
 }
+const loadMockData = () => loadBundle(mockPath);
 
 const modelByName = Object.fromEntries(Prisma.dmmf.datamodel.models.map((m) => [m.name, m]));
 
@@ -177,10 +181,53 @@ async function seedCatalogue() {
   }
 }
 
+// ---------------------------------------------------------------------
+// 3. Public website CMS — customer reviews + editable site content.
+// ---------------------------------------------------------------------
+async function seedReviews() {
+  const web = await loadBundle(websitePath);
+  const reviews = web.CUSTOMER_REVIEWS as Array<Record<string, unknown>> | undefined;
+  if (!Array.isArray(reviews) || reviews.length === 0) { console.log('• Review: no data'); return; }
+  await prisma.review.deleteMany({});
+  const data = reviews.map((r, i) => ({
+    id: r.id as string,
+    author: r.author as string,
+    country: (r.country as string) ?? null,
+    rating: (r.rating as number) ?? 5,
+    date: (r.date as string) ?? null,
+    tour: (r.tour as string) ?? null,
+    comment: r.comment as string,
+    avatar: (r.avatar as string) ?? null,
+    showOnWebsite: true,
+    sortOrder: i,
+  }));
+  const res = await prisma.review.createMany({ data, skipDuplicates: true });
+  console.log(`✓ Review: inserted ${res.count}/${reviews.length}`);
+}
+
+async function seedSiteContent() {
+  const mod = await loadBundle(siteContentPath);
+  const defs = mod.SITE_CONTENT_DEFAULTS as
+    | Record<string, { value: unknown; group?: string; label?: string; kind?: string }>
+    | undefined;
+  if (!defs) { console.log('• SiteContent: no defaults'); return; }
+  let order = 0;
+  for (const [key, def] of Object.entries(defs)) {
+    await prisma.siteContent.upsert({
+      where: { key },
+      create: { key, value: def.value as never, group: def.group, label: def.label, kind: def.kind ?? 'text', sortOrder: order++ },
+      update: {}, // preserve any admin edits on a re-seed
+    });
+  }
+  console.log(`✓ SiteContent: ${Object.keys(defs).length} keys`);
+}
+
 async function main() {
   console.log('Seeding database…\n');
   await seedUsers();
   await seedCatalogue();
+  await seedReviews();
+  await seedSiteContent();
   console.log('\n✅ Seed complete. Create the super-admin with: npm run create-superadmin -w @ar-trust/api');
 }
 

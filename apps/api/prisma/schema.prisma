@@ -794,3 +794,50 @@ model Upload {
 
   @@map("uploads")
 }
+
+// ---------------------------------------------------------------------
+// Public website CMS — customer reviews + editable site content.
+// ---------------------------------------------------------------------
+
+model Review {
+  id            String   @id @default(cuid())
+  author        String
+  country       String?
+  rating        Int      @default(5)
+  date          String? // human label e.g. "February 2026"
+  tour          String? // which experience the review is about
+  comment       String   @db.Text
+  avatar        String?  @db.Text
+  showOnWebsite Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  createdBy     String?
+  createdByName String?
+  updatedBy     String?
+  updatedByName String?
+
+  @@map("reviews")
+}
+
+// Key/value store for every editable piece of public-site text & content.
+// `value` is JSON so a key can hold a string, a block of text, an image ref,
+// or a structured list (e.g. the Why-Us points). `group`/`label`/`kind` drive
+// the dashboard "Website Content" editor; public pages read by `key`.
+model SiteContent {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  group     String? // editor grouping, e.g. "home.hero" / "contact" / "footer"
+  label     String? // human label shown in the editor
+  kind      String   @default("text") // text | textarea | html | image | list | json
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  updatedBy     String?
+  updatedByName String?
+
+  @@map("site_content")
+}

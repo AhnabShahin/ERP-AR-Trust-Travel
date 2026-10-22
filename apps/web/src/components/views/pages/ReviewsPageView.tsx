@@ -10,7 +10,8 @@ import {
   MapPin,
   Calendar,
 } from 'lucide-react';
-import { CUSTOMER_REVIEWS, ReviewItem } from '../../../data/websiteData';
+import { ReviewItem } from '../../../data/websiteData';
+import { useReviews } from '../../../hooks/useReviews';
 import { imgSrc } from '../../../../lib/uploads';
 import { useWebsiteLanguage } from '../../../context/WebsiteLanguageContext';
 
@@ -24,6 +25,7 @@ export const ReviewsPageView: React.FC<ReviewsPageViewProps> = ({
   onNavigateHome,
 }) => {
   const { t } = useWebsiteLanguage();
+  const reviews = useReviews();
   const [filterTour, setFilterTour] = useState<string>('All');
   const [showReviewModal, setShowReviewModal] = useState<boolean>(false);
   const [submittedReview, setSubmittedReview] = useState<boolean>(false);
@@ -36,7 +38,7 @@ export const ReviewsPageView: React.FC<ReviewsPageViewProps> = ({
   const [reviewerComment, setReviewerComment] = useState('');
 
   const expandedReviews: ReviewItem[] = [
-    ...CUSTOMER_REVIEWS,
+    ...reviews,
     {
       id: 'rev-5',
       author: 'Jean-Luc Dubois',

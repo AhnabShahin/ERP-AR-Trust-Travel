@@ -9,6 +9,7 @@ import { registerResourceRoutes, resourcePaths } from './modules/resources.js';
 import { rolesRouter } from './modules/roles/roles.routes.js';
 import { staffRouter } from './modules/staff/staff.routes.js';
 import { settingsRouter } from './modules/settings/settings.routes.js';
+import { siteContentRouter } from './modules/site-content/site-content.routes.js';
 import { uploadsRouter } from './modules/uploads/uploads.routes.js';
 import { usersRouter } from './modules/users/users.routes.js';
 
@@ -42,6 +43,9 @@ export function createApp() {
 
   // Key/value settings (exchange rates, shift drawer, config…).
   app.use('/api/settings', settingsRouter);
+
+  // Public website CMS content (hero text, sections, contact, footer, …).
+  app.use('/api/site-content', siteContentRouter);
 
   // Image uploads (optimized, stored on disk under UPLOAD_DIR, host-less refs).
   app.use('/api/uploads', uploadsRouter);

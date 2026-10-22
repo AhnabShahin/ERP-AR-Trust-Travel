@@ -26,6 +26,8 @@ import {
   Layers,
   Briefcase,
   Shield,
+  Globe,
+  Star,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { imgSrc } from '../../lib/uploads';
@@ -278,6 +280,24 @@ export const Sidebar: React.FC = () => {
           label: language === 'ar' ? 'التقارير والأرباح (P&L)' : 'Financial Reports & P&L',
           icon: FileText,
           badge: '68% Margin',
+        },
+      ],
+    },
+    {
+      id: 'website',
+      title: 'Website & Content',
+      titleAr: 'الموقع والمحتوى',
+      icon: Globe,
+      items: [
+        {
+          id: 'website-content',
+          label: language === 'ar' ? 'محتوى الموقع العام' : 'Website Content',
+          icon: Globe,
+        },
+        {
+          id: 'reviews',
+          label: language === 'ar' ? 'تقييمات العملاء' : 'Customer Reviews',
+          icon: Star,
         },
       ],
     },

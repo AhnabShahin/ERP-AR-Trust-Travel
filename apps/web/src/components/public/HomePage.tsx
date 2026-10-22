@@ -48,8 +48,10 @@ import { useWebsiteCurrency } from '../../context/WebsiteCurrencyContext';
 import { useApp } from '../../context/AppContext';
 import { imgSrc } from '../../../lib/uploads';
 import { usePublicUI } from './PublicUIProvider';
+import { useReviews } from '../../hooks/useReviews';
+import { useSiteContent } from '../../context/SiteContentContext';
+import type { HeroSlideText } from '../../data/siteContent';
 import {
-  CUSTOMER_REVIEWS,
   CORE_SERVICES,
   findExperienceItem,
   getSyncedWebsiteTours,
@@ -115,7 +117,9 @@ const HERO_SLIDES = [
 
 export default function HomePage() {
   const { packages, fleetVehicles } = useApp();
-  const { t: tWeb } = useWebsiteLanguage();
+  const reviews = useReviews();
+  const { c } = useSiteContent();
+  const { t: tWeb, websiteLang } = useWebsiteLanguage();
   const { formatPrice, selectedCurrency } = useWebsiteCurrency();
   const router = useRouter();
   const { openBookingDrawer } = usePublicUI();
@@ -131,7 +135,23 @@ export default function HomePage() {
 
   // Hero background image slider state & auto-play
   const [currentSlide, setCurrentSlide] = useState<number>(0);
-  const currentSlideTrans = tWeb.slides[currentSlide] || tWeb.slides[0];
+  // Hero text is editable from the dashboard Website Content editor
+  // (home.hero.slides); falls back to the translation bundle when unset.
+  const heroCms = c<HeroSlideText[]>('home.hero.slides', []);
+  const baseSlideTrans = tWeb.slides[currentSlide] || tWeb.slides[0];
+  const cmsSlide = heroCms[currentSlide];
+  // The editable CMS hero text is English; other website languages keep the
+  // translated bundle so localisation isn't lost.
+  const currentSlideTrans =
+    cmsSlide && websiteLang === 'en'
+      ? {
+          ...baseSlideTrans,
+          tag: cmsSlide.tag,
+          title: cmsSlide.title,
+          highlight: cmsSlide.highlight,
+          caption: cmsSlide.caption,
+        }
+      : baseSlideTrans;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -919,7 +939,7 @@ export default function HomePage() {
 
           {/* Desktop Grid Layout */}
           <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {CUSTOMER_REVIEWS.map((rev) => (
+            {reviews.map((rev) => (
               <div
                 key={rev.id}
                 className="bg-white dark:bg-[#05161D] p-6 rounded-3xl border border-slate-200 dark:border-[#C0AB6F]/30 shadow-md flex flex-col justify-between"
@@ -959,7 +979,7 @@ export default function HomePage() {
           <div className="md:hidden w-full overflow-hidden relative [mask-image:linear-gradient(to_right,transparent,black_4%,black_96%,transparent)] py-2">
             <div className="animate-marquee-slow flex items-stretch gap-4">
               {/* Group 1 of cards */}
-              {CUSTOMER_REVIEWS.map((rev) => (
+              {reviews.map((rev) => (
                 <div
                   key={`mobile-1-${rev.id}`}
                   className="w-[285px] shrink-0 bg-white dark:bg-[#05161D] p-5 rounded-3xl border border-slate-200 dark:border-[#C0AB6F]/30 shadow-md flex flex-col justify-between"
@@ -993,7 +1013,7 @@ export default function HomePage() {
               ))}
 
               {/* Group 2 of cards (Duplicate for seamless infinite marquee loop) */}
-              {CUSTOMER_REVIEWS.map((rev) => (
+              {reviews.map((rev) => (
                 <div
                   key={`mobile-2-${rev.id}`}
                   aria-hidden="true"

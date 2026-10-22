@@ -34,6 +34,8 @@ import { MyAccountView } from '../components/views/MyAccountView';
 import { UserAccountsManagerView } from '../components/views/UserAccountsManagerView';
 import { SettingsView } from '../components/views/SettingsView';
 import { GlobalSearchView } from '../components/views/GlobalSearchView';
+import { WebsiteContentView } from '../components/views/WebsiteContentView';
+import { ReviewsManagerView } from '../components/views/ReviewsManagerView';
 
 /** slug (URL segment after /dashboard/) -> view component. */
 export const ADMIN_VIEWS: Record<string, ComponentType> = {
@@ -58,4 +60,6 @@ export const ADMIN_VIEWS: Record<string, ComponentType> = {
   accounts: UserAccountsManagerView,
   settings: SettingsView,
   search: GlobalSearchView,
+  'website-content': WebsiteContentView,
+  reviews: ReviewsManagerView,
 };
