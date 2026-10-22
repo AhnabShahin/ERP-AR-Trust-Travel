@@ -15,7 +15,6 @@
     "migrate:staff": "tsx src/scripts/migrate-employees-to-staff.ts",
     "seed:locations": "tsx src/scripts/seed-locations.ts",
     "prisma:seed": "tsx prisma/seed.ts",
-    "prisma:seed:data": "tsx prisma/seed-full.ts",
     "prisma:studio": "prisma studio"
   },
   "prisma": {

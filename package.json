@@ -20,7 +20,6 @@
     "db:generate": "npm run prisma:generate -w @ar-trust/api",
     "db:migrate": "npm run prisma:migrate -w @ar-trust/api",
     "db:seed": "npm run prisma:seed -w @ar-trust/api",
-    "db:seed:data": "npm run prisma:seed:data -w @ar-trust/api",
     "db:studio": "npm run prisma:studio -w @ar-trust/api"
   },
   "devDependencies": {

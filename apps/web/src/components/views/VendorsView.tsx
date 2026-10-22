@@ -128,7 +128,7 @@ export const VendorsView: React.FC = () => {
   const avgCommissionRate =
     hotelVendors.length > 0
       ? (hotelVendors.reduce((acc, v) => acc + v.commissionRate, 0) / hotelVendors.length).toFixed(1)
-      : '15.0';
+      : '0.0';
 
   const triggerFeedback = (text: string, type: 'success' | 'error') => {
     setFeedbackMessage({ text, type });
