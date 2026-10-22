@@ -1,5 +1,7 @@
-import DashboardShell from '@/components/dashboard/DashboardShell';
+import { redirect } from 'next/navigation';
 
+// Legacy role-dashboard slug — the console is now unified under /admin
+// (role-adaptive). Redirect so old links/bookmarks keep working.
 export default function Page() {
-  return <DashboardShell role="vendor-partner" />;
+  redirect('/admin');
 }

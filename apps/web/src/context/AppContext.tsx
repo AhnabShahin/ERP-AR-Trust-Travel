@@ -1,6 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { tabFromPath, adminPath } from '../config/adminTabs';
 import {
   INITIAL_AIRPORT_DESKS,
   INITIAL_BOOKINGS,
@@ -34,11 +36,6 @@ import {
 } from '../data/mockData';
 import { api, authApi, ApiError } from '../../lib/api';
 import { useResourceSync, useSettingSync } from '../../lib/data';
-import {
-  getRoleDashboardSlug,
-  getRoleFromSlug,
-  isDashboardSlug,
-} from '../utils/roleSlugs';
 import {
   AirportDesk,
   Booking,
@@ -430,7 +427,15 @@ export const AppProvider: React.FC<{
   // after mount (see below).
   const [theme, setTheme] = useState<Theme>('dark');
   const themeHydrated = React.useRef(false);
-  const [activeTab, setActiveTab] = useState<string>('dashboard');
+  // Navigation is URL-backed: the active console tab is derived from the current
+  // /admin/<tab> path, and switching tabs is a real route push — so every menu
+  // item has its own URL and a reload (or shared link) lands on the same page.
+  const pathname = usePathname();
+  const router = useRouter();
+  const activeTab = tabFromPath(pathname);
+  const setActiveTab = (tab: string) => {
+    router.push(adminPath(tab));
+  };
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [rates, setRates] = useState<ExchangeRates>(INITIAL_RATES); // hydrated from settings
 
@@ -1013,21 +1018,8 @@ export const AppProvider: React.FC<{
       try { localStorage.setItem('artrust_current_user', JSON.stringify(match)); } catch {}
     }
 
-    // Sync browser URL to role-based dashboard slug if currently in an ERP/dashboard route
-    if (typeof window !== 'undefined') {
-      const targetSlug = getRoleDashboardSlug(newRole);
-      const currentPath = window.location.pathname.toLowerCase();
-      if (
-        currentPath === '/dashboard' ||
-        isDashboardSlug(currentPath) ||
-        currentPath === '/erp' ||
-        currentPath.includes('dashboard')
-      ) {
-        if (window.location.pathname !== targetSlug) {
-          window.history.pushState(null, '', targetSlug);
-        }
-      }
-    }
+    // Navigation to the role's default tab is handled by setActiveTab above
+    // (URL-backed, pushes /admin/<defaultTab>).
 
     // Add log
     addAuditLog('Role Context Switched', 'SECURITY', `User role switched to ${targetConfig.title}`);

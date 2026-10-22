@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Search,
   Bell,
@@ -64,6 +65,13 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
     t,
   } = useApp();
 
+  const router = useRouter();
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (q) router.push(`/admin/search?q=${encodeURIComponent(q)}`);
+  };
+
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifFilter, setNotifFilter] = useState<'ALL' | 'BOOKINGS' | 'FLIGHTS' | 'FINANCE'>('ALL');
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
@@ -108,7 +116,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
 
       {/* Zone 1: Global Search & Context */}
       <div className="flex-1 min-w-0 max-w-sm relative">
-        <div className="relative">
+        <form onSubmit={submitSearch} className="relative" role="search">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 rtl:left-auto rtl:right-3 pointer-events-none" />
           <input
             type="text"
@@ -119,13 +127,14 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
           />
           {searchQuery && (
             <button
+              type="button"
               onClick={() => setSearchQuery('')}
               className="absolute right-2.5 top-1/2 -translate-y-1/2 rtl:right-auto rtl:left-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           )}
-        </div>
+        </form>
       </div>
 
       {/* Zone 2: Live FX Ticker (QAR, USD, EUR, GBP) */}

@@ -364,13 +364,8 @@ export const Sidebar: React.FC = () => {
   };
 
   const handleNavClick = (tabId: string) => {
+    // URL-backed navigation: setActiveTab pushes /admin/<tabId>.
     setActiveTab(tabId);
-    if (tabId === 'dashboard') {
-      const slug = getRoleDashboardSlug(currentRole);
-      if (typeof window !== 'undefined' && window.location.pathname !== slug) {
-        window.history.pushState(null, '', slug);
-      }
-    }
     if (typeof window !== 'undefined' && window.innerWidth < 768) {
       toggleSidebar();
     }

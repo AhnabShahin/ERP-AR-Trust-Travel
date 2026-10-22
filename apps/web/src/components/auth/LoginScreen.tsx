@@ -14,17 +14,17 @@ import { AppProvider, useApp } from '../../context/AppContext';
 import { WebsiteLanguageProvider } from '../../context/WebsiteLanguageContext';
 import { WebsiteCurrencyProvider } from '../../context/WebsiteCurrencyContext';
 import { AuthView } from '../views/AuthView';
-import { getRoleDashboardSlug } from '../../utils/roleSlugs';
 
 function LoginInner() {
-  const { isAuthenticated, currentRole } = useApp();
+  const { isAuthenticated } = useApp();
   const router = useRouter();
 
+  // Unified console: everyone lands on /admin, which is role-adaptive.
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace(getRoleDashboardSlug(currentRole));
+      router.replace('/admin');
     }
-  }, [isAuthenticated, currentRole, router]);
+  }, [isAuthenticated, router]);
 
   return <AuthView onNavigateToHome={() => router.push('/')} />;
 }
