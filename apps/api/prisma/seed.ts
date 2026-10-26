@@ -21,12 +21,41 @@
 //   DRIVER_PASSWORD     (default "Driver@2026")
 // =====================================================================
 
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import bcrypt from 'bcryptjs';
+import * as esbuild from 'esbuild';
 import { PrismaClient, UserRole } from '@prisma/client';
 
 const prisma = new PrismaClient();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const webDataDir = path.resolve(__dirname, '../../web/src/data');
 
 const slug = (n: string) => n.toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '');
+
+// Bundle a web `src/data` module (which imports image assets) under Node,
+// stubbing image imports to their committed `/media/<file>` public path so the
+// seeded refs point at files shipped in the repo.
+const imageStub: esbuild.Plugin = {
+  name: 'image-stub',
+  setup(build) {
+    build.onResolve({ filter: /\.(jpg|jpeg|png|gif|webp|svg)$/ }, (args) => ({ path: args.path, namespace: 'img-stub' }));
+    build.onLoad({ filter: /.*/, namespace: 'img-stub' }, (args) => ({
+      contents: `export default ${JSON.stringify('/media/' + path.basename(args.path))}`,
+      loader: 'js',
+    }));
+  },
+};
+
+async function loadBundle(entry: string): Promise<Record<string, unknown>> {
+  const outFile = path.join(os.tmpdir(), `artrust-seed-${Date.now()}-${Math.random().toString(36).slice(2)}.mjs`);
+  await esbuild.build({ entryPoints: [entry], bundle: true, format: 'esm', platform: 'node', outfile: outFile, plugins: [imageStub], logLevel: 'silent' });
+  const mod = await import('file://' + outFile.replace(/\\/g, '/'));
+  try { fs.unlinkSync(outFile); } catch { /* ignore */ }
+  return mod as Record<string, unknown>;
+}
 
 // ---------------------------------------------------------------------
 // 1. Wipe every table (best-effort per table).
@@ -148,21 +177,37 @@ const VEHICLES: Array<{ plate: string; type: string; make: string; model: string
   { plate: '631416', type: 'Sedan 3 Pax', make: 'Toyota', model: 'Camry', color: 'White', year: '2022', pax: 3 },
 ];
 
+// Committed /media car image + demo day-rate, matched by model name.
+const FLEET_MEDIA: Record<string, { image: string; price: number }> = {
+  Coaster: { image: '/media/toyota-coaster.jpg', price: 1500 },
+  Hiace: { image: '/media/mercedes-v-class.jpg', price: 900 },
+  Caravelle: { image: '/media/mercedes-v-class.jpg', price: 850 },
+  Carnival: { image: '/media/kia-carnival.jpg', price: 700 },
+  Staria: { image: '/media/hyundai-staria.jpg', price: 750 },
+  Innova: { image: '/media/toyota-veloz.jpg', price: 500 },
+  Xpander: { image: '/media/mitsubishi-xpander.jpg', price: 450 },
+  Carens: { image: '/media/kia-carens.jpg', price: 450 },
+  CS55: { image: '/media/changan-sedan.jpg', price: 400 },
+  Eado: { image: '/media/changan-sedan.jpg', price: 350 },
+  Camry: { image: '/media/kia-k5.jpg', price: 350 },
+};
+
 async function seedFleet(drivers: Array<{ id: string; name: string }>) {
   let created = 0;
   for (let i = 0; i < VEHICLES.length; i++) {
     const v = VEHICLES[i];
     const driver = drivers[i]; // first three vehicles get a driver; rest unassigned
+    const media = FLEET_MEDIA[v.model] ?? { image: '/media/mercedes-v-class.jpg', price: 500 };
     await prisma.fleetVehicle.create({
       data: {
         name: `${v.make} ${v.model}`,
         category: v.type,
         passengers: v.pax,
         luggage: Math.max(1, Math.round(v.pax / 3)),
-        priceQAR: 0,
+        priceQAR: media.price,
         rateType: 'Per Trip',
         features: [v.type, v.color, `Model year ${v.year}`],
-        image: '',
+        image: media.image,
         idealFor: `Up to ${v.pax} passengers`,
         plateNumber: v.plate,
         modelYear: v.year,
@@ -272,6 +317,86 @@ async function seedConfig() {
   console.log(`✓ currencies: ${res.count} (QAR base) + rates`);
 }
 
+// ---------------------------------------------------------------------
+// 8. Public website CMS content (hero text + images, sections, contact,
+//    footer) — seeded from the single source of truth in web/src/data so the
+//    landing page is fully populated. Image refs resolve to committed /media.
+// ---------------------------------------------------------------------
+async function seedSiteContent() {
+  const mod = await loadBundle(path.join(webDataDir, 'siteContent.ts'));
+  const defs = mod.SITE_CONTENT_DEFAULTS as
+    | Record<string, { value: unknown; group?: string; label?: string; kind?: string }>
+    | undefined;
+  if (!defs) { console.log('• site content: no defaults'); return; }
+  let order = 0;
+  for (const [key, def] of Object.entries(defs)) {
+    await prisma.siteContent.create({
+      data: { key, value: def.value as never, group: def.group, label: def.label, kind: def.kind ?? 'text', sortOrder: order++ },
+    });
+  }
+  console.log(`✓ site content: ${Object.keys(defs).length} keys (hero, sections, contact, footer)`);
+}
+
+// ---------------------------------------------------------------------
+// 9. Tour packages (tours + multi-day holiday packages) — committed /media
+//    images, so the Popular Tours & Holiday Packages sections are full.
+// ---------------------------------------------------------------------
+const TOURS = [
+  { name: 'Half-Day Desert Safari & Inland Sea', nameAr: 'سفاري نصف يوم والبحر الداخلي', category: 'Desert Safari', duration: '6 Hours', priceQAR: 320, image: '/media/inland-sea-safari-hero.jpg', badge: 'Best Seller', groupSize: '1 - 6 Guests', rating: 4.9, reviewCount: 428, description: 'Thrilling dune bashing across Qatar’s golden sands to the UNESCO Khor Al Adaid inland sea, with Bedouin tea and camel rides.', includes: ['Hotel pickup & drop-off', '4x4 Land Cruiser dune bashing', 'Inland Sea (Khor Al Adaid) visit', 'Bedouin camp refreshments'] },
+  { name: 'Doha City Tour & Dhow Cruise', nameAr: 'جولة الدوحة ورحلة الداو', category: 'City Tour', duration: '5 Hours', priceQAR: 250, image: '/media/dhow-cruise-heritage-hero.jpg', badge: 'Popular', groupSize: '1 - 10 Guests', rating: 4.8, reviewCount: 356, description: 'Discover Souq Waqif, Katara Cultural Village, the Pearl-Qatar and a traditional wooden dhow cruise across Doha Bay.', includes: ['Private AC vehicle', 'Souq Waqif & Katara', 'Corniche & Pearl-Qatar', 'Traditional dhow cruise'] },
+  { name: 'Private Transit Layover City Tour', nameAr: 'جولة الترانزيت الخاصة', category: 'Airport Transit', duration: '4 Hours', priceQAR: 290, image: '/media/vip-airport-transit-hero.jpg', badge: 'Guaranteed Return', groupSize: '1 - 4 Guests', rating: 5.0, reviewCount: 512, description: 'Make the most of your Hamad International layover with a private highlights tour and guaranteed on-time airport return.', includes: ['Airport meet & greet', 'Private chauffeur', 'Key Doha landmarks', 'Guaranteed on-time return'] },
+  { name: 'Sunset Dune Buggy Adventure', nameAr: 'مغامرة عربة الكثبان عند الغروب', category: 'Desert Safari', duration: '4 Hours', priceQAR: 450, image: '/media/explore-qatar-hero.jpg', badge: 'Adventure', groupSize: '1 - 2 Guests', rating: 4.9, reviewCount: 187, description: 'Self-drive dune buggy thrills across the desert at golden hour with a professional safari guide escort.', includes: ['Dune buggy & safety gear', 'Professional guide', 'Sunset photo stop', 'Bottled water'] },
+  { name: 'Private Luxury Doha Experience', nameAr: 'تجربة الدوحة الفاخرة الخاصة', category: 'Private Luxury', duration: '8 Hours', priceQAR: 980, image: '/media/mercedes-v-class.jpg', badge: 'VIP', groupSize: '1 - 6 Guests', rating: 5.0, reviewCount: 143, description: 'A bespoke full-day private tour in a Mercedes V-Class with a dedicated guide, fine dining and premium experiences.', includes: ['Mercedes V-Class + chauffeur', 'Dedicated private guide', 'Lunch at a 5-star venue', 'Flexible custom itinerary'] },
+  { name: 'Full-Day North Qatar Heritage Tour', nameAr: 'جولة شمال قطر التراثية', category: 'City Tour', duration: '7 Hours', priceQAR: 390, image: '/media/toyota-land-cruiser.jpg', badge: 'New', groupSize: '1 - 6 Guests', rating: 4.7, reviewCount: 98, description: 'Explore Al Zubarah UNESCO fort, Purple Island mangroves and the northern coast’s historic sites.', includes: ['Private 4x4 vehicle', 'Al Zubarah Fort', 'Purple Island mangroves', 'Snacks & water'] },
+];
+
+const HOLIDAY_PACKAGES = [
+  { name: '3-Day Doha Discovery Escape', nameAr: 'باقة اكتشاف الدوحة 3 أيام', category: 'Holiday Package', duration: '3 Days / 2 Nights', priceQAR: 2450, image: '/media/holiday-packages-hero.jpg', badge: 'All-Inclusive', days: 3, nights: 2, description: 'A perfectly balanced short break: city highlights, desert safari and cultural immersion with 5-star comfort.', includes: ['2 nights 5-star hotel', 'Private airport transfers', 'Daily breakfast', 'City tour + desert safari'], highlights: ['Day 1: VIP airport reception & Doha city orientation', 'Day 2: Full-day desert safari & inland sea', 'Day 3: Souq Waqif & departure transfer'], excluded: ['International airfare', 'Personal expenses', 'Travel insurance'] },
+  { name: '5-Day Qatar Luxury Explorer', nameAr: 'باقة قطر الفاخرة 5 أيام', category: 'Holiday Package', duration: '5 Days / 4 Nights', priceQAR: 4850, image: '/media/explore-qatar-hero.jpg', badge: 'Premium', days: 5, nights: 4, description: 'The complete Qatar experience — desert, sea, culture and luxury — across five curated days.', includes: ['4 nights luxury hotel', 'Private chauffeur throughout', 'Daily breakfast & 2 dinners', 'All tours & entrance fees'], highlights: ['Day 1: Arrival & Pearl-Qatar evening', 'Day 2: Desert safari & dune buggy', 'Day 3: Dhow cruise & Katara', 'Day 4: North Qatar heritage', 'Day 5: Leisure & departure'], excluded: ['International airfare', 'Personal shopping', 'Optional spa treatments'] },
+  { name: '4-Day Family Adventure Package', nameAr: 'باقة المغامرة العائلية 4 أيام', category: 'Holiday Package', duration: '4 Days / 3 Nights', priceQAR: 3600, image: '/media/dhow-cruise-heritage-hero.jpg', badge: 'Family', days: 4, nights: 3, description: 'Kid-friendly adventure blending desert fun, cultural stops and family-sized comfort transport.', includes: ['3 nights family hotel', 'Family MPV transfers', 'Daily breakfast', 'Desert safari + dhow cruise'], highlights: ['Day 1: Airport welcome & Corniche', 'Day 2: Family desert safari', 'Day 3: Dhow cruise & Katara', 'Day 4: Souq Waqif & departure'], excluded: ['International airfare', 'Personal expenses'] },
+];
+
+async function seedTourPackages() {
+  const base = (p: Record<string, unknown>) => ({
+    serviceType: 'Tour Package' as const, pickupLocation: 'Doha, Qatar', departure: 'Daily departures',
+    includes: p.includes as never, isFeatured: true, showOnWebsite: true, originalPriceQAR: 0,
+  });
+  const tours = TOURS.map((t) => ({
+    name: t.name, nameAr: t.nameAr, category: t.category, duration: t.duration, priceQAR: t.priceQAR,
+    description: t.description, image: t.image, badge: t.badge, groupSize: t.groupSize, rating: t.rating,
+    reviewCount: t.reviewCount, isMultiDay: false, ...base(t),
+  }));
+  const pkgs = HOLIDAY_PACKAGES.map((p) => ({
+    name: p.name, nameAr: p.nameAr, category: p.category, duration: p.duration, priceQAR: p.priceQAR,
+    description: p.description, image: p.image, badge: p.badge, groupSize: 'Up to 6 Guests', rating: 4.9,
+    reviewCount: 120, isMultiDay: true, days: p.days, nights: p.nights, highlights: p.highlights as never,
+    excluded: p.excluded as never, ...base(p),
+  }));
+  const res = await prisma.tourPackage.createMany({ data: [...tours, ...pkgs] as never });
+  console.log(`✓ tour packages: ${res.count} (${TOURS.length} tours, ${HOLIDAY_PACKAGES.length} holiday packages)`);
+}
+
+// ---------------------------------------------------------------------
+// 10. Customer reviews (committed avatar placeholder).
+// ---------------------------------------------------------------------
+const REVIEWS = [
+  { author: 'David Sterling', country: 'United Kingdom', rating: 5, tour: 'Desert Safari & Inland Sea', comment: 'Absolutely world-class. The dune bashing was exhilarating and our guide made the inland sea unforgettable. Punctual, professional, premium.' },
+  { author: 'Elena Rostova', country: 'Russia', rating: 5, tour: 'Doha City Tour & Dhow Cruise', comment: 'The dhow cruise at sunset was magical and Souq Waqif came alive with our guide’s stories. AR Trust exceeded every expectation.' },
+  { author: 'Sultan Al-Otaibi', country: 'Saudi Arabia', rating: 5, tour: 'Private Luxury Experience', comment: 'Flawless VIP service in a spotless Mercedes V-Class. The chauffeur and private guide were exceptional. Highly recommended.' },
+  { author: 'Maria Gonzalez', country: 'Spain', rating: 5, tour: 'Transit Layover City Tour', comment: 'Perfect for a long layover — they got us back to the airport with time to spare. Saw all the highlights of Doha stress-free.' },
+  { author: 'James Carter', country: 'United States', rating: 5, tour: 'Sunset Dune Buggy Adventure', comment: 'The dune buggy ride at golden hour was the highlight of our Qatar trip. Safe, thrilling and beautifully organised.' },
+  { author: 'Aiko Tanaka', country: 'Japan', rating: 5, tour: 'Family Adventure Package', comment: 'Our family felt cared for from airport to departure. The kids loved the desert and the team was warm and attentive throughout.' },
+];
+
+async function seedReviews() {
+  const data = REVIEWS.map((r, i) => ({
+    author: r.author, country: r.country, rating: r.rating, tour: r.tour, comment: r.comment,
+    date: 'October 2026', avatar: '/media/avatar-placeholder.svg', showOnWebsite: true, sortOrder: i,
+  }));
+  const res = await prisma.review.createMany({ data });
+  console.log(`✓ reviews: ${res.count}`);
+}
+
 async function main() {
   console.log('Seeding AR Trust database (real data)…\n');
   await wipeDatabase();
@@ -282,7 +407,10 @@ async function main() {
   await seedPlatforms();
   await seedStaff();
   await seedConfig();
-  console.log('\n✅ Seed complete — super-admin + drivers + the PDF data + base currency only.');
+  await seedSiteContent();
+  await seedTourPackages();
+  await seedReviews();
+  console.log('\n✅ Seed complete — super-admin, drivers, PDF fleet/hotels/platforms, full website content + tours + reviews.');
 }
 
 main()

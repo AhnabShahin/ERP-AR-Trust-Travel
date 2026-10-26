@@ -87,6 +87,14 @@ export const SITE_CONTENT_DEFAULTS: Record<string, ContentDef> = {
     ] as HeroSlideText[],
   },
 
+  // ---- Homepage hero background images (dashboard-editable) ------------
+  // Each slide's background image. Change/remove from the Website Content
+  // editor; defaults point at committed /media files (shipped in the repo).
+  'home.hero.slide1.image': { value: '/media/explore-qatar-hero.jpg', group: 'Homepage · Hero', label: 'Hero slide 1 image', kind: 'image' },
+  'home.hero.slide2.image': { value: '/media/inland-sea-safari-hero.jpg', group: 'Homepage · Hero', label: 'Hero slide 2 image', kind: 'image' },
+  'home.hero.slide3.image': { value: '/media/vip-airport-transit-hero.jpg', group: 'Homepage · Hero', label: 'Hero slide 3 image', kind: 'image' },
+  'home.hero.slide4.image': { value: '/media/dhow-cruise-heritage-hero.jpg', group: 'Homepage · Hero', label: 'Hero slide 4 image', kind: 'image' },
+
   // ---- Homepage section headings --------------------------------------
   'home.tours.title': { value: 'Popular Tour Packages', group: 'Homepage · Sections', label: 'Tours heading', kind: 'text' },
   'home.tours.subtitle': { value: 'Handcrafted Qatar experiences, from desert safaris to dhow cruises.', group: 'Homepage · Sections', label: 'Tours subheading', kind: 'textarea' },
@@ -100,6 +108,7 @@ export const SITE_CONTENT_DEFAULTS: Record<string, ContentDef> = {
   'home.cta.title': { value: 'Ready to Explore Qatar?', group: 'Homepage · CTA', label: 'CTA heading', kind: 'text' },
   'home.cta.subtitle': { value: 'Let us craft your perfect Qatar journey — from airport to adventure.', group: 'Homepage · CTA', label: 'CTA subheading', kind: 'textarea' },
   'home.cta.button': { value: 'Book Your Experience', group: 'Homepage · CTA', label: 'CTA button', kind: 'text' },
+  'home.whyus.image': { value: '/media/holiday-packages-hero.jpg', group: 'Homepage · Why Us', label: 'Why-Us showcase image', kind: 'image' },
 
   // ---- Contact ---------------------------------------------------------
   'contact.title': { value: 'Get in Touch', group: 'Contact', label: 'Contact heading', kind: 'text' },

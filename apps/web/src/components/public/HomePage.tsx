@@ -57,16 +57,13 @@ import {
   getSyncedHolidayPackages,
   getSyncedFleet,
 } from '../../data/websiteData';
-import exploreQatarHeroImage from '../../assets/explore-qatar-hero.jpg';
-import inlandSeaSafariHeroImage from '../../assets/inland-sea-safari-hero.jpg';
-import vipAirportTransitHeroImage from '../../assets/vip-airport-transit-hero.jpg';
-import dhowCruiseHeritageHeroImage from '../../assets/dhow-cruise-heritage-hero.jpg';
 import { mercedesVClass } from '../../assets/cars';
 
+// Hero slide TEXT structure (count + i18n defaults). The background images are
+// dashboard-driven (CMS keys home.hero.slideN.image), read at render below.
 const HERO_SLIDES = [
   {
     id: 1,
-    image: exploreQatarHeroImage,
     title: 'Experience Qatar’s Wonders With',
     titleAr: 'اكتشف روائع ومعالم قطر الساحرة مع',
     highlight: 'AR Trust Travel & Tourism',
@@ -78,7 +75,6 @@ const HERO_SLIDES = [
   },
   {
     id: 2,
-    image: inlandSeaSafariHeroImage,
     title: 'Thrilling Inland Sea Dune Safaris',
     titleAr: 'مغامرات السفاري الصحراوية والكثبان الرملية',
     highlight: 'With 4x4 Land Cruiser Expeditions',
@@ -90,7 +86,6 @@ const HERO_SLIDES = [
   },
   {
     id: 3,
-    image: vipAirportTransitHeroImage,
     title: 'Premier Airport Transit & Fleet',
     titleAr: 'خدمات استقبال المطار والأسطول الفاخر',
     highlight: 'With VIP Chauffeur & Transfers',
@@ -102,7 +97,6 @@ const HERO_SLIDES = [
   },
   {
     id: 4,
-    image: dhowCruiseHeritageHeroImage,
     title: 'Authentic Arabian Dhow Cruises',
     titleAr: 'رحلات المراكب الشراعية التقليدية',
     highlight: '& Doha Heritage Excursions',
@@ -139,6 +133,9 @@ export default function HomePage() {
   // Hero text is editable from the dashboard Website Content editor
   // (home.hero.slides); falls back to the translation bundle when unset.
   const heroCms = c<HeroSlideText[]>('home.hero.slides', []);
+  // Hero background images are dashboard-editable (CMS image keys). Resolved to
+  // loadable URLs; empty when the DB is unseeded (no static demo fallback).
+  const heroImages = [1, 2, 3, 4].map((n) => imgSrc(c<string>(`home.hero.slide${n}.image`, '')));
   const baseSlideTrans = tWeb.slides[currentSlide] || tWeb.slides[0];
   const cmsSlide = heroCms[currentSlide];
   // The editable CMS hero text is English; other website languages keep the
@@ -219,7 +216,7 @@ export default function HomePage() {
                   ? 'opacity-65 scale-100'
                   : 'opacity-0 scale-105 pointer-events-none'
               }`}
-              style={{ backgroundImage: `url('${slide.image}')` }}
+              style={{ backgroundImage: heroImages[idx] ? `url('${heroImages[idx]}')` : undefined }}
             />
           ))}
           {/* Dark subtle vignette over slide so text and header are crisp and readable */}
@@ -884,16 +881,14 @@ export default function HomePage() {
           {/* Visual Showcase Box */}
           <div className="relative">
             <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-slate-200 dark:border-[#C0AB6F]/40 aspect-[4/3]">
-              <img
-                src="https://artrusttravel.com/wp-content/uploads/al_opt_content/IMAGE/artrusttravel.com/wp-content/uploads/2026/02/WhatsApp-Image-2026-10-11-at-3.58.32-PM-1536.jpeg.bv.webp"
-                alt="Qatar Desert Safari Adventure"
-                className="w-full h-full object-cover"
-                loading="lazy"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src =
-                    'https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80';
-                }}
-              />
+              {imgSrc(c<string>('home.whyus.image', '')) && (
+                <img
+                  src={imgSrc(c<string>('home.whyus.image', ''))}
+                  alt="Qatar Desert Safari Adventure"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-[#05161D]/90 via-transparent to-transparent" />
               <div className="absolute bottom-6 left-6 right-6 p-4 rounded-2xl bg-[#09232C]/90 backdrop-blur-md border border-[#C0AB6F]/40 text-white flex items-center justify-between">
                 <div>

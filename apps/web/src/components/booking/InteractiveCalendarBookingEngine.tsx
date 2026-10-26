@@ -289,11 +289,13 @@ export const InteractiveCalendarBookingEngine: React.FC<InteractiveCalendarBooki
           <div className="rounded-2xl border border-[#C0AB6F]/40 bg-gradient-to-r from-[#05161D] via-[#09232C] to-[#0D3A48] p-4 sm:p-5 shadow-xl relative overflow-hidden">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="relative shrink-0 w-full sm:w-36 h-28 rounded-xl overflow-hidden border border-[#C0AB6F]/30 shadow-md">
-                <img
-                  src={imgSrc(selectedExperience.image)}
-                  alt={selectedExperience.title}
-                  className="w-full h-full object-cover"
-                />
+                {imgSrc(selectedExperience.image) && (
+                  <img
+                    src={imgSrc(selectedExperience.image)}
+                    alt={selectedExperience.title}
+                    className="w-full h-full object-cover"
+                  />
+                )}
                 {selectedExperience.badge && (
                   <span className="absolute top-1.5 left-1.5 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-[#05161D]/90 text-[#E7CF8A] border border-[#C0AB6F]/40">
                     {selectedExperience.badge}

@@ -10,6 +10,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Globe, Save, RotateCcw, Loader2 } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { ImageUploadField } from '../common/ImageUploadField';
 
 interface ContentRow {
   key: string;
@@ -148,7 +149,13 @@ export function WebsiteContentView() {
                       <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">
                         {r.label || r.key} <span className="text-slate-400 font-mono font-normal">· {r.key}</span>
                       </label>
-                      {kind === 'text' ? (
+                      {kind === 'image' ? (
+                        <ImageUploadField
+                          value={drafts[r.key] || null}
+                          onChange={(ref) => setDrafts((d) => ({ ...d, [r.key]: ref || '' }))}
+                          hint="Upload, replace or remove this image. Shown live on the public site."
+                        />
+                      ) : kind === 'text' ? (
                         <input
                           type="text"
                           value={drafts[r.key] ?? ''}
