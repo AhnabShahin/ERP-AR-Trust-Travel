@@ -214,6 +214,10 @@ model FleetVehicle {
   assignedDriverName String?
   plateNumber        String?
   modelYear          String?
+  // Vehicle registry detail (from the fleet sheet): make, model & colour.
+  make               String?
+  model              String?
+  color              String?
   showOnWebsite      Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -819,6 +823,115 @@ model Review {
   updatedByName String?
 
   @@map("reviews")
+}
+
+// ---------------------------------------------------------------------
+// Billing — payment accounts + invoices (BizBill-style).
+// `items` and `payments` are JSON (line items / payment ledger) to match the
+// codebase convention of storing nested structures as JSON columns. Links to
+// a Booking are kept as plain string ids (no FK), like the rest of the schema.
+// ---------------------------------------------------------------------
+
+// A payment account / method (bank, cash, wallet…) used when recording an
+// invoice payment. Its currentBalance is bumped as payments are recorded.
+model PaymentAccount {
+  id             String   @id @default(cuid())
+  title          String // e.g. "Qatar Bank", "Cash", "bKash"
+  openingDate    String // ISO date label (yyyy-mm-dd)
+  accountNumber  String?
+  currency       String   @default("QAR")
+  openingBalance Float    @default(0)
+  currentBalance Float    @default(0)
+  note           String?  @db.Text
+  isActive       Boolean  @default(true)
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  createdBy     String?
+  createdByName String?
+  updatedBy     String?
+  updatedByName String?
+
+  @@map("payment_accounts")
+}
+
+model Invoice {
+  id          String @id @default(cuid())
+  invoiceNumber String @unique // e.g. "INV-260001"
+  publicToken   String @unique // opaque token for the public /invoice/<token> page
+  status        String @default("unpaid") // unpaid | partial | paid
+
+  // Bill-To / customer
+  customerId      String?
+  customerName    String
+  customerPhone   String?
+  customerEmail   String?
+  customerAddress String? @db.Text
+  customerTRN     String?
+
+  // Dates (stored as yyyy-mm-dd labels for parity with the rest of the app)
+  invoiceDate String
+  dueDate     String?
+
+  // Money
+  currency      String  @default("QAR")
+  items         Json // [{ name, description?, qty, unit?, unitCost, vatPercent, vatAmount, amount }]
+  subTotal      Float   @default(0)
+  discount      Float   @default(0)
+  vatTotal      Float   @default(0)
+  grandTotal    Float   @default(0)
+  amountPaid    Float   @default(0)
+  balanceDue    Float   @default(0)
+  amountInWords String? @db.Text
+
+  // Payment ledger — [{ id, date, method, accountId?, accountTitle?, note?, amount }]
+  payments Json?
+
+  // Extras
+  notes      String? @db.Text
+  terms      String? @db.Text
+  source     String  @default("Manual") // Manual | Booking
+  bookingId  String? // optional link to a Booking row
+  bookingPnr String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy     String?
+  createdByName String?
+  updatedBy     String?
+  updatedByName String?
+
+  @@index([status])
+  @@index([bookingId])
+  @@map("invoices")
+}
+
+// ---------------------------------------------------------------------
+// Online booking platforms / channels — the OTA partners AR Trust receives
+// business from, grouped by `type` (tour vs airport-transfer). Hotels have
+// their own model (HotelVendor); this covers the other two groups.
+// ---------------------------------------------------------------------
+model Platform {
+  id           String   @id @default(cuid())
+  name         String
+  type         String // 'tour' | 'airport-transfer'
+  contactPhone String?
+  website      String?
+  notes        String?  @db.Text
+  isActive     Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  createdBy     String?
+  createdByName String?
+  updatedBy     String?
+  updatedByName String?
+
+  @@index([type])
+  @@map("platforms")
 }
 
 // Key/value store for every editable piece of public-site text & content.

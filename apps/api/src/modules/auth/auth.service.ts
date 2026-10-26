@@ -33,6 +33,7 @@ export function toPublicUser(user: User): UserAccount {
     nationality: user.nationality,
     companyName: user.companyName,
     bio: user.bio,
+    staffStatus: user.staffStatus,
   };
 }
 

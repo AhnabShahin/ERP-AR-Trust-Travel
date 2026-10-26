@@ -1660,7 +1660,7 @@ export const ROLE_CONFIGS: Record<import('../types').UserRole, import('../types'
     scopeSummary: 'Manages payout approvals, multi-currency cash deposits, expense entries, and exports tax/accounting reports.',
     scopeSummaryAr: 'إدارة اعتمادات الصرف، وإيداعات العملات المتعددة، وتسجيل المصروفات، وتصدير التقارير الضريبية والمحاسبية.',
     defaultTab: 'dashboard',
-    allowedTabs: ['dashboard', 'ledger', 'my-account', 'payroll', 'expenses', 'eod', 'reports'],
+    allowedTabs: ['dashboard', 'ledger', 'my-account', 'payroll', 'expenses', 'eod', 'reports', 'reports-center', 'invoices', 'payment-accounts'],
     permissions: {
       canViewAllFinancials: true,
       canEditExchangeRates: false,

@@ -13,6 +13,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { UserAccountsManagerView } from './UserAccountsManagerView';
 import { api } from '../../../lib/api';
+import { InvoiceBillingSettings } from '../invoices/InvoiceBillingSettings';
 
 const DEFAULT_WHATSAPP_TEMPLATE =
   'Marhaba {passenger_name}! Welcome to Doha. Your AR Trust driver {driver_name} ({driver_vehicle}) is awaiting you at Hamad International Airport {pickup_bay}. PNR: {pnr}';
@@ -203,6 +204,11 @@ export const SettingsView: React.FC = () => {
           </button>
         </div>
       </form>
+
+      {/* Invoice & billing (company header/signature/footer on every invoice) */}
+      <div className="mt-4">
+        <InvoiceBillingSettings />
+      </div>
     </>
   )}
 </div>

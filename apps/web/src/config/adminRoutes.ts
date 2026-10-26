@@ -36,13 +36,22 @@ import { SettingsView } from '../components/views/SettingsView';
 import { GlobalSearchView } from '../components/views/GlobalSearchView';
 import { WebsiteContentView } from '../components/views/WebsiteContentView';
 import { ReviewsManagerView } from '../components/views/ReviewsManagerView';
+import { InvoicesView } from '../components/views/InvoicesView';
+import { PaymentAccountsView } from '../components/views/PaymentAccountsView';
+import { ReportsCenterView } from '../components/views/ReportsCenterView';
+import { PlatformsView } from '../components/views/PlatformsView';
+import { DriversManagerView } from '../components/views/DriversManagerView';
 
 /** slug (URL segment after /dashboard/) -> view component. */
 export const ADMIN_VIEWS: Record<string, ComponentType> = {
   dashboard: DashboardView,
   bookings: UnifiedBookingsView,
+  invoices: InvoicesView,
+  'payment-accounts': PaymentAccountsView,
   'hotel-bookings': HotelBookingView,
   vendors: VendorsView,
+  platforms: PlatformsView,
+  'drivers-manager': DriversManagerView,
   pos: AgentDeskPOSView,
   guests: GuestsView,
   services: ServicesManagementView,
@@ -53,6 +62,7 @@ export const ADMIN_VIEWS: Record<string, ComponentType> = {
   expenses: ExpensesView,
   ledger: MultiCurrencyLedgerView,
   reports: FinancialReportsView,
+  'reports-center': ReportsCenterView,
   'audit-logs': AuditLogsView,
   'driver-portal': DriverPortalView,
   'vendor-portal': VendorDashboardView,

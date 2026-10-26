@@ -24,6 +24,8 @@ const isAdminRole = (role?: string): boolean =>
 const EDITABLE = [
   'name', 'nameAr', 'phone', 'department', 'vendorId', 'avatar',
   'address', 'city', 'country', 'nationality', 'passportNumber', 'companyName', 'bio',
+  // Staff/driver duty status — set from the dispatch board + staff screen.
+  'staffStatus', 'jobTitle',
 ] as const;
 
 export const usersRouter = Router();

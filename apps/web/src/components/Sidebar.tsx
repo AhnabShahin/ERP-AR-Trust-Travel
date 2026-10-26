@@ -28,6 +28,11 @@ import {
   Shield,
   Globe,
   Star,
+  ReceiptText,
+  Wallet,
+  BarChart3,
+  Share2,
+  Car,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { imgSrc } from '../../lib/uploads';
@@ -191,6 +196,12 @@ export const Sidebar: React.FC = () => {
           badge: '5★',
         },
         {
+          id: 'platforms',
+          label: language === 'ar' ? 'المنصات (جولات/نقل المطار)' : 'Online Platforms (Tour/Transfer)',
+          icon: Share2,
+          badge: 'New',
+        },
+        {
           id: 'pos',
           label: language === 'ar' ? 'نقطة بيع مكاتب الوكلاء' : 'Agent Desk POS',
           icon: Store,
@@ -222,6 +233,12 @@ export const Sidebar: React.FC = () => {
           label: language === 'ar' ? 'باقات وخدمات الرحلات' : 'Tour Services & Packages',
           icon: Sparkles,
           badge: currentRole === 'super-admin' ? 'Admin' : undefined,
+        },
+        {
+          id: 'drivers-manager',
+          label: language === 'ar' ? 'إدارة السائقين' : 'Drivers',
+          icon: Car,
+          badge: 'New',
         },
         {
           id: 'driver-portal',
@@ -257,6 +274,17 @@ export const Sidebar: React.FC = () => {
       icon: DollarSign,
       items: [
         {
+          id: 'invoices',
+          label: language === 'ar' ? 'الفواتير والمبيعات' : 'Invoices & Billing',
+          icon: ReceiptText,
+          badge: 'New',
+        },
+        {
+          id: 'payment-accounts',
+          label: language === 'ar' ? 'حسابات الدفع' : 'Payment Accounts',
+          icon: Wallet,
+        },
+        {
           id: 'eod',
           label: t('eod'),
           icon: Receipt,
@@ -280,6 +308,12 @@ export const Sidebar: React.FC = () => {
           label: language === 'ar' ? 'التقارير والأرباح (P&L)' : 'Financial Reports & P&L',
           icon: FileText,
           badge: '68% Margin',
+        },
+        {
+          id: 'reports-center',
+          label: language === 'ar' ? 'مركز التقارير التحليلية' : 'Reports Center',
+          icon: BarChart3,
+          badge: 'New',
         },
       ],
     },
@@ -338,11 +372,16 @@ export const Sidebar: React.FC = () => {
       roleConfig.allowedTabs.includes(itemId) ||
       ((currentRole === 'super-admin' || currentRole === 'admin' || currentRole === 'operations-manager') &&
         (itemId === 'reports' ||
+          itemId === 'reports-center' ||
           itemId === 'audit-logs' ||
           itemId === 'services' ||
           itemId === 'employees' ||
           itemId === 'guests' ||
           itemId === 'expenses' ||
+          itemId === 'invoices' ||
+          itemId === 'payment-accounts' ||
+          itemId === 'platforms' ||
+          itemId === 'drivers-manager' ||
           itemId === 'vendors' ||
           itemId === 'hotel-bookings' ||
           itemId === 'vendor-portal' ||

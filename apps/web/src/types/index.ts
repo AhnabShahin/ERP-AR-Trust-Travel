@@ -145,6 +145,143 @@ export interface Booking {
   leadType?: 'tour' | 'package' | 'fleet' | 'service';
 }
 
+// ---- Billing: payment accounts + invoices (BizBill-style) ---------------
+
+export interface PaymentAccount extends Partial<AuditMeta> {
+  id: string;
+  title: string;
+  openingDate: string; // yyyy-mm-dd
+  accountNumber?: string;
+  currency: Currency;
+  openingBalance: number;
+  currentBalance: number;
+  note?: string;
+  isActive?: boolean;
+  sortOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type InvoiceStatus = 'unpaid' | 'partial' | 'paid';
+
+export interface InvoiceItem {
+  name: string;
+  description?: string;
+  qty: number;
+  unit?: string; // e.g. 'pax', 'night', 'trip'
+  unitCost: number;
+  vatPercent: number; // 0..100
+  vatAmount: number;
+  amount: number; // line total incl. VAT
+}
+
+export interface InvoicePayment {
+  id: string;
+  date: string; // yyyy-mm-dd
+  method: string; // account title, e.g. 'Qatar Bank' / 'Cash'
+  accountId?: string; // PaymentAccount.id when chosen from the list
+  note?: string;
+  amount: number;
+}
+
+export interface Invoice extends Partial<AuditMeta> {
+  id: string;
+  invoiceNumber: string; // e.g. 'INV-260001'
+  publicToken: string; // opaque token for /invoice/<token>
+  status: InvoiceStatus;
+
+  customerId?: string;
+  customerName: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  customerAddress?: string;
+  customerTRN?: string;
+
+  invoiceDate: string; // yyyy-mm-dd
+  dueDate?: string;
+
+  currency: Currency;
+  items: InvoiceItem[];
+  subTotal: number;
+  discount: number;
+  vatTotal: number;
+  grandTotal: number;
+  amountPaid: number;
+  balanceDue: number;
+  amountInWords?: string;
+
+  payments?: InvoicePayment[];
+
+  notes?: string;
+  terms?: string;
+  source: 'Manual' | 'Booking' | string;
+  bookingId?: string;
+  bookingPnr?: string;
+
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** Company header/footer shown on invoices — stored in settings `invoiceProfile`. */
+export interface InvoiceProfile {
+  companyName: string;
+  companyNameAr?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  helpline?: string;
+  website?: string;
+  trn?: string; // VAT / tax registration number
+  licenseNo?: string; // company / tourism license
+  logo?: string; // image ref (/api/uploads/<id> or data URL)
+  signatureImage?: string; // authorised-signatory image
+  signatureName?: string;
+  signatureTitle?: string;
+  footerNote?: string;
+  defaultVatPercent?: number;
+  invoicePrefix?: string; // default 'INV-'
+  defaultNotes?: string;
+  defaultTerms?: string;
+}
+
+// ---- Reporting (aggregation payload from /api/reports/overview) ---------
+
+export interface ReportBreakdownItem {
+  label: string;
+  amount: number;
+  count: number;
+}
+
+export interface ReportOverview {
+  range: { from?: string; to?: string };
+  generatedAt: string;
+  kpis: {
+    invoicedTotal: number;
+    collectedTotal: number;
+    outstandingTotal: number;
+    invoiceCount: number;
+    bookingTotal: number;
+    bookingCount: number;
+    bookingPax: number;
+    expenseTotal: number;
+    payrollTotal: number;
+    grossRevenue: number;
+    netProfit: number;
+  };
+  salesSeries: Array<{ period: string; invoiced: number; bookings: number; collected: number }>;
+  invoiceStatus: Record<'paid' | 'partial' | 'unpaid', { count: number; amount: number }>;
+  receivablesAging: { current: number; d30: number; d60: number; d90plus: number };
+  topCustomers: Array<{ name: string; invoiced: number; outstanding: number }>;
+  collectionsByAccount: Array<{ account: string; amount: number }>;
+  collectionsByMethod: Array<{ method: string; amount: number }>;
+  expensesByCategory: ReportBreakdownItem[];
+  expensesByStatus: ReportBreakdownItem[];
+  bookingsBySource: ReportBreakdownItem[];
+  bookingsByPackage: ReportBreakdownItem[];
+  bookingsByMethod: ReportBreakdownItem[];
+  accountBalances: Array<{ account: string; currency: string; balance: number }>;
+}
+
 export interface ExchangeRates {
   USD: number; // e.g. 3.64 QAR per USD (pegged)
   EUR: number; // e.g. 3.96 QAR per EUR
@@ -208,7 +345,26 @@ export interface FleetVehicle {
   assignedDriverName?: string;
   plateNumber?: string;
   modelYear?: string;
+  make?: string;
+  model?: string;
+  color?: string;
   showOnWebsite?: boolean;
+}
+
+// Online booking platform / channel (tour or airport-transfer OTA).
+export type PlatformType = 'tour' | 'airport-transfer';
+
+export interface Platform {
+  id: string;
+  name: string;
+  type: PlatformType;
+  contactPhone?: string;
+  website?: string;
+  notes?: string;
+  isActive?: boolean;
+  sortOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Driver {
@@ -593,4 +749,6 @@ export interface UserAccount {
   spokenLanguages?: string[];
   companyName?: string;
   bio?: string;
+  staffStatus?: string;
+  jobTitle?: string;
 }

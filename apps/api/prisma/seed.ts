@@ -1,236 +1,293 @@
 // =====================================================================
-// Single unified seed — one command sets up a ready-to-use database:
-//   1. Demo users, one per role (so you can sign in as each role).
-//   2. The full catalogue + operational data, loaded from the app's own
-//      mock dataset (fleet, tour packages, vendors, guests, bookings, finance,
-//      currencies, desks, …) so the dashboard AND the public website have data.
-//   3. Singleton config (rates, shift drawer, package categories, service map).
+// AR Trust — production seed (real operational data).
 //
-// mockData.ts imports image assets, so we bundle it with esbuild (stubbing image
-// imports to their /media public path) before importing it under Node. Field
-// selection is driven by the Prisma DMMF, so only columns that exist on each
-// model are inserted and invalid date strings fall back to defaults.
+// Running it:
+//   1. WIPES every table (empties the database).
+//   2. Creates the super-admin "ar-trust" + 3 driver accounts (role
+//      driver-guide — drivers live in the users table, managed from the
+//      dedicated "Drivers" menu).
+//   3. Loads AR Trust's real data from "Ar Trust det — Hotel.pdf":
+//      5 hotels (with desk-rep contact numbers), tour + airport-transfer
+//      platforms, airport/hotel-desk staff, and 13 fleet vehicles (with
+//      make/model/colour) — the first three linked to the three drivers.
+//   4. Seeds Qatar's currency (QAR base) + USD/EUR/GBP so money/reports work.
 //
-// Run with:  npm run db:seed          (or: npm run prisma:seed -w @ar-trust/api)
-// The super-admin is NOT seeded here — create it once after deploy with:
-//            npm run create-superadmin -w @ar-trust/api
+// Run with:  npm run db:seed -w @ar-trust/api
+// Full reset (drop + re-migrate + seed): npx prisma migrate reset -w @ar-trust/api
+//
+// Credentials (override with env before seeding):
+//   SUPERADMIN_USERNAME (default "ar-trust"), SUPERADMIN_EMAIL,
+//   SUPERADMIN_PASSWORD (default "ArTrust@2026" — change after first login)
+//   DRIVER_PASSWORD     (default "Driver@2026")
 // =====================================================================
 
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import bcrypt from 'bcryptjs';
-import * as esbuild from 'esbuild';
-import { Prisma, PrismaClient, UserRole } from '@prisma/client';
+import { PrismaClient, UserRole } from '@prisma/client';
 
 const prisma = new PrismaClient();
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const webDataDir = path.resolve(__dirname, '../../web/src/data');
-const mockPath = path.join(webDataDir, 'mockData.ts');
-const websitePath = path.join(webDataDir, 'websiteData.ts');
-const siteContentPath = path.join(webDataDir, 'siteContent.ts');
 
-const toPrismaRole = (r: string): UserRole => r.replace(/-/g, '_') as UserRole;
+const slug = (n: string) => n.toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '');
 
 // ---------------------------------------------------------------------
-// 1. Demo users (one per role). Passwords are the mock plaintext values,
-//    hashed here. Upserted so re-seeding never duplicates accounts.
+// 1. Wipe every table (best-effort per table).
 // ---------------------------------------------------------------------
-const demoUsers: Array<{
-  name: string; nameAr?: string; username: string; email: string; password: string;
-  role: string; department?: string; phone?: string; vendorId?: string; isEmailVerified?: boolean;
-}> = [
-  { name: 'Tariq Al-Sulaiti', nameAr: 'طارق السليطي', username: 'ops', email: 'ops@artrust.qa', password: 'ops123', role: 'operations-manager', department: 'Operations & Dispatch Desk', phone: '+974 5512 8841', isEmailVerified: true },
-  { name: 'Zaid Qasim', nameAr: 'زيد قاسم', username: 'agent', email: 'agent@artrust.qa', password: 'agent123', role: 'transit-agent', department: 'Airport Arrivals Counter 4 & Hotels', phone: '+974 6690 1243' },
-  { name: 'Tariq Al-Kuwari', nameAr: 'طارق الكواري', username: 'driver', email: 'driver@artrust.qa', password: 'driver123', role: 'driver-guide', department: 'Chauffeur Fleet & Desert Guides', phone: '+974 7741 9920' },
-  { name: 'Khalid Al-Nuaimi CPA', nameAr: 'خالد النعيمي', username: 'finance', email: 'finance@artrust.qa', password: 'finance123', role: 'finance-accountant', department: 'Treasury & Audit Division', phone: '+974 3321 0098', isEmailVerified: true },
-  { name: 'Bader Al-Husseini (The Ritz-Carlton)', nameAr: 'بدر الحسيني', username: 'ritz', email: 'concierge.doha@ritzcarlton.com', password: 'ritz123', role: 'vendor-partner', vendorId: 'h-ritz', department: 'The Ritz-Carlton, Doha', phone: '+974 4484 8000', isEmailVerified: true },
-  { name: 'Marc de Saint-Germain (Fairmont)', nameAr: 'مارك دي سان جيرمان', username: 'fairmont', email: 'vipconcierge.doha@fairmont.com', password: 'fairmont123', role: 'vendor-partner', vendorId: 'h-fairmont', department: 'Fairmont & Raffles Doha', phone: '+974 4030 7777' },
-  { name: 'Layla Al-Kuwari (Marsa Malaz)', nameAr: 'ليلى الكواري', username: 'kempinski', email: 'reservations.marsamalaz@kempinski.com', password: 'marsa123', role: 'vendor-partner', vendorId: 'h-marsamalaz', department: 'Marsa Malaz Kempinski', phone: '+974 4035 5555', isEmailVerified: true },
-  { name: 'Alexander Wright', nameAr: 'ألكسندر رايت', username: 'customer', email: 'traveler.wright@gmail.com', password: 'customer123', role: 'customer', department: 'VIP Leisure Traveler', phone: '+44 7911 123456' },
-];
-
-async function seedUsers() {
-  for (const u of demoUsers) {
-    const passwordHash = await bcrypt.hash(u.password, 10);
-    await prisma.user.upsert({
-      where: { username: u.username },
-      update: {},
-      create: {
-        name: u.name, nameAr: u.nameAr, username: u.username, email: u.email, passwordHash,
-        role: toPrismaRole(u.role), department: u.department, phone: u.phone, vendorId: u.vendorId,
-        status: 'active', isEmailVerified: u.isEmailVerified ?? false,
-      },
-    });
-  }
-  console.log(`✓ users: ${demoUsers.length} demo accounts (ops/ops123, agent/agent123, driver/driver123, finance/finance123, customer/customer123, + 3 vendor-partners)`);
-}
-
-// ---------------------------------------------------------------------
-// 2. Catalogue + operational data from the app's mock dataset.
-// ---------------------------------------------------------------------
-const imageStub: esbuild.Plugin = {
-  name: 'image-stub',
-  setup(build) {
-    build.onResolve({ filter: /\.(jpg|jpeg|png|gif|webp|svg)$/ }, (args) => ({ path: args.path, namespace: 'img-stub' }));
-    build.onLoad({ filter: /.*/, namespace: 'img-stub' }, (args) => ({
-      contents: `export default ${JSON.stringify('/media/' + path.basename(args.path))}`,
-      loader: 'js',
-    }));
-  },
-};
-
-async function loadBundle(entry: string): Promise<Record<string, unknown>> {
-  const outFile = path.join(os.tmpdir(), `artrust-bundle-${Date.now()}-${Math.random().toString(36).slice(2)}.mjs`);
-  await esbuild.build({
-    entryPoints: [entry], bundle: true, format: 'esm', platform: 'node',
-    outfile: outFile, plugins: [imageStub], logLevel: 'silent',
-  });
-  const mod = await import('file://' + outFile.replace(/\\/g, '/'));
-  try { fs.unlinkSync(outFile); } catch { /* ignore */ }
-  return mod as Record<string, unknown>;
-}
-const loadMockData = () => loadBundle(mockPath);
-
-const modelByName = Object.fromEntries(Prisma.dmmf.datamodel.models.map((m) => [m.name, m]));
-
-function delegateFor(modelName: string) {
-  const key = modelName.charAt(0).toLowerCase() + modelName.slice(1);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return (prisma as any)[key];
-}
-
-/** Keep only columns that exist on the model; coerce/skip DateTime strings. */
-function sanitise(modelName: string, row: Record<string, unknown>) {
-  const model = modelByName[modelName];
-  const out: Record<string, unknown> = {};
-  for (const field of model.fields) {
-    if (field.relationName) continue;
-    if (field.kind === 'object') continue;
-    const value = row[field.name];
-    if (value === undefined || value === null) continue;
-    if (field.type === 'DateTime') {
-      const d = new Date(value as string);
-      if (Number.isNaN(d.getTime())) continue;
-      out[field.name] = d;
-    } else {
-      out[field.name] = value;
+async function wipeDatabase() {
+  const steps: Array<[string, () => Promise<unknown>]> = [
+    ['invoices', () => prisma.invoice.deleteMany({})],
+    ['payment_accounts', () => prisma.paymentAccount.deleteMany({})],
+    ['platforms', () => prisma.platform.deleteMany({})],
+    ['staff_ledger_entries', () => prisma.staffLedgerEntry.deleteMany({})],
+    ['bookings', () => prisma.booking.deleteMany({})],
+    ['hotel_bookings', () => prisma.hotelBooking.deleteMany({})],
+    ['hotel_vendors', () => prisma.hotelVendor.deleteMany({})],
+    ['desk_assignments', () => prisma.deskAssignment.deleteMany({})],
+    ['notifications', () => prisma.notification.deleteMany({})],
+    ['system_audit_logs', () => prisma.systemAuditLog.deleteMany({})],
+    ['salary_records', () => prisma.salaryRecord.deleteMany({})],
+    ['commission_rules', () => prisma.commissionRule.deleteMany({})],
+    ['reviews', () => prisma.review.deleteMany({})],
+    ['site_content', () => prisma.siteContent.deleteMany({})],
+    ['uploads', () => prisma.upload.deleteMany({})],
+    ['app_settings', () => prisma.appSetting.deleteMany({})],
+    ['finance_expenses', () => prisma.financeExpense.deleteMany({})],
+    ['currency_history', () => prisma.currencyHistory.deleteMany({})],
+    ['currency_items', () => prisma.currencyItem.deleteMany({})],
+    ['tour_packages', () => prisma.tourPackage.deleteMany({})],
+    ['service_categories', () => prisma.serviceCategory.deleteMany({})],
+    ['airport_desks', () => prisma.airportDesk.deleteMany({})],
+    ['locations', () => prisma.location.deleteMany({})],
+    ['guests', () => prisma.guest.deleteMany({})],
+    ['guest_tiers', () => prisma.guestTier.deleteMany({})],
+    ['employees', () => prisma.employee.deleteMany({})],
+    ['tour_guides', () => prisma.tourGuide.deleteMany({})],
+    ['drivers', () => prisma.driver.deleteMany({})],
+    ['fleet_vehicles', () => prisma.fleetVehicle.deleteMany({})],
+    ['users', () => prisma.user.deleteMany({})],
+  ];
+  for (const [name, run] of steps) {
+    try {
+      await run();
+    } catch (err) {
+      console.warn(`  • skip wipe ${name}: ${(err as Error).message.split('\n')[0]}`);
     }
   }
+  console.log('✓ database emptied');
+}
+
+// ---------------------------------------------------------------------
+// 2. Users: the super-admin + the drivers (role driver-guide).
+// ---------------------------------------------------------------------
+async function seedSuperAdmin() {
+  const username = (process.env.SUPERADMIN_USERNAME ?? 'ar-trust').toLowerCase().trim();
+  const email = (process.env.SUPERADMIN_EMAIL ?? 'admin@artrust.qa').toLowerCase().trim();
+  const password = process.env.SUPERADMIN_PASSWORD ?? 'ArTrust@2026';
+  await prisma.user.create({
+    data: {
+      name: 'AR Trust Administrator',
+      username,
+      email,
+      passwordHash: await bcrypt.hash(password, 10),
+      role: UserRole.super_admin,
+      status: 'active',
+      isEmailVerified: true,
+      department: 'Executive Management',
+    },
+  });
+  console.log(`✓ super-admin: "${username}" / "${email}" (change the password after first login)`);
+}
+
+const DRIVERS: Array<{ name: string; phone: string }> = [
+  { name: 'Shojib Mohammed', phone: '+974 7778 0821' },
+  { name: 'Ohidul Islam Kabir', phone: '+974 3335 8618' },
+  { name: 'Golam Nafiul Hasan', phone: '+974 5072 9789' },
+];
+
+/** Drivers are USERS with role driver-guide. Returns their {id, name}. */
+async function seedDrivers(): Promise<Array<{ id: string; name: string }>> {
+  const password = process.env.DRIVER_PASSWORD ?? 'Driver@2026';
+  const out: Array<{ id: string; name: string }> = [];
+  for (const d of DRIVERS) {
+    const user = await prisma.user.create({
+      data: {
+        name: d.name,
+        username: slug(d.name),
+        email: `${slug(d.name)}@artrust.qa`,
+        passwordHash: await bcrypt.hash(password, 10),
+        role: UserRole.driver_guide,
+        status: 'active',
+        isEmailVerified: true,
+        phone: d.phone,
+        department: 'Chauffeur Fleet & Transfers',
+        jobTitle: 'Driver',
+        staffStatus: 'Available',
+      },
+    });
+    out.push({ id: user.id, name: user.name });
+  }
+  console.log(`✓ drivers (users, role driver-guide): ${out.length}`);
   return out;
 }
 
-async function seedModel(modelName: string, rows: unknown): Promise<void> {
-  if (!Array.isArray(rows) || rows.length === 0) { console.log(`• ${modelName}: no data`); return; }
-  const delegate = delegateFor(modelName);
-  const data = rows.map((r) => sanitise(modelName, r as Record<string, unknown>));
-  try {
-    await delegate.deleteMany({});
-    const res = await delegate.createMany({ data, skipDuplicates: true });
-    console.log(`✓ ${modelName}: inserted ${res.count}/${rows.length}`);
-  } catch (err) {
-    console.error(`✗ ${modelName}: ${(err as Error).message.split('\n')[0]}`);
-  }
-}
+// ---------------------------------------------------------------------
+// 3. Fleet — 13 vehicles. make/model/colour now have their own columns;
+//    the first three are linked to the three drivers.
+// ---------------------------------------------------------------------
+const VEHICLES: Array<{ plate: string; type: string; make: string; model: string; color: string; year: string; pax: number }> = [
+  { plate: '124547', type: 'Coaster 22 Pax', make: 'Toyota', model: 'Coaster', color: 'White', year: '2022', pax: 22 },
+  { plate: '141632', type: 'Minivan 12 Pax', make: 'Toyota', model: 'Hiace', color: 'White', year: '2022', pax: 12 },
+  { plate: '782924', type: 'Minivan 9 Pax', make: 'Volkswagen', model: 'Caravelle', color: 'Black', year: '2020', pax: 9 },
+  { plate: '347672', type: 'Minivan 7 Pax', make: 'Kia', model: 'Carnival', color: 'White', year: '2023', pax: 7 },
+  { plate: '780282', type: 'Comfort Van 7 Pax', make: 'Hyundai', model: 'Staria', color: 'Black', year: '2025', pax: 7 },
+  { plate: '987139', type: 'Comfort Van 7 Pax', make: 'Kia', model: 'Carnival', color: 'Black', year: '2025', pax: 7 },
+  { plate: '85256', type: 'Economy 7 Pax', make: 'Toyota', model: 'Innova', color: 'White', year: '2022', pax: 7 },
+  { plate: '9479', type: 'Medium 6 Pax', make: 'Mitsubishi', model: 'Xpander', color: 'Green Bronze', year: '2024', pax: 6 },
+  { plate: '417792', type: 'MPV / 6–7 Seater', make: 'Kia', model: 'Carens', color: 'White', year: '2024', pax: 7 },
+  { plate: '987140', type: 'MPV / 6–7 Seater', make: 'Kia', model: 'Carens', color: 'Gray', year: '2024', pax: 7 },
+  { plate: '542105', type: 'Compact SUV', make: 'Changan', model: 'CS55', color: 'White', year: '2024', pax: 5 },
+  { plate: '886896', type: 'Sedan 3 Pax', make: 'Changan', model: 'Eado', color: 'Gray', year: '2024', pax: 3 },
+  { plate: '631416', type: 'Sedan 3 Pax', make: 'Toyota', model: 'Camry', color: 'White', year: '2022', pax: 3 },
+];
 
-async function seedCatalogue() {
-  const mock = await loadMockData();
-
-  // Prisma model -> mock export name.
-  const plan: Array<[string, string]> = [
-    ['GuestTier', 'INITIAL_GUEST_TIERS'],
-    ['FleetVehicle', 'INITIAL_FLEET_VEHICLES'],
-    ['Driver', 'INITIAL_DRIVERS'],
-    ['TourGuide', 'INITIAL_TOUR_GUIDES'],
-    ['Guest', 'INITIAL_GUESTS'],
-    ['Booking', 'INITIAL_BOOKINGS'],
-    ['HotelVendor', 'INITIAL_HOTEL_VENDORS'],
-    ['HotelBooking', 'INITIAL_HOTEL_BOOKINGS'],
-    ['Employee', 'INITIAL_EMPLOYEES'],
-    ['FinanceExpense', 'INITIAL_FINANCE_EXPENSES'],
-    ['CurrencyItem', 'INITIAL_CURRENCIES'],
-    ['CurrencyHistory', 'INITIAL_CURRENCY_HISTORY'],
-    ['TourPackage', 'TOUR_PACKAGES'],
-    ['AirportDesk', 'INITIAL_AIRPORT_DESKS'],
-    ['DeskAssignment', 'INITIAL_DESK_ASSIGNMENT_HISTORY'],
-    // Notifications are NOT seeded — the feed is real-time only.
-    ['SalaryRecord', 'INITIAL_SALARY_RECORDS'],
-    ['CommissionRule', 'INITIAL_COMMISSION_RULES'],
-    ['SystemAuditLog', 'INITIAL_SYSTEM_LOGS'],
-  ];
-  for (const [modelName, exportName] of plan) {
-    await seedModel(modelName, mock[exportName]);
-  }
-
-  // Singletons & config → AppSetting key/value rows.
-  const settings: Array<[string, unknown]> = [
-    ['rates', mock.INITIAL_RATES],
-    ['shiftDrawer', mock.INITIAL_SHIFT_DRAWER],
-    ['packageCategories', mock.INITIAL_PACKAGE_CATEGORIES],
-    ['categoryServiceMap', mock.INITIAL_CATEGORY_SERVICE_MAP],
-  ];
-  for (const [key, value] of settings) {
-    if (value === undefined) continue;
-    await prisma.appSetting.upsert({
-      where: { key },
-      create: { key, value: value as never },
-      update: { value: value as never },
+async function seedFleet(drivers: Array<{ id: string; name: string }>) {
+  let created = 0;
+  for (let i = 0; i < VEHICLES.length; i++) {
+    const v = VEHICLES[i];
+    const driver = drivers[i]; // first three vehicles get a driver; rest unassigned
+    await prisma.fleetVehicle.create({
+      data: {
+        name: `${v.make} ${v.model}`,
+        category: v.type,
+        passengers: v.pax,
+        luggage: Math.max(1, Math.round(v.pax / 3)),
+        priceQAR: 0,
+        rateType: 'Per Trip',
+        features: [v.type, v.color, `Model year ${v.year}`],
+        image: '',
+        idealFor: `Up to ${v.pax} passengers`,
+        plateNumber: v.plate,
+        modelYear: v.year,
+        make: v.make,
+        model: v.model,
+        color: v.color,
+        assignedDriverId: driver?.id,
+        assignedDriverName: driver?.name,
+        showOnWebsite: true,
+      },
     });
-    console.log(`✓ setting: ${key}`);
+    created++;
   }
+  console.log(`✓ fleet vehicles: ${created} (${drivers.length} linked to drivers)`);
 }
 
 // ---------------------------------------------------------------------
-// 3. Public website CMS — customer reviews + editable site content.
+// 4. Hotels — names + desk-rep contact numbers (number field = contactPhone).
 // ---------------------------------------------------------------------
-async function seedReviews() {
-  const web = await loadBundle(websitePath);
-  const reviews = web.CUSTOMER_REVIEWS as Array<Record<string, unknown>> | undefined;
-  if (!Array.isArray(reviews) || reviews.length === 0) { console.log('• Review: no data'); return; }
-  await prisma.review.deleteMany({});
-  const data = reviews.map((r, i) => ({
-    id: r.id as string,
-    author: r.author as string,
-    country: (r.country as string) ?? null,
-    rating: (r.rating as number) ?? 5,
-    date: (r.date as string) ?? null,
-    tour: (r.tour as string) ?? null,
-    comment: r.comment as string,
-    avatar: (r.avatar as string) ?? null,
-    showOnWebsite: true,
-    sortOrder: i,
+const HOTELS: Array<{ name: string; rep: string; phone: string }> = [
+  { name: 'The Royal Riviera Hotel', rep: 'Arafat', phone: '+974 7011 9084' },
+  { name: 'C - Hotel and Suites Doha', rep: 'Ali', phone: '+974 3044 1512' },
+  { name: 'Central Inn Souq Waqif', rep: 'Tamim Ikbal', phone: '+974 3375 6839' },
+  { name: 'The Avenue Hotel', rep: '', phone: '' },
+  { name: 'West Walk Retaj Hotel', rep: '', phone: '' },
+];
+
+async function seedHotels() {
+  const data = HOTELS.map((h) => ({
+    name: h.name,
+    locationZone: 'Doha',
+    starRating: 0,
+    contactPerson: h.rep,
+    contactPhone: h.phone,
+    contactEmail: '',
+    address: 'Doha, Qatar',
+    desks: [],
+    roomOptions: [],
+    contractStatus: 'Active',
+    amenities: [],
+    notes: h.rep ? `Hotel desk representative: ${h.rep}` : null,
   }));
-  const res = await prisma.review.createMany({ data, skipDuplicates: true });
-  console.log(`✓ Review: inserted ${res.count}/${reviews.length}`);
+  const res = await prisma.hotelVendor.createMany({ data, skipDuplicates: true });
+  console.log(`✓ hotels: ${res.count}`);
 }
 
-async function seedSiteContent() {
-  const mod = await loadBundle(siteContentPath);
-  const defs = mod.SITE_CONTENT_DEFAULTS as
-    | Record<string, { value: unknown; group?: string; label?: string; kind?: string }>
-    | undefined;
-  if (!defs) { console.log('• SiteContent: no defaults'); return; }
-  let order = 0;
-  for (const [key, def] of Object.entries(defs)) {
-    await prisma.siteContent.upsert({
-      where: { key },
-      create: { key, value: def.value as never, group: def.group, label: def.label, kind: def.kind ?? 'text', sortOrder: order++ },
-      update: {}, // preserve any admin edits on a re-seed
-    });
-  }
-  console.log(`✓ SiteContent: ${Object.keys(defs).length} keys`);
+// ---------------------------------------------------------------------
+// 5. Platforms — tour + airport-transfer booking channels.
+// ---------------------------------------------------------------------
+const TOUR_PLATFORMS = ['Trip Advisor', 'GetYourGuide', 'Tour Radar', 'Tour HQ'];
+const TRANSFER_PLATFORMS = [
+  'World-Transfer (WT)', 'Talixo', 'My Transfer', 'City Guide', 'Sixt Ride', 'Rimo',
+  'Kiwi Taxi', 'Airport Taxi', 'Get Transfer', 'Welcome Pickup', 'Connecto Transfers', 'TRANSFERO', 'iWay',
+];
+
+async function seedPlatforms() {
+  const data = [
+    ...TOUR_PLATFORMS.map((name, i) => ({ name, type: 'tour', sortOrder: i })),
+    ...TRANSFER_PLATFORMS.map((name, i) => ({ name, type: 'airport-transfer', sortOrder: i })),
+  ];
+  const res = await prisma.platform.createMany({ data, skipDuplicates: true });
+  console.log(`✓ platforms: ${res.count} (tour ${TOUR_PLATFORMS.length}, airport-transfer ${TRANSFER_PLATFORMS.length})`);
+}
+
+// ---------------------------------------------------------------------
+// 6. Staff — airport + hotel-desk representatives (Employee records).
+// ---------------------------------------------------------------------
+const STAFF: Array<{ name: string; phone: string; role: string; department: string }> = [
+  { name: 'Ahad', phone: '+974 5527 8092', role: 'Airport Representative', department: 'Airport Operations — Day Shift' },
+  { name: 'Ratul', phone: '+974 7044 8640', role: 'Airport Representative', department: 'Airport Operations — Day Shift' },
+  { name: 'Sazid', phone: '+974 5992 4154', role: 'Airport Representative', department: 'Airport Operations — Night Shift' },
+  { name: 'Mahfuz', phone: '+974 6661 6957', role: 'Airport Representative', department: 'Airport Operations — Night Shift' },
+  { name: 'Arafat', phone: '+974 7011 9084', role: 'Hotel Desk Representative', department: 'The Royal Riviera Hotel' },
+  { name: 'Ali', phone: '+974 3044 1512', role: 'Hotel Desk Representative', department: 'C - Hotel and Suites Doha' },
+  { name: 'Tamim Ikbal', phone: '+974 3375 6839', role: 'Hotel Desk Representative', department: 'Central Inn Souq Waqif' },
+];
+
+async function seedStaff() {
+  const today = new Date().toISOString().slice(0, 10);
+  const data = STAFF.map((s) => ({
+    name: s.name,
+    email: `${slug(s.name)}@artrust.qa`,
+    phone: s.phone,
+    role: s.role,
+    department: s.department,
+    status: 'Available',
+    hireDate: today,
+  }));
+  const res = await prisma.employee.createMany({ data, skipDuplicates: true });
+  console.log(`✓ staff (employees): ${res.count}`);
+}
+
+// ---------------------------------------------------------------------
+// 7. Currencies + rates (QAR base).
+// ---------------------------------------------------------------------
+async function seedConfig() {
+  await prisma.appSetting.create({
+    data: { key: 'rates', value: { USD: 3.64, EUR: 3.96, GBP: 4.74, SAR: 0.97, lastUpdated: new Date().toISOString() } as never },
+  });
+  const currencies = [
+    { code: 'QAR', name: 'Qatari Riyal', symbol: 'QAR', rateToQAR: 1, isPegged: true },
+    { code: 'USD', name: 'US Dollar', symbol: '$', rateToQAR: 3.64, isPegged: true },
+    { code: 'EUR', name: 'Euro', symbol: '€', rateToQAR: 3.96, isPegged: false },
+    { code: 'GBP', name: 'British Pound', symbol: '£', rateToQAR: 4.74, isPegged: false },
+  ];
+  const res = await prisma.currencyItem.createMany({ data: currencies, skipDuplicates: true });
+  console.log(`✓ currencies: ${res.count} (QAR base) + rates`);
 }
 
 async function main() {
-  console.log('Seeding database…\n');
-  await seedUsers();
-  await seedCatalogue();
-  await seedReviews();
-  await seedSiteContent();
-  console.log('\n✅ Seed complete. Create the super-admin with: npm run create-superadmin -w @ar-trust/api');
+  console.log('Seeding AR Trust database (real data)…\n');
+  await wipeDatabase();
+  await seedSuperAdmin();
+  const drivers = await seedDrivers();
+  await seedFleet(drivers);
+  await seedHotels();
+  await seedPlatforms();
+  await seedStaff();
+  await seedConfig();
+  console.log('\n✅ Seed complete — super-admin + drivers + the PDF data + base currency only.');
 }
 
 main()
-  .catch((err) => { console.error('Seed failed:', err); process.exit(1); })
+  .catch((err) => {
+    console.error('Seed failed:', err);
+    process.exit(1);
+  })
   .finally(() => prisma.$disconnect());

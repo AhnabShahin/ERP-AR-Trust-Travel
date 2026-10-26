@@ -57,6 +57,8 @@ export interface UserAccount {
   nationality?: string | null;
   companyName?: string | null;
   bio?: string | null;
+  // Staff/driver duty status (On Duty | Available | dispatch states…).
+  staffStatus?: string | null;
 }
 
 export interface Booking {

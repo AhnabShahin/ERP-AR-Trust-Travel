@@ -642,6 +642,35 @@ export const AppProvider: React.FC<{
         ]);
         if (cancelled) return;
         if (usr?.length) setUserAccounts(usr);
+        // Drivers live in the users table (role driver-guide). Derive the
+        // dispatch `drivers` list from those users + their linked fleet
+        // vehicle, so the Fleet & Field Ops board reads the real accounts
+        // (not the legacy, now-unused Driver table).
+        if (usr?.length) {
+          const DRIVER_STATUSES = ['Dispatched', 'At Airport Bay', 'En Route', 'Standby', 'Off Duty', 'Maintenance'];
+          const driverRows: Driver[] = usr
+            .filter((u) => u.role === 'driver-guide')
+            .map((u) => {
+              const veh = (fl || []).find((v) => v.assignedDriverId === u.id);
+              const ss = (u as { staffStatus?: string }).staffStatus || '';
+              return {
+                id: u.id,
+                name: u.name,
+                nameAr: u.nameAr || '',
+                phone: u.phone || '',
+                vehicle: veh ? veh.name : '',
+                plateNumber: veh?.plateNumber || '',
+                vehicleType: veh?.category || '',
+                status: (DRIVER_STATUSES.includes(ss) ? ss : 'Standby') as Driver['status'],
+                location: u.city || 'Doha',
+                rating: 5,
+                totalTripsToday: 0,
+                image: u.avatar || '',
+                fleetVehicleId: veh?.id,
+              };
+            });
+          setDrivers(driverRows);
+        }
         if (sal?.length) setSalaryRecords(sal);
         if (com?.length) setCommissionRules(com);
         if (logs?.length) setSystemLogs(logs);
@@ -683,7 +712,8 @@ export const AppProvider: React.FC<{
   // API so accounts, and especially activation, are the DB's source of truth.
   useResourceSync('users', userAccounts as never, dataHydrated, notifySyncError);
   useResourceSync('bookings', bookings as never, dataHydrated, notifySyncError);
-  useResourceSync('drivers', drivers as never, dataHydrated, notifySyncError);
+  // NOTE: drivers are NOT synced as a resource — they are user accounts (role
+  // driver-guide). The driver mutators below persist to /api/users directly.
   useResourceSync('fleet', fleetVehicles as never, dataHydrated, notifySyncError);
   useResourceSync('tour-guides', tourGuides as never, dataHydrated, notifySyncError);
   useResourceSync('guests', guests as never, dataHydrated, notifySyncError);
@@ -1502,33 +1532,61 @@ export const AppProvider: React.FC<{
     );
   };
 
+  // Drivers are user accounts (role driver-guide); mutations persist to
+  // /api/users (best-effort, fire-and-forget) while updating local state so
+  // the dispatch board stays responsive. The duty status is stored on the
+  // user's `staffStatus`.
+  const driverSlug = (n: string) => n.toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '');
+
   const updateDriverStatus = (id: string, status: Driver['status'], mission?: string) => {
     setDrivers((prev) =>
       prev.map((d) => (d.id === id ? { ...d, status, currentMission: mission || d.currentMission } : d))
     );
+    api.patch(`/api/users/${id}`, { staffStatus: status }).catch(() => notifySyncError('Could not save driver status.'));
   };
 
   const addDriver = (driverData: Omit<Driver, 'id'>): { success: boolean; error?: string; driver?: Driver } => {
+    const id = `drv-${Date.now()}`;
     const newDriver: Driver = {
       ...driverData,
-      id: `drv-${Date.now()}`,
+      id,
       rating: driverData.rating || 5.0,
       totalTripsToday: driverData.totalTripsToday || 0,
       activePassengers: driverData.activePassengers || 0,
     };
     setDrivers((prev) => [newDriver, ...prev]);
+    // Create the backing driver-guide user account, then activate it.
+    const username = driverSlug(newDriver.name) || id;
+    (async () => {
+      try {
+        await api.post('/api/users', {
+          id, name: newDriver.name, username, email: `${username}@artrust.qa`,
+          role: 'driver-guide', phone: newDriver.phone, password: 'Driver@2026',
+          department: 'Chauffeur Fleet & Transfers', jobTitle: 'Driver',
+        });
+        await api.patch(`/api/users/${id}`, { status: 'active', staffStatus: newDriver.status });
+      } catch {
+        notifySyncError('Could not save the new driver account.');
+      }
+    })();
     addAuditLog('New Fleet Vehicle & Chauffeur Added', 'DISPATCH', `${roleConfig.title} registered ${newDriver.vehicle} (${newDriver.plateNumber}) driven by ${newDriver.name}`);
     return { success: true, driver: newDriver };
   };
 
   const updateDriver = (id: string, updated: Partial<Driver>): { success: boolean; error?: string } => {
     setDrivers((prev) => prev.map((d) => (d.id === id ? { ...d, ...updated } : d)));
+    const patch: Record<string, unknown> = {};
+    if (updated.name !== undefined) patch.name = updated.name;
+    if (updated.phone !== undefined) patch.phone = updated.phone;
+    if (updated.status !== undefined) patch.staffStatus = updated.status;
+    if (Object.keys(patch).length) api.patch(`/api/users/${id}`, patch).catch(() => notifySyncError('Could not update driver.'));
     addAuditLog('Fleet Vehicle / Chauffeur Updated', 'DISPATCH', `${roleConfig.title} updated vehicle/chauffeur record #${id}`);
     return { success: true };
   };
 
   const deleteDriver = (id: string): { success: boolean; error?: string } => {
     setDrivers((prev) => prev.filter((d) => d.id !== id));
+    api.delete(`/api/users/${id}`).catch(() => notifySyncError('Could not delete driver account.'));
     addAuditLog('Fleet Vehicle Decommissioned', 'DISPATCH', `${roleConfig.title} decommissioned driver/vehicle #${id}`);
     return { success: true };
   };

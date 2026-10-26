@@ -4,6 +4,8 @@ import { env } from './config/env.js';
 import { errorHandler, notFound } from './middleware/error.js';
 import { authRouter } from './modules/auth/auth.routes.js';
 import { bookingsRouter } from './modules/bookings/bookings.routes.js';
+import { invoicesRouter } from './modules/invoices/invoices.routes.js';
+import { reportsRouter } from './modules/reports/reports.routes.js';
 import { notificationsRouter } from './modules/notifications/notifications.routes.js';
 import { registerResourceRoutes, resourcePaths } from './modules/resources.js';
 import { rolesRouter } from './modules/roles/roles.routes.js';
@@ -34,6 +36,11 @@ export function createApp() {
   app.use('/api/roles', rolesRouter);
   app.use('/api/staff', staffRouter);
   app.use('/api/bookings', bookingsRouter);
+  // Invoices (auto number + public share token, totals, payment ledger). Its
+  // GET /public/:token route is open; all other routes require auth.
+  app.use('/api/invoices', invoicesRouter);
+  // Read-only reporting aggregation over the existing tables.
+  app.use('/api/reports', reportsRouter);
   // Notifications feed (bulk read-all / clear-all + CRUD). Mounted before the
   // generated resources so its custom bulk routes take precedence.
   app.use('/api/notifications', notificationsRouter);
