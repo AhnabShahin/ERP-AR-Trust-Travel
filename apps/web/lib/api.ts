@@ -5,7 +5,7 @@
 // and error handling stay consistent as features move off localStorage.
 // =====================================================================
 
-import type { ApiResponse, AuthResponse, LoginDto, RegisterDto, UserAccount } from '@ar-trust/shared';
+import type { ApiResponse, AuthResponse, LoginDto, RegisterDto, UserAccount } from './shared-types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 const TOKEN_KEY = 'artrust_token';
