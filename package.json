@@ -1,0 +1,28 @@
+{
+  "name": "ar-trust-erp",
+  "private": true,
+  "version": "2.0.0",
+  "description": "AR Trust Travel & Tourism ERP — monorepo (Next.js web + Express/MySQL API)",
+  "type": "module",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c magenta,cyan \"npm:dev:api\" \"npm:dev:web\"",
+    "dev:web": "npm run dev -w @ar-trust/web",
+    "dev:api": "npm run dev -w @ar-trust/api",
+    "build": "npm run build -w @ar-trust/api && npm run build -w @ar-trust/web",
+    "build:web:static": "npm run build:static -w @ar-trust/web",
+    "db:generate": "npm run prisma:generate -w @ar-trust/api",
+    "db:migrate": "npm run prisma:migrate -w @ar-trust/api",
+    "db:seed": "npm run prisma:seed -w @ar-trust/api",
+    "db:studio": "npm run prisma:studio -w @ar-trust/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
