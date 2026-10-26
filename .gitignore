@@ -6,7 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
-*.zip
 
 # Next.js
 .next/
