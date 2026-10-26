@@ -1,6 +1,0 @@
-{
-  "name": "AR Trust Travel & Tourism - Qatar ERP Dashboard",
-  "description": "High-fidelity modern SaaS ERP dashboard for AR Trust Travel & Tourism in Doha, Qatar. Featuring agent desk POS, hotel vendor partnerships, multi-currency ledger, live passenger dispatch, and EOD shift reconciliation.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
