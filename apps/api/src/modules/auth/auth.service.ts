@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import type { AuthResponse, UserAccount, UserRole } from '@ar-trust/shared';
+import type { AuthResponse, UserAccount, UserRole } from '../../shared-types.js';
 import { Prisma, UserRole as PrismaRole, type User } from '@prisma/client';
 import { prisma } from '../../config/prisma.js';
 import { env } from '../../config/env.js';
