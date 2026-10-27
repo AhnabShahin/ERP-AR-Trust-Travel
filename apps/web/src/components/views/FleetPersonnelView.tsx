@@ -34,6 +34,7 @@ import {
   Image as ImageIcon,
   RefreshCw,
   Download,
+  UserCheck,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { Driver, FleetVehicle, TourGuide } from '../../types';
@@ -66,8 +67,7 @@ export const FleetPersonnelView: React.FC = () => {
 
   const canManageFleet = roleConfig.permissions.canManageFleet;
 
-  const [activePersonnelTab, setActivePersonnelTab] = useState<'drivers' | 'vehicles' | 'guides' | 'roster'>('drivers');
-  const [selectedPassengerSheet, setSelectedPassengerSheet] = useState<any>(bookings[0] || null);
+  const [activePersonnelTab, setActivePersonnelTab] = useState<'drivers' | 'vehicles' | 'guides'>('drivers');
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,12 +84,11 @@ export const FleetPersonnelView: React.FC = () => {
   // Form State
   const [driverName, setDriverName] = useState('');
   const [driverNameAr, setDriverNameAr] = useState('');
-  const [vehicleModel, setVehicleModel] = useState('');
-  const [plateNumber, setPlateNumber] = useState('');
-  const [vehicleType, setVehicleType] = useState<string>('4x4 SUV');
+  const [driverType, setDriverType] = useState<'first-party' | 'third-party'>('first-party');
+  const [company, setCompany] = useState('');
   const [phone, setPhone] = useState('+974 ');
   const [location, setLocation] = useState('HIA Terminal Arrivals Bay 3');
-  const [status, setStatus] = useState<Driver['status']>('Standby');
+  const [status, setStatus] = useState<Driver['status']>('Available');
   const [currentMission, setCurrentMission] = useState('');
   const [activePassengers, setActivePassengers] = useState<number>(0);
 
@@ -114,6 +113,8 @@ export const FleetPersonnelView: React.FC = () => {
   const [vehicleAssignedDriverId, setVehicleAssignedDriverId] = useState('');
   const [vehiclePlateNumber, setVehiclePlateNumber] = useState('');
   const [vehicleShowOnWebsite, setVehicleShowOnWebsite] = useState(true);
+  const [vehicleStatus, setVehicleStatus] = useState<NonNullable<FleetVehicle['status']>>('Available');
+  const [vehicleOwnership, setVehicleOwnership] = useState<'owned' | 'third-party'>('owned');
 
   // Filtered Vehicle Fleet
   const filteredVehicles = fleetVehicles.filter((v) => {
@@ -139,22 +140,23 @@ export const FleetPersonnelView: React.FC = () => {
   const filteredDrivers = drivers.filter((d) => {
     const matchesSearch =
       d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.vehicle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.plateNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (d.phone || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (d.company || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       d.location.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus = statusFilter === 'ALL' || d.status === statusFilter;
-    const matchesType = typeFilter === 'ALL' || d.vehicleType === typeFilter;
+    const matchesType = typeFilter === 'ALL' || d.driverType === typeFilter;
 
     return matchesSearch && matchesStatus && matchesType;
   });
 
   // Fleet Statistics
-  const atAirportCount = drivers.filter((d) => d.status === 'At Airport Bay').length;
-  const dispatchedCount = drivers.filter((d) => d.status === 'Dispatched' || d.status === 'En Route').length;
-  const standbyCount = drivers.filter((d) => d.status === 'Standby').length;
-  const maintenanceCount = drivers.filter((d) => d.status === 'Maintenance' || d.status === 'Off Duty').length;
-  const activeUtilization = drivers.length > 0 ? Math.round(((atAirportCount + dispatchedCount) / drivers.length) * 100) : 0;
+  const onTripCount = drivers.filter((d) => d.status === 'On Trip').length;
+  const availableCount = drivers.filter((d) => d.status === 'Available' || d.status === 'Standby').length;
+  const offDutyCount = drivers.filter((d) => d.status === 'Maintenance' || d.status === 'Off Duty').length;
+  const firstPartyCount = drivers.filter((d) => (d.driverType || 'first-party') === 'first-party').length;
+  const thirdPartyCount = drivers.filter((d) => d.driverType === 'third-party').length;
+  const activeUtilization = drivers.length > 0 ? Math.round((onTripCount / drivers.length) * 100) : 0;
 
   const handleOpenAddModal = () => {
     if (!canManageFleet) {
@@ -169,12 +171,11 @@ export const FleetPersonnelView: React.FC = () => {
     setEditingDriver(null);
     setDriverName('');
     setDriverNameAr('');
-    setVehicleModel('Toyota Land Cruiser 300 VXR');
-    setPlateNumber('QA ');
-    setVehicleType('4x4 SUV');
+    setDriverType('first-party');
+    setCompany('');
     setPhone('+974 55');
     setLocation('Hamad International Airport Bay 4');
-    setStatus('Standby');
+    setStatus('Available');
     setCurrentMission('Available for HIA airport transit pickups');
     setActivePassengers(0);
     setShowAddModal(true);
@@ -189,9 +190,8 @@ export const FleetPersonnelView: React.FC = () => {
     setEditingDriver(d);
     setDriverName(d.name);
     setDriverNameAr(d.nameAr);
-    setVehicleModel(d.vehicle);
-    setPlateNumber(d.plateNumber);
-    setVehicleType(d.vehicleType);
+    setDriverType(d.driverType || 'first-party');
+    setCompany(d.company || '');
     setPhone(d.phone);
     setLocation(d.location);
     setStatus(d.status);
@@ -206,10 +206,10 @@ export const FleetPersonnelView: React.FC = () => {
       setTimeout(() => setFeedbackError(null), 3500);
       return;
     }
-    if (window.confirm(`Are you sure you want to decommission vehicle ${d.vehicle} (${d.plateNumber}) driven by ${d.name}?`)) {
+    if (window.confirm(`Are you sure you want to remove driver ${d.name} from the roster?`)) {
       const res = deleteDriver(d.id);
       if (res.success) {
-        setFeedbackSuccess(`Vehicle ${d.vehicle} (${d.plateNumber}) successfully decommissioned.`);
+        setFeedbackSuccess(`Driver ${d.name} successfully removed.`);
         setTimeout(() => setFeedbackSuccess(null), 3000);
       } else {
         setFeedbackError(res.error || 'Failed to remove driver.');
@@ -239,10 +239,12 @@ export const FleetPersonnelView: React.FC = () => {
     setVehicleRateType('per airport transfer');
     setVehicleImage('https://artrusttravel.com/wp-content/uploads/2026/04/Mercedes-Benz-V-Class-1000x1296.png');
     setVehicleIdealFor('Executive VIPs, Diplomats & Luxury Family Transit');
-    setVehicleFeatures('Leather Captain Seats, High-Speed Wi-Fi, Evian Water, Chauffeur in Formal Attire, Curbside Greeting');
+    setVehicleFeatures('Leather Captain Seats, High-Speed Wi-Fi, Evian Water, Driver in Formal Attire, Curbside Greeting');
     setVehicleAssignedDriverId('');
     setVehiclePlateNumber('QA ');
     setVehicleShowOnWebsite(true);
+    setVehicleStatus('Available');
+    setVehicleOwnership('owned');
     setShowVehicleModal(true);
   };
 
@@ -281,6 +283,8 @@ export const FleetPersonnelView: React.FC = () => {
     setVehicleAssignedDriverId(v.assignedDriverId || '');
     setVehiclePlateNumber(v.plateNumber || '');
     setVehicleShowOnWebsite(v.showOnWebsite !== false);
+    setVehicleStatus(v.status || 'Available');
+    setVehicleOwnership(v.ownership || 'owned');
     setShowVehicleModal(true);
   };
 
@@ -325,10 +329,12 @@ export const FleetPersonnelView: React.FC = () => {
       rateType: vehicleRateType.trim() || 'per transfer',
       image: vehicleImage.trim() || 'https://artrusttravel.com/wp-content/uploads/2026/04/Mercedes-Benz-V-Class-1000x1296.png',
       idealFor: vehicleIdealFor.trim() || 'Private Doha Airport & Hotel Transfers',
-      features: parsedFeatures.length > 0 ? parsedFeatures : ['Chauffeur in Formal Attire', 'Air Conditioned', 'Hamad Airport Meet & Greet'],
+      features: parsedFeatures.length > 0 ? parsedFeatures : ['Driver in Formal Attire', 'Air Conditioned', 'Hamad Airport Meet & Greet'],
       assignedDriverId: assignedDrv ? assignedDrv.id : undefined,
       assignedDriverName: assignedDrv ? assignedDrv.name : undefined,
-      plateNumber: vehiclePlateNumber.trim() || (assignedDrv ? assignedDrv.plateNumber : undefined),
+      plateNumber: vehiclePlateNumber.trim() || undefined,
+      status: vehicleStatus,
+      ownership: vehicleOwnership,
       showOnWebsite: vehicleShowOnWebsite,
     };
 
@@ -355,50 +361,40 @@ export const FleetPersonnelView: React.FC = () => {
 
   const handleSaveDriver = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!driverName.trim() || !vehicleModel.trim() || !plateNumber.trim()) {
-      setFeedbackError('Please complete all required fields.');
+    if (!driverName.trim()) {
+      setFeedbackError('Driver name is required.');
+      return;
+    }
+    if (driverType === 'third-party' && !company.trim()) {
+      setFeedbackError('Company name is required for a third-party driver.');
       return;
     }
 
-    if (editingDriver) {
-      const res = updateDriver(editingDriver.id, {
-        name: driverName.trim(),
-        nameAr: driverNameAr.trim() || driverName.trim(),
-        vehicle: vehicleModel.trim(),
-        plateNumber: plateNumber.trim(),
-        vehicleType,
-        phone: phone.trim(),
-        location: location.trim(),
-        status,
-        currentMission: currentMission.trim(),
-        activePassengers: Number(activePassengers),
-      });
+    const payload = {
+      name: driverName.trim(),
+      nameAr: driverNameAr.trim() || driverName.trim(),
+      driverType,
+      company: driverType === 'third-party' ? company.trim() : undefined,
+      phone: phone.trim(),
+      location: location.trim(),
+      status,
+      currentMission: currentMission.trim(),
+      activePassengers: Number(activePassengers),
+    };
 
+    if (editingDriver) {
+      const res = updateDriver(editingDriver.id, payload);
       if (res.success) {
-        setFeedbackSuccess(`Vehicle and chauffeur "${driverName}" updated successfully.`);
+        setFeedbackSuccess(`Driver "${driverName}" updated successfully.`);
         setShowAddModal(false);
         setTimeout(() => setFeedbackSuccess(null), 3000);
       } else {
         setFeedbackError(res.error || 'Update failed.');
       }
     } else {
-      const res = addDriver({
-        name: driverName.trim(),
-        nameAr: driverNameAr.trim() || driverName.trim(),
-        vehicle: vehicleModel.trim(),
-        plateNumber: plateNumber.trim(),
-        vehicleType,
-        phone: phone.trim(),
-        location: location.trim(),
-        status,
-        currentMission: currentMission.trim(),
-        activePassengers: Number(activePassengers),
-        totalTripsToday: 0,
-        rating: 5.0,
-      });
-
+      const res = addDriver({ ...payload, totalTripsToday: 0, rating: 5.0 });
       if (res.success) {
-        setFeedbackSuccess(`New fleet vehicle "${vehicleModel}" (${plateNumber}) registered with chauffeur ${driverName}!`);
+        setFeedbackSuccess(`New driver "${driverName}" registered${driverType === 'third-party' ? ` (${company.trim()})` : ''}!`);
         setShowAddModal(false);
         setTimeout(() => setFeedbackSuccess(null), 3500);
       } else {
@@ -409,8 +405,10 @@ export const FleetPersonnelView: React.FC = () => {
 
   const getStatusBadgeClass = (st: Driver['status']) => {
     switch (st) {
+      case 'On Trip':
       case 'At Airport Bay':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-200 dark:border-blue-800';
+      case 'Available':
       case 'Dispatched':
       case 'En Route':
         return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800';
@@ -427,44 +425,45 @@ export const FleetPersonnelView: React.FC = () => {
   return (
     <div className="space-y-5 pb-8 select-none">
       {/* 1. Top Banner & Primary Action */}
-      <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-4 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-              <Compass className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                <span>{language === 'ar' ? 'إدارة الأسطول الميداني والكوادر وتوزيع المهام' : 'Fleet & Field Personnel Scheduling & Duty Roster'}</span>
-                <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                  {drivers.length} Vehicles
-                </span>
-              </h2>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {language === 'ar'
-                  ? 'أسطول الدفع الرباعي 4x4، ليموزينات VIP، حافلات الكوستر، المرشدين المرخصين، وقسائم الركاب'
-                  : '4x4 Land Cruiser convoys, VIP luxury limousines, licensed multilingual tour guides & passenger manifests'}
-              </p>
+      <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 flex flex-col gap-4 shadow-xs">
+        {/* Top line: title (left) + sub-tab navigation (right) */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <div className="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                <Compass className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
+                  <span>{language === 'ar' ? 'إدارة الأسطول الميداني والكوادر وتوزيع المهام' : 'Fleet & Field Personnel Scheduling & Duty Roster'}</span>
+                  <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 whitespace-nowrap">
+                    {fleetVehicles.length} Vehicles
+                  </span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {language === 'ar'
+                    ? 'أسطول الدفع الرباعي 4x4، ليموزينات VIP، حافلات الكوستر، المرشدين المرخصين'
+                    : '4x4 Land Cruiser convoys, VIP luxury limousines & licensed multilingual tour guides'}
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Sub Tab Navigation */}
-          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl text-xs">
+          {/* Sub Tab Navigation (upper line) */}
+          <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl text-xs self-start lg:self-auto">
             <button
               onClick={() => setActivePersonnelTab('drivers')}
-              className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer ${
+              className={`whitespace-nowrap px-3 py-1.5 rounded-xl font-bold transition cursor-pointer ${
                 activePersonnelTab === 'drivers'
                   ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
-              Chauffeurs & Dispatch ({drivers.length})
+              Drivers & Dispatch ({drivers.length})
             </button>
             <button
               onClick={() => setActivePersonnelTab('vehicles')}
-              className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              className={`whitespace-nowrap px-3 py-1.5 rounded-xl font-bold transition cursor-pointer flex items-center gap-1.5 ${
                 activePersonnelTab === 'vehicles'
                   ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
@@ -475,7 +474,7 @@ export const FleetPersonnelView: React.FC = () => {
             </button>
             <button
               onClick={() => setActivePersonnelTab('guides')}
-              className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer ${
+              className={`whitespace-nowrap px-3 py-1.5 rounded-xl font-bold transition cursor-pointer ${
                 activePersonnelTab === 'guides'
                   ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
                   : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
@@ -483,22 +482,15 @@ export const FleetPersonnelView: React.FC = () => {
             >
               Tour Guides ({tourGuides.length})
             </button>
-            <button
-              onClick={() => setActivePersonnelTab('roster')}
-              className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer ${
-                activePersonnelTab === 'roster'
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
-              }`}
-            >
-              Passenger Slips
-            </button>
           </div>
+        </div>
 
+        {/* Lower line: action buttons, left-aligned */}
+        <div className="flex flex-wrap items-center gap-3">
           {/* 1-Click Sync & Import Website Fleet Catalog */}
           <button
             onClick={handleSyncWebsiteFleet}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:brightness-110 text-white text-xs font-bold transition shadow-sm active:scale-95 cursor-pointer"
+            className="whitespace-nowrap flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:brightness-110 text-white text-xs font-bold transition shadow-sm active:scale-95 cursor-pointer"
             title="Import and synchronize all 12 vehicles & field operations with website catalog"
           >
             <RefreshCw className="w-3.5 h-3.5" />
@@ -510,27 +502,26 @@ export const FleetPersonnelView: React.FC = () => {
           {/* Primary Action Button (Contextual for Drivers vs Vehicles) */}
           <button
             onClick={activePersonnelTab === 'vehicles' ? handleOpenAddVehicleModal : handleOpenAddModal}
-            className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm ${
+            className={`whitespace-nowrap flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-all shadow-sm ${
               canManageFleet
                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-500/20 active:scale-98 cursor-pointer'
                 : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 cursor-not-allowed border border-slate-200 dark:border-slate-700'
             }`}
-            title={canManageFleet ? (activePersonnelTab === 'vehicles' ? 'Add new vehicle to fleet & public website' : 'Register new chauffeur driver') : 'Restricted: Operations Manager or Super Admin only'}
+            title={canManageFleet ? (activePersonnelTab === 'vehicles' ? 'Add new vehicle to fleet & public website' : 'Register a new driver') : 'Restricted: Operations Manager or Super Admin only'}
           >
             {canManageFleet ? (
               <>
                 <Plus className="w-4 h-4" />
-                <Car className="w-3.5 h-3.5" />
                 <span>
                   {activePersonnelTab === 'vehicles'
-                    ? (language === 'ar' ? '+ إضافة مركبة للأسطول والموقع' : '+ Add Fleet Vehicle')
-                    : (language === 'ar' ? '+ إضافة سائق ميداني' : '+ Add Chauffeur Driver')}
+                    ? (language === 'ar' ? 'إضافة مركبة للأسطول والموقع' : 'Add Fleet Vehicle')
+                    : (language === 'ar' ? 'إضافة سائق ميداني' : 'Add Driver')}
                 </span>
               </>
             ) : (
               <>
                 <Lock className="w-3.5 h-3.5 text-amber-500" />
-                <span>{language === 'ar' ? 'إضافة أسطول (للمدراء)' : '+ Add Fleet (Restricted)'}</span>
+                <span>{language === 'ar' ? 'إضافة أسطول (للمدراء)' : 'Add Fleet (Restricted)'}</span>
               </>
             )}
           </button>
@@ -551,35 +542,35 @@ export const FleetPersonnelView: React.FC = () => {
         </div>
       )}
 
-      {/* 3. Sub Tab 1: Chauffeur Fleet Operations */}
+      {/* 3. Sub Tab 1: Driver Fleet Operations */}
       {activePersonnelTab === 'drivers' && (
         <div className="space-y-4">
           {/* Fleet Operational Metrics Bar */}
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
             <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Vehicles</span>
-              <div className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{drivers.length} Units</div>
-              <span className="text-[10px] text-slate-500">100% Accredited</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Total Drivers</span>
+              <div className="text-lg font-black text-slate-900 dark:text-white mt-0.5">{drivers.length} Drivers</div>
+              <span className="text-[10px] text-slate-500">{firstPartyCount} in-house · {thirdPartyCount} 3rd-party</span>
             </div>
             <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-500 block">At Airport Bay</span>
-              <div className="text-lg font-black text-blue-600 dark:text-blue-400 mt-0.5">{atAirportCount} Staged</div>
-              <span className="text-[10px] text-slate-500">Terminal 1 & Al Maha</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-500 block">On Trip</span>
+              <div className="text-lg font-black text-blue-600 dark:text-blue-400 mt-0.5">{onTripCount} Active</div>
+              <span className="text-[10px] text-slate-500">Currently dispatched</span>
             </div>
             <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 block">Dispatched / En Route</span>
-              <div className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{dispatchedCount} Active</div>
-              <span className="text-[10px] text-slate-500">On Highway & Dunes</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 block">Available</span>
+              <div className="text-lg font-black text-emerald-600 dark:text-emerald-400 mt-0.5">{availableCount} Ready</div>
+              <span className="text-[10px] text-slate-500">Free to assign</span>
             </div>
             <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-500 block">Standby Ready</span>
-              <div className="text-lg font-black text-purple-600 dark:text-purple-400 mt-0.5">{standbyCount} Units</div>
-              <span className="text-[10px] text-slate-500">Depot Reserve</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-purple-500 block">Third-Party</span>
+              <div className="text-lg font-black text-purple-600 dark:text-purple-400 mt-0.5">{thirdPartyCount} Drivers</div>
+              <span className="text-[10px] text-slate-500">Contracted / external</span>
             </div>
             <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs col-span-2 sm:col-span-1">
               <span className="text-[10px] font-bold uppercase tracking-wider text-amber-500 block">Fleet Utilization</span>
               <div className="text-lg font-black text-amber-600 dark:text-amber-400 mt-0.5">{activeUtilization}%</div>
-              <span className="text-[10px] text-slate-500">{maintenanceCount} Maintenance/Off</span>
+              <span className="text-[10px] text-slate-500">{offDutyCount} off duty / maint.</span>
             </div>
           </div>
 
@@ -591,7 +582,7 @@ export const FleetPersonnelView: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search chauffeur, vehicle model, QA plate, location..."
+                placeholder="Search driver, phone, company, location..."
                 className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400"
               />
             </div>
@@ -607,9 +598,8 @@ export const FleetPersonnelView: React.FC = () => {
                 className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs text-slate-800 dark:text-slate-200 font-medium"
               >
                 <option value="ALL">All Statuses ({drivers.length})</option>
-                <option value="At Airport Bay">At Airport Bay</option>
-                <option value="Dispatched">Dispatched</option>
-                <option value="En Route">En Route</option>
+                <option value="Available">Available</option>
+                <option value="On Trip">On Trip</option>
                 <option value="Standby">Standby</option>
                 <option value="Maintenance">Maintenance</option>
                 <option value="Off Duty">Off Duty</option>
@@ -620,13 +610,9 @@ export const FleetPersonnelView: React.FC = () => {
                 onChange={(e) => setTypeFilter(e.target.value)}
                 className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-2.5 py-1 text-xs text-slate-800 dark:text-slate-200 font-medium"
               >
-                <option value="ALL">All Vehicle Types</option>
-                <option value="4x4 SUV">4x4 SUV</option>
-                <option value="VIP Van">VIP Van</option>
-                <option value="Luxury Sedan">Luxury Sedan</option>
-                <option value="Mini Bus">Mini Bus</option>
-                <option value="Luxury Limousine">Luxury Limousine</option>
-                <option value="Coaster Bus">Coaster Bus</option>
+                <option value="ALL">All Driver Types</option>
+                <option value="first-party">First-party (in-house)</option>
+                <option value="third-party">Third-party (contracted)</option>
               </select>
 
               {/* Card / List Layout Switcher */}
@@ -679,11 +665,20 @@ export const FleetPersonnelView: React.FC = () => {
                       <h4 className="font-extrabold text-sm text-slate-900 dark:text-white leading-tight">
                         {d.name}
                       </h4>
-                      {d.nameAr && (
-                        <span className="text-[11px] text-slate-400 font-medium block">
-                          {d.nameAr}
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <span
+                          className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                            d.driverType === 'third-party'
+                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300'
+                              : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
+                          }`}
+                        >
+                          {d.driverType === 'third-party' ? '3rd-party' : 'In-house'}
                         </span>
-                      )}
+                        {d.driverType === 'third-party' && d.company && (
+                          <span className="text-[10px] text-slate-400 font-medium truncate max-w-[110px]">{d.company}</span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -693,14 +688,14 @@ export const FleetPersonnelView: React.FC = () => {
                       <button
                         onClick={() => handleOpenEditModal(d)}
                         className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-blue-600 transition-colors cursor-pointer"
-                        title="Edit fleet vehicle"
+                        title="Edit driver"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDeleteDriver(d)}
                         className="p-1.5 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/50 text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
-                        title="Decommission vehicle"
+                        title="Remove driver"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -708,25 +703,9 @@ export const FleetPersonnelView: React.FC = () => {
                   )}
                 </div>
 
-                {/* Vehicle Specs & Qatar Plate Badge */}
+                {/* Driver contact + currently paired vehicle (read-only) */}
                 <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 text-xs space-y-2">
                   <div className="flex items-center justify-between gap-2">
-                    <div className="font-bold text-slate-800 dark:text-slate-200 truncate">
-                      {d.vehicle}
-                    </div>
-                    {/* Authentic Qatar Plate pill */}
-                    <div className="flex items-center rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 overflow-hidden shadow-2xs shrink-0">
-                      <span className="bg-rose-900 text-white text-[9px] font-bold px-1.5 py-0.5">QATAR</span>
-                      <span className="text-slate-900 dark:text-white font-mono font-bold text-[10px] px-1.5 py-0.5">
-                        {d.plateNumber}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 font-mono">
-                    <span className="px-2 py-0.5 rounded-full bg-slate-200/70 dark:bg-slate-700/70 text-slate-700 dark:text-slate-300 text-[10px] font-medium">
-                      {d.vehicleType}
-                    </span>
                     <a
                       href={`tel:${d.phone}`}
                       className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 hover:underline font-semibold"
@@ -734,6 +713,14 @@ export const FleetPersonnelView: React.FC = () => {
                       <PhoneCall className="w-3 h-3" />
                       <span>{d.phone}</span>
                     </a>
+                    {d.vehicle ? (
+                      <div className="flex items-center gap-1 text-[10px] text-slate-500" title="Default paired vehicle (assigned per-trip on booking)">
+                        <Car className="w-3 h-3 text-slate-400" />
+                        <span className="truncate max-w-[120px]">{d.vehicle}{d.plateNumber ? ` · ${d.plateNumber}` : ''}</span>
+                      </div>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 italic">No default vehicle</span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
@@ -767,12 +754,11 @@ export const FleetPersonnelView: React.FC = () => {
                             d.status
                           )}`}
                         >
-                          <option value="At Airport Bay">At Airport Bay</option>
-                          <option value="Dispatched">Dispatched</option>
-                          <option value="En Route">En Route</option>
+                          <option value="Available">Available</option>
+                          <option value="On Trip" disabled>On Trip (auto)</option>
                           <option value="Standby">Standby</option>
-                          <option value="Maintenance">Maintenance</option>
                           <option value="Off Duty">Off Duty</option>
+                          <option value="Maintenance">Maintenance</option>
                         </select>
                         <ChevronDown className="w-2.5 h-2.5 absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-60" />
                       </div>
@@ -791,13 +777,13 @@ export const FleetPersonnelView: React.FC = () => {
             ))}
           </div>
         ) : (
-          /* Fleet Chauffeurs & Vehicles List / Table View ("list view te dekha jay ei option ta add koro") */
+          /* Fleet Drivers & Vehicles List / Table View ("list view te dekha jay ei option ta add koro") */
           <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider font-mono">
-                    <th className="py-3.5 px-4">Chauffeur & Rating</th>
+                    <th className="py-3.5 px-4">Driver & Rating</th>
                     <th className="py-3.5 px-4">Vehicle Specs</th>
                     <th className="py-3.5 px-4">Qatar Plate & Type</th>
                     <th className="py-3.5 px-4">Current Bay / Location</th>
@@ -868,7 +854,7 @@ export const FleetPersonnelView: React.FC = () => {
                           <button
                             onClick={() => handleOpenEditModal(d)}
                             className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-blue-600 transition"
-                            title="Edit Vehicle & Chauffeur"
+                            title="Edit Vehicle & Driver"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
@@ -934,7 +920,7 @@ export const FleetPersonnelView: React.FC = () => {
                 type="text"
                 value={vehicleSearchQuery}
                 onChange={(e) => setVehicleSearchQuery(e.target.value)}
-                placeholder="Search vehicle model, category, chauffeur, plate..."
+                placeholder="Search vehicle model, category, driver, plate..."
                 className="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400"
               />
             </div>
@@ -1066,6 +1052,26 @@ export const FleetPersonnelView: React.FC = () => {
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
                             {v.idealFor}
                           </p>
+                          <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                            <span
+                              className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                                (v.status || 'Available') === 'On Trip'
+                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
+                                  : (v.status || 'Available') === 'Maintenance'
+                                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300'
+                                  : (v.status || 'Available') === 'Reserved'
+                                  ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300'
+                                  : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300'
+                              }`}
+                            >
+                              {v.status || 'Available'}
+                            </span>
+                            {v.ownership === 'third-party' && (
+                              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                                3rd-party
+                              </span>
+                            )}
+                          </div>
                         </div>
 
                         {/* Passenger & Luggage Specs */}
@@ -1112,7 +1118,7 @@ export const FleetPersonnelView: React.FC = () => {
                             </div>
                             <div>
                               <span className="text-[10px] text-slate-400 block uppercase font-bold">
-                                Assigned Chauffeur
+                                Assigned Driver
                               </span>
                               <span className="font-bold text-slate-800 dark:text-slate-200 text-xs">
                                 {assignedDriver ? assignedDriver.name : v.assignedDriverName || 'Pool Standby (Unassigned)'}
@@ -1162,7 +1168,7 @@ export const FleetPersonnelView: React.FC = () => {
                       <th className="py-3 px-4">Category</th>
                       <th className="py-3 px-4">Capacity</th>
                       <th className="py-3 px-4">Price (QAR)</th>
-                      <th className="py-3 px-4">Assigned Chauffeur</th>
+                      <th className="py-3 px-4">Assigned Driver</th>
                       <th className="py-3 px-4">Website Status</th>
                       <th className="py-3 px-4 text-right">Actions</th>
                     </tr>
@@ -1283,95 +1289,6 @@ export const FleetPersonnelView: React.FC = () => {
       )}
 
       {/* 5. Sub Tab 3: Printable Passenger Information Sheet */}
-      {activePersonnelTab === 'roster' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-          <div className="lg:col-span-5 space-y-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Select Reservation to Print Information Slip
-            </span>
-            <div className="space-y-2 max-h-96 overflow-y-auto pr-1 text-xs">
-              {bookings.map((b) => (
-                <div
-                  key={b.id}
-                  onClick={() => setSelectedPassengerSheet(b)}
-                  className={`p-3 rounded-2xl border cursor-pointer transition ${
-                    selectedPassengerSheet?.id === b.id
-                      ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/30 shadow-xs'
-                      : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-slate-300'
-                  }`}
-                >
-                  <div className="flex justify-between font-bold text-slate-900 dark:text-white">
-                    <span>{b.passengerName}</span>
-                    <span className="font-mono text-blue-600 dark:text-blue-400">{b.pnr}</span>
-                  </div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">{b.packageName}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Passenger Information Slip Preview */}
-          <div className="lg:col-span-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-xs space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div>
-                <span className="text-[10px] uppercase font-bold text-slate-400 block font-mono">OFFICIAL PASSENGER MANIFEST SLIP</span>
-                <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                  Hamad International Airport Pickup Voucher #{selectedPassengerSheet?.pnr || 'N/A'}
-                </h3>
-              </div>
-
-              <button
-                onClick={() => window.print()}
-                className="px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print Slip</span>
-              </button>
-            </div>
-
-            {selectedPassengerSheet && (
-              <div className="p-4 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800 space-y-3 text-xs font-mono">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase">Lead Passenger</span>
-                    <div className="font-bold text-slate-900 dark:text-white text-sm">
-                      {selectedPassengerSheet.passengerName}
-                    </div>
-                    <div className="text-[11px] text-slate-500">
-                      {selectedPassengerSheet.paxCount} Travelers · {selectedPassengerSheet.nationality}
-                    </div>
-                  </div>
-
-                  <div>
-                    <span className="text-[10px] text-slate-400 uppercase">Flight & Meeting Point</span>
-                    <div className="font-bold text-blue-600 dark:text-blue-400 text-sm">
-                      {selectedPassengerSheet.flightNumber} ({selectedPassengerSheet.arrivalTime})
-                    </div>
-                    <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
-                      Terminal Meeting Bay: {selectedPassengerSheet.pickupBay}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-                  <span className="text-[10px] text-slate-400 uppercase">Assigned Chauffeur & Escort</span>
-                  <div className="font-bold text-slate-900 dark:text-white">
-                    {selectedPassengerSheet.driverName} — {selectedPassengerSheet.driverVehicle}
-                  </div>
-                  <div className="text-[11px] text-slate-500">
-                    Chauffeur Direct Contact: {selectedPassengerSheet.driverPhone}
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-700 text-[11px] text-slate-600 dark:text-slate-300">
-                  <span className="font-bold">Special Operational Notes: </span>
-                  {selectedPassengerSheet.notes || 'No special requests.'}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* 6. Register / Edit Fleet Vehicle Modal */}
       {showAddModal && (
@@ -1381,18 +1298,18 @@ export const FleetPersonnelView: React.FC = () => {
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2.5">
                 <div className="p-2.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
-                  <Car className="w-5 h-5" />
+                  <UserCheck className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
                     {editingDriver
-                      ? language === 'ar' ? 'تعديل بيانات المركبة والسائق' : 'Edit Fleet Vehicle & Chauffeur'
-                      : language === 'ar' ? 'تسجيل مركبة وسائق جديد في الأسطول' : 'Register New Fleet Vehicle & Chauffeur'}
+                      ? language === 'ar' ? 'تعديل بيانات السائق' : 'Edit Driver'
+                      : language === 'ar' ? 'تسجيل سائق جديد' : 'Register New Driver'}
                   </h3>
                   <p className="text-xs text-slate-500">
                     {language === 'ar'
-                      ? 'إضافة سيارة جديدة لأسطول النقل السياحي بمطار حمد الدولي ومطابقتها مع المهام'
-                      : 'Deploy vehicle to Hamad Airport staging bays, desert safari convoys, and VIP transfers'}
+                      ? 'إضافة سائق (داخلي أو خارجي) لفريق النقل والمهام الميدانية'
+                      : 'Add an in-house or contracted driver to the dispatch roster'}
                   </p>
                 </div>
               </div>
@@ -1409,7 +1326,7 @@ export const FleetPersonnelView: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
-                    Chauffeur / Driver Full Name (English) *
+                    Driver Full Name (English) *
                   </label>
                   <input
                     type="text"
@@ -1423,7 +1340,7 @@ export const FleetPersonnelView: React.FC = () => {
 
                 <div>
                   <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
-                    Chauffeur Name (Arabic)
+                    Driver Name (Arabic)
                   </label>
                   <input
                     type="text"
@@ -1435,53 +1352,40 @@ export const FleetPersonnelView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
-                    Vehicle Model & Make *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={vehicleModel}
-                    onChange={(e) => setVehicleModel(e.target.value)}
-                    placeholder="e.g. Toyota Land Cruiser 300 VXR"
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
-                    Qatar Plate Number *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={plateNumber}
-                    onChange={(e) => setPlateNumber(e.target.value)}
-                    placeholder="e.g. QA 84920"
-                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-bold font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
-                    Vehicle Type *
+                    Driver Type *
                   </label>
                   <select
-                    value={vehicleType}
-                    onChange={(e) => setVehicleType(e.target.value)}
+                    value={driverType}
+                    onChange={(e) => setDriverType(e.target.value as 'first-party' | 'third-party')}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white font-medium"
                   >
-                    <option value="4x4 SUV">4x4 SUV (Land Cruiser/Patrol)</option>
-                    <option value="VIP Van">VIP Van (Staria/V-Class)</option>
-                    <option value="Luxury Sedan">Luxury Sedan (Lexus/S-Class)</option>
-                    <option value="Mini Bus">Mini Bus (HiAce)</option>
-                    <option value="Luxury Limousine">Luxury Limousine (Escalade/Maybach)</option>
-                    <option value="Coaster Bus">Coaster Bus (22 Pax)</option>
+                    <option value="first-party">First-party (in-house staff)</option>
+                    <option value="third-party">Third-party (contracted / external)</option>
                   </select>
                 </div>
+
+                {driverType === 'third-party' && (
+                  <div>
+                    <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
+                      Company / Vendor *
+                    </label>
+                    <input
+                      type="text"
+                      value={company}
+                      onChange={(e) => setCompany(e.target.value)}
+                      placeholder="e.g. Al Majd Transport LLC"
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3.5 py-2.5 text-slate-900 dark:text-white font-medium"
+                    />
+                  </div>
+                )}
               </div>
+
+              <p className="text-[11px] text-slate-400 -mt-1">
+                A vehicle is assigned to a driver per-trip on the booking — not stored on the driver. Manage the vehicle fleet in the Vehicle Fleet tab.
+              </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
@@ -1521,10 +1425,8 @@ export const FleetPersonnelView: React.FC = () => {
                     onChange={(e) => setStatus(e.target.value as any)}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white font-medium"
                   >
-                    <option value="Standby">Standby (Ready at Depot)</option>
-                    <option value="At Airport Bay">At Airport Bay (Terminal 1)</option>
-                    <option value="Dispatched">Dispatched</option>
-                    <option value="En Route">En Route</option>
+                    <option value="Available">Available (Ready to assign)</option>
+                    <option value="Standby">Standby (At depot)</option>
                     <option value="Maintenance">Under Maintenance</option>
                     <option value="Off Duty">Off Duty</option>
                   </select>
@@ -1557,7 +1459,7 @@ export const FleetPersonnelView: React.FC = () => {
                   className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all shadow-md shadow-emerald-500/20 active:scale-98 cursor-pointer flex items-center gap-1.5"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>{editingDriver ? 'Save Fleet Updates' : 'Add Vehicle to Fleet'}</span>
+                  <span>{editingDriver ? 'Save Driver' : 'Register Driver'}</span>
                 </button>
               </div>
             </form>
@@ -1739,28 +1641,53 @@ export const FleetPersonnelView: React.FC = () => {
                 />
               </div>
 
-              {/* Link to Chauffeur Driver & QA Plate */}
+              {/* Operational status + ownership */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
+                    Availability Status
+                  </label>
+                  <select
+                    value={vehicleStatus}
+                    onChange={(e) => setVehicleStatus(e.target.value as NonNullable<FleetVehicle['status']>)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white font-medium"
+                  >
+                    <option value="Available">Available</option>
+                    <option value="On Trip" disabled>On Trip (auto)</option>
+                    <option value="Reserved">Reserved</option>
+                    <option value="Maintenance">Maintenance</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
+                    Ownership
+                  </label>
+                  <select
+                    value={vehicleOwnership}
+                    onChange={(e) => setVehicleOwnership(e.target.value as 'owned' | 'third-party')}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-slate-900 dark:text-white font-medium"
+                  >
+                    <option value="owned">Owned (company fleet)</option>
+                    <option value="third-party">Third-party (contracted)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Link to Driver & QA Plate */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60">
                 <div>
                   <label className="block text-slate-700 dark:text-slate-300 font-bold mb-1">
-                    Assigned Primary Chauffeur
+                    Default Paired Driver
                   </label>
                   <select
                     value={vehicleAssignedDriverId}
-                    onChange={(e) => {
-                      const selId = e.target.value;
-                      setVehicleAssignedDriverId(selId);
-                      const d = drivers.find((drv) => drv.id === selId);
-                      if (d) {
-                        setVehiclePlateNumber(d.plateNumber);
-                      }
-                    }}
+                    onChange={(e) => setVehicleAssignedDriverId(e.target.value)}
                     className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white font-medium"
                   >
                     <option value="">Pool Reserve (Unassigned)</option>
                     {drivers.map((d) => (
                       <option key={d.id} value={d.id}>
-                        {d.name} — {d.vehicle} ({d.plateNumber})
+                        {d.name}{d.driverType === 'third-party' ? ' (3rd-party)' : ''}
                       </option>
                     ))}
                   </select>

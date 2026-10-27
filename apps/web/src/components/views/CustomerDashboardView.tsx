@@ -171,7 +171,7 @@ export const CustomerDashboardView: React.FC = () => {
               <p className="text-xs text-slate-300 max-w-xl mt-1 leading-relaxed">
                 {isRtl
                   ? 'لوحة تحكم المسافر الخاصة بك: استعرض قسائم رحلاتك الصحراوية، حجوزات الفنادق الفاخرة، ومواعيد الاستقبال بمطار حمد الدولي.'
-                  : 'Your personal traveler hub. Review your upcoming desert safaris, 5-star hotel stays, QR vouchers, and VIP airport chauffeur schedules.'}
+                  : 'Your personal traveler hub. Review your upcoming desert safaris, 5-star hotel stays, QR vouchers, and VIP airport driver schedules.'}
               </p>
             </div>
           </div>
@@ -397,7 +397,7 @@ export const CustomerDashboardView: React.FC = () => {
 
                     <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
                       <Car className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span className="truncate">{b.driverVehicle || '4x4 Chauffeur'}</span>
+                      <span className="truncate">{b.driverVehicle || '4x4 Driver'}</span>
                     </div>
                   </div>
                 </div>
@@ -585,7 +585,7 @@ export const CustomerDashboardView: React.FC = () => {
                   VIP Fleet
                 </span>
                 <h4 className="font-extrabold text-slate-900 dark:text-white text-base">
-                  Hamad Airport (HIA) VIP Mercedes Chauffeur
+                  Hamad Airport (HIA) VIP Mercedes Driver
                 </h4>
                 <p className="text-xs text-slate-500 line-clamp-2">
                   Airside/arrival terminal personal greeting, luggage assistance, and luxury Mercedes V-Class transfer.

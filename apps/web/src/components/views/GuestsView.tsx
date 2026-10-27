@@ -295,36 +295,6 @@ export const GuestsView: React.FC = () => {
 
         {/* View Mode Toggle & Action Buttons */}
         <div className="flex items-center gap-2.5 self-start xl:self-auto flex-wrap">
-          {/* Mode Switcher */}
-          <div className="flex items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700">
-            <button
-              onClick={() => setActiveViewMode('crm')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeViewMode === 'crm'
-                  ? 'bg-white dark:bg-slate-900 text-purple-700 dark:text-purple-300 shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <UserCheck className="w-3.5 h-3.5" />
-              <span>{language === 'ar' ? 'سجل الضيوف (CRM)' : 'CRM Roster'}</span>
-            </button>
-
-            <button
-              onClick={() => setActiveViewMode('customer-portal')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeViewMode === 'customer-portal'
-                  ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>{language === 'ar' ? 'بوابة المسافر (Customer)' : 'Customer Portal'}</span>
-              <span className="text-[9px] bg-amber-400 text-slate-950 font-black px-1 rounded-sm">
-                PORTAL
-              </span>
-            </button>
-          </div>
-
           <button
             onClick={() => openModal('qr-verification')}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-blue-300 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-xs font-bold transition shadow-xs cursor-pointer"
@@ -347,7 +317,7 @@ export const GuestsView: React.FC = () => {
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition shadow-sm shadow-purple-500/25 cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>{language === 'ar' ? '+ إضافة مسافر' : '+ Add Guest'}</span>
+            <span>{language === 'ar' ? 'إضافة مسافر' : 'Add Guest'}</span>
           </button>
         </div>
       </div>
@@ -594,10 +564,13 @@ export const GuestsView: React.FC = () => {
               {/* Action Buttons */}
               <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
                 <button
-                  onClick={() => setSelectedGuest(guest)}
+                  onClick={() => {
+                    setSelectedCustomerId(guest.id);
+                    setActiveViewMode('customer-portal');
+                  }}
                   className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition shadow-xs"
                 >
-                  <span>View Guest Dossier</span>
+                  <span>View Customer Portal</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
                 </button>
 
@@ -750,6 +723,17 @@ export const GuestsView: React.FC = () => {
   ) : (
         /* CUSTOMER SELF-SERVICE DASHBOARD PORTAL */
         <div className="space-y-6 animate-in fade-in duration-200">
+          {/* Back to roster (hidden for the customer's own self-service login) */}
+          {currentRole !== 'customer' && (
+            <button
+              onClick={() => setActiveViewMode('crm')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition cursor-pointer"
+            >
+              <ArrowUpRight className="w-3.5 h-3.5 rotate-180" />
+              <span>Back to Customer Roster</span>
+            </button>
+          )}
+
           {/* Customer Profile & Concierge Hero Card */}
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 p-6 sm:p-8 text-white border border-indigo-900/50 shadow-xl">
             <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-purple-500/10 blur-3xl pointer-events-none" />
@@ -822,7 +806,7 @@ export const GuestsView: React.FC = () => {
                     className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black transition shadow-md shadow-amber-500/25 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>+ Book VIP Tour</span>
+                    <span>Book VIP Tour</span>
                   </button>
                 </div>
               </div>
@@ -880,7 +864,7 @@ export const GuestsView: React.FC = () => {
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-base font-black text-blue-600 dark:text-blue-400">Hamad Int’l DOH</span>
               </div>
-              <p className="text-[10px] text-slate-400 mt-1">VIP Curbside Chauffeur & Al Maha Meet</p>
+              <p className="text-[10px] text-slate-400 mt-1">VIP Curbside Driver & Al Maha Meet</p>
             </div>
           </div>
 
@@ -893,7 +877,7 @@ export const GuestsView: React.FC = () => {
                   <span>My Active Reservations & Digital Boarding Passes</span>
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Present these passes at Hamad Airport Terminal pickup bays, hotel check-ins, or to your designated chauffeur.
+                  Present these passes at Hamad Airport Terminal pickup bays, hotel check-ins, or to your designated driver.
                 </p>
               </div>
 
@@ -940,7 +924,7 @@ export const GuestsView: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Car className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                        <span className="line-clamp-1">{b.driverVehicle || 'Audi A8 L / Mercedes S-Class'} • {b.driverName || 'VIP Chauffeur'}</span>
+                        <span className="line-clamp-1">{b.driverVehicle || 'Audi A8 L / Mercedes S-Class'} • {b.driverName || 'VIP Driver'}</span>
                       </div>
                     </div>
                   </div>
@@ -1016,7 +1000,7 @@ export const GuestsView: React.FC = () => {
               <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 flex items-center justify-between">
                 <div>
                   <div className="text-[10px] font-mono text-amber-300 font-bold">VOUCHER: QA-29311</div>
-                  <div className="text-xs font-extrabold text-white mt-1">Hamad VIP Chauffeur Transfer</div>
+                  <div className="text-xs font-extrabold text-white mt-1">Hamad VIP Driver Transfer</div>
                   <div className="text-[11px] text-purple-200">Audi A8 L Limousine Escort (Terminal Bay 4)</div>
                 </div>
                 <button
@@ -1214,7 +1198,7 @@ export const GuestsView: React.FC = () => {
                     {selectedGuest.vipTier}
                   </span>
                   <span className="text-[10px] text-slate-500 block mt-0.5">
-                    Fast-Track & Chauffeur
+                    Fast-Track & Driver
                   </span>
                 </div>
               </div>
@@ -1260,7 +1244,7 @@ export const GuestsView: React.FC = () => {
                             <span>•</span>
                             <span>Pickup: {bkg.pickupBay}</span>
                             <span>•</span>
-                            <span>Chauffeur: {bkg.driverName}</span>
+                            <span>Driver: {bkg.driverName}</span>
                             <span>•</span>
                             <span>Date: {bkg.createdAt}</span>
                           </div>
@@ -1632,7 +1616,7 @@ export const GuestsView: React.FC = () => {
                       </label>
                       <input
                         type="text"
-                        placeholder="e.g. Complimentary airport chauffeur & 15% tour discount"
+                        placeholder="e.g. Complimentary airport driver & 15% tour discount"
                         value={newTierDesc}
                         onChange={(e) => setNewTierDesc(e.target.value)}
                         className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"

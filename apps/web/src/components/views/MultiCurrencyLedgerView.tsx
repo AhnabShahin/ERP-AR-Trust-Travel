@@ -436,7 +436,7 @@ export const MultiCurrencyLedgerView: React.FC = () => {
             className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Add New Currency</span>
+            <span>Add New Currency</span>
           </button>
 
           <div className="text-right font-mono pl-3 border-l border-slate-200 dark:border-slate-800">
@@ -723,7 +723,7 @@ export const MultiCurrencyLedgerView: React.FC = () => {
               className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>+ Record Historical Entry</span>
+              <span>Record Historical Entry</span>
             </button>
           </div>
         </div>

@@ -1,4 +1,4 @@
-// Authentic Car Images for Airport Transfer & Chauffeur Fleet
+// Authentic Car Images for Airport Transfer & Driver Fleet
 import mercedesVClass from './mercedes-v-class.jpg';
 import toyotaLandCruiser from './toyota-land-cruiser.jpg';
 import kiaK5 from './kia-k5.jpg';

@@ -9,7 +9,6 @@ import {
   Coins,
   Settings,
   ShieldCheck,
-  FileText,
   UserCheck,
   Users,
   ChevronDown,
@@ -96,7 +95,7 @@ export const Sidebar: React.FC = () => {
       case 'transit-agent':
         return 'Transit Desk Dashboard';
       case 'driver-guide':
-        return 'Driver & Chauffeur Dashboard';
+        return 'Driver Dashboard';
       case 'finance-accountant':
         return 'Finance Dashboard';
       default:
@@ -297,11 +296,6 @@ export const Sidebar: React.FC = () => {
           icon: Coins,
         },
         {
-          id: 'reports',
-          label: language === 'ar' ? 'التقارير والأرباح (P&L)' : 'Financial Reports & P&L',
-          icon: FileText,
-        },
-        {
           id: 'reports-center',
           label: language === 'ar' ? 'مركز التقارير التحليلية' : 'Reports Center',
           icon: BarChart3,
@@ -442,11 +436,13 @@ export const Sidebar: React.FC = () => {
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
               {/* Brand Header with Logo and Collapse Toggle */}
               <div className="p-4 border-b border-slate-100 dark:border-slate-800/80 shrink-0">
-                <div className="flex items-center justify-between">
-                  <BrandLogo size="md" variant="full" tone="auto" />
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <BrandLogo size="sm" variant="full" tone="auto" className="w-full" />
+                  </div>
                   <button
                     onClick={toggleSidebar}
-                    className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                    className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
                     title={isRtl ? 'تصغير إلى لوحة أيقونات' : 'Collapse to icon rail panel'}
                     aria-label="Collapse sidebar"
                   >

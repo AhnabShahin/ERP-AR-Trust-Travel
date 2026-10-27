@@ -163,10 +163,10 @@ export const InteractiveCalendarBookingEngine: React.FC<InteractiveCalendarBooki
 
     if (expType === 'fleet') {
       driverVehicleName = selectedTour.title;
-      typeTag = '[🚗 Website Fleet Chauffeur Lead]';
-      fullPackageName = `${selectedTour.title} (${selectedTour.category || 'Chauffeur Transfer'})`;
+      typeTag = '[🚗 Website Fleet Driver Lead]';
+      fullPackageName = `${selectedTour.title} (${selectedTour.category || 'Driver Transfer'})`;
     } else if (expType === 'package') {
-      driverVehicleName = 'Dedicated Tour Guide & Chauffeur';
+      driverVehicleName = 'Dedicated Tour Guide & Driver';
       typeTag = '[🏖️ Website Holiday Package Lead]';
       fullPackageName = `${selectedTour.title} (${selectedTour.duration || 'Holiday Package'})`;
     } else if (expType === 'service') {
@@ -580,7 +580,7 @@ export const InteractiveCalendarBookingEngine: React.FC<InteractiveCalendarBooki
               <div className="flex flex-wrap items-center gap-3 text-xs text-slate-300">
                 {(selectedTour.includes || [
                   'Curbside VIP Reception',
-                  'Licensed English/Arabic Chauffeur',
+                  'Licensed English/Arabic Driver',
                   'Bottled Mineral Water',
                 ]).slice(0, 3).map((inc: string, i: number) => (
                   <span key={i} className="flex items-center gap-1.5">
@@ -906,7 +906,7 @@ export const InteractiveCalendarBookingEngine: React.FC<InteractiveCalendarBooki
               rows={2}
               value={specialNotes}
               onChange={(e) => setSpecialNotes(e.target.value)}
-              placeholder="Any special requests or instructions for your chauffeur / guide..."
+              placeholder="Any special requests or instructions for your driver / guide..."
               className="w-full bg-[#05161D] border border-[#C0AB6F]/30 focus:border-[#D4AF37] rounded-xl p-3 text-xs text-white outline-none"
             />
           </div>
@@ -1030,7 +1030,7 @@ export const InteractiveCalendarBookingEngine: React.FC<InteractiveCalendarBooki
               className="py-3 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition"
             >
               <MessageSquare className="w-4 h-4" />
-              <span>Connect with Chauffeur on WhatsApp</span>
+              <span>Connect with Driver on WhatsApp</span>
             </a>
             <button
               type="button"

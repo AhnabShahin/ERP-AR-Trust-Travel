@@ -443,7 +443,7 @@ export const EmployeesView: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition shadow-sm shadow-blue-500/25"
           >
             <Plus className="w-4 h-4" />
-            <span>{language === 'ar' ? '+ إضافة موظف جديد' : '+ Add New Employee'}</span>
+            <span>{language === 'ar' ? 'إضافة موظف جديد' : 'Add New Employee'}</span>
           </button>
         </div>
       </div>
@@ -1007,7 +1007,7 @@ export const EmployeesView: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition shadow-xs shrink-0"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Add Agent Desk</span>
+              <span>Add Agent Desk</span>
             </button>
           </div>
 

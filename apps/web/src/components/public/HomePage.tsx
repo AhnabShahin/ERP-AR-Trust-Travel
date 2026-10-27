@@ -88,7 +88,7 @@ const HERO_SLIDES = [
     id: 3,
     title: 'Premier Airport Transit & Fleet',
     titleAr: 'خدمات استقبال المطار والأسطول الفاخر',
-    highlight: 'With VIP Chauffeur & Transfers',
+    highlight: 'With VIP Driver & Transfers',
     highlightAr: 'مع خدمة السائق الخاص الفاخر',
     caption: 'Luxury Mercedes-Benz V-Class, Land Cruisers & seamless Hamad International Airport layover tours with guaranteed punctual return.',
     captionAr: 'سيارات مرسيدس V-Class ولاند كروزر فاخرة لجولات ترانزيت سلسة ومضمونة لمسافري مطار حمد الدولي.',

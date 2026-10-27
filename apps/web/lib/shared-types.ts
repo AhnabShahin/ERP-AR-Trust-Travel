@@ -37,6 +37,7 @@ export interface UserAccount {
   companyName?: string | null;
   bio?: string | null;
   staffStatus?: string | null;
+  driverType?: string | null;
 }
 
 /** Every API response is wrapped in this envelope. */

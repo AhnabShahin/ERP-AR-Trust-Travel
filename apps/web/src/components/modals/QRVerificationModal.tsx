@@ -295,7 +295,7 @@ export const QRVerificationModal: React.FC = () => {
                       </span>
                       <span className="text-[11px] text-slate-500 dark:text-slate-400 block font-mono">
                         {verificationResult.type === 'tour'
-                          ? `Chauffeur: ${verificationResult.data.driverName || 'Airport Desk Dispatch'}`
+                          ? `Driver: ${verificationResult.data.driverName || 'Airport Desk Dispatch'}`
                           : `Check-in: ${verificationResult.data.checkInDate} to ${verificationResult.data.checkOutDate}`}
                       </span>
                     </div>

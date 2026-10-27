@@ -196,7 +196,7 @@ export const ServicesManagementView: React.FC = () => {
       setDuration('3 Days / 2 Nights');
       setPriceQAR(1450);
       setPickupLocation('Hamad International Airport (Arrivals & Departures)');
-      setInclusionsInput('5-Star Hotel Stay, Private Chauffeur, Inland Sea Safari, Daily Breakfast');
+      setInclusionsInput('5-Star Hotel Stay, Private Driver, Inland Sea Safari, Daily Breakfast');
       setDescription('Comprehensive multi-day Qatar experience combining luxury accommodation and guided excursions.');
       setDescriptionAr('باقة متكاملة لعدة أيام تجمع بين الإقامة الفندقية الفاخرة وسفاري الصحراء.');
       setIsMultiDay(true);
@@ -209,8 +209,8 @@ export const ServicesManagementView: React.FC = () => {
       setDuration('Point-to-Point / 2 Hours');
       setPriceQAR(280);
       setPickupLocation('Hamad Int’l Airport (HIA) Arrivals Bay 4');
-      setInclusionsInput('Mercedes-Benz / AC Chauffeur, Meet & Greet, Bottled Water, Wi-Fi');
-      setDescription('Punctual, luxury airport and city chauffeur transfer with dedicated driver.');
+      setInclusionsInput('Mercedes-Benz / AC Driver, Meet & Greet, Bottled Water, Wi-Fi');
+      setDescription('Punctual, luxury airport and city driver transfer with dedicated driver.');
       setDescriptionAr('خدمة نقل ترانزيت واستقبال كبار الشخصيات بمطار حمد الدولي بسيارات فاخرة.');
       setIsMultiDay(false);
       setDays(1);
@@ -456,7 +456,7 @@ export const ServicesManagementView: React.FC = () => {
             {isSuperAdmin ? (
               <>
                 <Plus className="w-4 h-4" />
-                <span>{language === 'ar' ? '+ إضافة خدمة / باقة جديدة' : '+ Add New Tour Service'}</span>
+                <span>{language === 'ar' ? 'إضافة خدمة / باقة جديدة' : 'Add New Tour Service'}</span>
               </>
             ) : (
               <>
@@ -1320,7 +1320,7 @@ export const ServicesManagementView: React.FC = () => {
                         className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-semibold flex items-center gap-1 cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
-                        <span>{showInlineAddCategory ? 'Cancel' : '+ New'}</span>
+                        <span>{showInlineAddCategory ? 'Cancel' : 'New'}</span>
                       </button>
                     )}
                   </div>
@@ -1756,7 +1756,7 @@ export const ServicesManagementView: React.FC = () => {
                       required
                       value={newCategoryName}
                       onChange={(e) => setNewCategoryName(e.target.value)}
-                      placeholder="e.g. Dhow Marina Cruise, Extreme Dune Bashing, VIP Chauffeur..."
+                      placeholder="e.g. Dhow Marina Cruise, Extreme Dune Bashing, VIP Driver..."
                       className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500/30"
                     />
                     <button

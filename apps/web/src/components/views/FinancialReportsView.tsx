@@ -221,7 +221,7 @@ export const FinancialReportsView: React.FC = () => {
                   <span>- {convertAmount(totalSalariesQAR + totalCommissionsQAR + totalExpensesQAR).formatted}</span>
                 </div>
                 <div className="flex justify-between text-slate-500 text-[11px] pl-4">
-                  <span>Field Chauffeur & Tour Guide Performance Commissions</span>
+                  <span>Field Driver & Tour Guide Performance Commissions</span>
                   <span>- {convertAmount(totalCommissionsQAR).formatted}</span>
                 </div>
                 <div className="flex justify-between text-slate-500 text-[11px] pl-4">

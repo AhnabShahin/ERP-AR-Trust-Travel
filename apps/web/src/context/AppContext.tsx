@@ -145,6 +145,22 @@ interface AppContextType {
   // Tour Guides & Scheduling
   tourGuides: import('../types').TourGuide[];
   assignDriverAndGuide: (bookingId: string, driverId: string, guideId?: string) => void;
+  // Service/trip workflow — persist assignment + lifecycle via the API, which
+  // runs the driver/vehicle occupancy automation server-side.
+  assignTrip: (
+    bookingId: string,
+    assignment: { driverId?: string; vehicleId?: string; guideId?: string }
+  ) => Promise<{ success: boolean; error?: string }>;
+  transitionTrip: (
+    bookingId: string,
+    status: NonNullable<Booking['tripStatus']>,
+    note?: string
+  ) => Promise<{ success: boolean; error?: string; booking?: Booking }>;
+  // Create an invoice from a booking (links booking.invoiceId ↔ invoice.bookingId,
+  // records the collected amount as a payment). Returns the new invoice's id.
+  generateInvoiceFromBooking: (
+    bookingId: string
+  ) => Promise<{ success: boolean; error?: string; invoiceId?: string }>;
   approveBooking: (bookingId: string) => void;
 
   // Salary & Commission Engine
@@ -333,7 +349,7 @@ const TRANSLATIONS: Record<string, { en: string; ar: string }> = {
   passenger: { en: 'Passenger & Flight', ar: 'الراكب وتفاصيل الرحلة' },
   package: { en: 'Package / Service', ar: 'البرنامج / الخدمة' },
   amount: { en: 'Amount Total', ar: 'المبلغ الإجمالي' },
-  driverVehicle: { en: 'Assigned Chauffeur', ar: 'السائق والمركبة' },
+  driverVehicle: { en: 'Assigned Driver', ar: 'السائق والمركبة' },
   status: { en: 'QR Check-in', ar: 'حالة التحقق' },
   actions: { en: 'Actions', ar: 'إجراءات' },
 
@@ -647,10 +663,11 @@ export const AppProvider: React.FC<{
         // vehicle, so the Fleet & Field Ops board reads the real accounts
         // (not the legacy, now-unused Driver table).
         if (usr?.length) {
-          const DRIVER_STATUSES = ['Dispatched', 'At Airport Bay', 'En Route', 'Standby', 'Off Duty', 'Maintenance'];
+          const DRIVER_STATUSES = ['Available', 'On Trip', 'Dispatched', 'At Airport Bay', 'En Route', 'Standby', 'Off Duty', 'Maintenance'];
           const driverRows: Driver[] = usr
             .filter((u) => u.role === 'driver-guide')
             .map((u) => {
+              // The driver's current (default) vehicle, if one is paired to them.
               const veh = (fl || []).find((v) => v.assignedDriverId === u.id);
               const ss = (u as { staffStatus?: string }).staffStatus || '';
               return {
@@ -658,10 +675,15 @@ export const AppProvider: React.FC<{
                 name: u.name,
                 nameAr: u.nameAr || '',
                 phone: u.phone || '',
-                vehicle: veh ? veh.name : '',
-                plateNumber: veh?.plateNumber || '',
-                vehicleType: veh?.category || '',
-                status: (DRIVER_STATUSES.includes(ss) ? ss : 'Standby') as Driver['status'],
+                driverType: (u.driverType as Driver['driverType']) || 'first-party',
+                company: u.companyName,
+                // Derived (read-only) view of the paired vehicle — the real
+                // per-trip vehicle is assigned on the Booking. Shown until the
+                // Phase 2 UI rework separates the two lists fully.
+                vehicle: veh?.name,
+                plateNumber: veh?.plateNumber,
+                vehicleType: veh?.category,
+                status: (DRIVER_STATUSES.includes(ss) ? ss : 'Available') as Driver['status'],
                 location: u.city || 'Doha',
                 rating: 5,
                 totalTripsToday: 0,
@@ -1328,6 +1350,16 @@ export const AppProvider: React.FC<{
         posCardTotalQAR: prev.posCardTotalQAR + bookingData.totalQAR,
         transactionsCount: prev.transactionsCount + 1,
       }));
+    } else if (
+      bookingData.paymentMethod === 'Payment Link' ||
+      bookingData.paymentMethod === 'Website Online Gateway'
+    ) {
+      // Online / payment-link settlements accrue to the non-cash link channel.
+      setShiftDrawer((prev) => ({
+        ...prev,
+        paymentLinkTotalQAR: prev.paymentLinkTotalQAR + bookingData.totalQAR,
+        transactionsCount: prev.transactionsCount + 1,
+      }));
     }
 
     // 2. Synchronize Airport Desk cash balance
@@ -1562,14 +1594,16 @@ export const AppProvider: React.FC<{
         await api.post('/api/users', {
           id, name: newDriver.name, username, email: `${username}@artrust.qa`,
           role: 'driver-guide', phone: newDriver.phone, password: 'Driver@2026',
-          department: 'Chauffeur Fleet & Transfers', jobTitle: 'Driver',
+          department: 'Driver Fleet & Transfers', jobTitle: 'Driver',
+          driverType: newDriver.driverType || 'first-party',
+          companyName: newDriver.company,
         });
         await api.patch(`/api/users/${id}`, { status: 'active', staffStatus: newDriver.status });
       } catch {
         notifySyncError('Could not save the new driver account.');
       }
     })();
-    addAuditLog('New Fleet Vehicle & Chauffeur Added', 'DISPATCH', `${roleConfig.title} registered ${newDriver.vehicle} (${newDriver.plateNumber}) driven by ${newDriver.name}`);
+    addAuditLog('New Driver Added', 'DISPATCH', `${roleConfig.title} registered driver ${newDriver.name}${newDriver.driverType === 'third-party' ? ` (third-party: ${newDriver.company || 'N/A'})` : ''}`);
     return { success: true, driver: newDriver };
   };
 
@@ -1579,8 +1613,10 @@ export const AppProvider: React.FC<{
     if (updated.name !== undefined) patch.name = updated.name;
     if (updated.phone !== undefined) patch.phone = updated.phone;
     if (updated.status !== undefined) patch.staffStatus = updated.status;
+    if (updated.driverType !== undefined) patch.driverType = updated.driverType;
+    if (updated.company !== undefined) patch.companyName = updated.company;
     if (Object.keys(patch).length) api.patch(`/api/users/${id}`, patch).catch(() => notifySyncError('Could not update driver.'));
-    addAuditLog('Fleet Vehicle / Chauffeur Updated', 'DISPATCH', `${roleConfig.title} updated vehicle/chauffeur record #${id}`);
+    addAuditLog('Fleet Vehicle / Driver Updated', 'DISPATCH', `${roleConfig.title} updated vehicle/driver record #${id}`);
     return { success: true };
   };
 
@@ -1733,6 +1769,127 @@ export const AppProvider: React.FC<{
     }
 
     addAuditLog('Driver/Guide Scheduled', 'DISPATCH', `Assigned ${drv?.name} and ${gd?.name || 'Guide'} to PNR booking`);
+  };
+
+  // Persist a driver/vehicle/guide assignment to a booking. The API enforces
+  // occupancy (a driver/vehicle already On Trip is rejected).
+  const assignTrip = async (
+    bookingId: string,
+    assignment: { driverId?: string; vehicleId?: string; guideId?: string }
+  ): Promise<{ success: boolean; error?: string }> => {
+    const drv = assignment.driverId ? drivers.find((d) => d.id === assignment.driverId) : undefined;
+    const veh = assignment.vehicleId ? fleetVehicles.find((v) => v.id === assignment.vehicleId) : undefined;
+    const gd = assignment.guideId ? tourGuides.find((g) => g.id === assignment.guideId) : undefined;
+    try {
+      const updated = await api.post<Booking>(`/api/bookings/${bookingId}/assign`, {
+        driverId: drv?.id ?? null,
+        driverName: drv?.name ?? null,
+        driverPhone: drv?.phone ?? null,
+        vehicleId: veh?.id ?? null,
+        vehicleName: veh?.name ?? null,
+        vehiclePlate: veh?.plateNumber ?? null,
+        guideId: gd?.id ?? null,
+        guideName: gd?.name ?? null,
+      });
+      setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, ...updated } : b)));
+      addAuditLog('Trip Assignment Updated', 'DISPATCH', `Assigned ${drv?.name || 'no driver'} + ${veh?.name || 'no vehicle'} to booking ${updated.pnr}`);
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: (e as Error).message || 'Assignment failed.' };
+    }
+  };
+
+  // Move a booking through its trip lifecycle; the API flips driver + vehicle
+  // occupancy (On Trip on dispatch, released on complete/cancel). Mirror locally.
+  const transitionTrip = async (
+    bookingId: string,
+    status: NonNullable<Booking['tripStatus']>,
+    note?: string
+  ): Promise<{ success: boolean; error?: string; booking?: Booking }> => {
+    const prevBooking = bookings.find((b) => b.id === bookingId);
+    try {
+      const updated = await api.post<Booking>(`/api/bookings/${bookingId}/transition`, { status, note });
+      setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, ...updated } : b)));
+      const dId = updated.driverId || prevBooking?.driverId;
+      const vId = updated.vehicleId || prevBooking?.vehicleId;
+      const released = status === 'Completed' || status === 'Cancelled' || status === 'No Show';
+      if (dId) {
+        setDrivers((prev) =>
+          prev.map((d) =>
+            d.id === dId
+              ? {
+                  ...d,
+                  status: status === 'On Trip' ? 'On Trip' : released ? 'Available' : d.status,
+                  currentMission: status === 'On Trip' ? `Trip ${updated.pnr}` : released ? '' : d.currentMission,
+                }
+              : d
+          )
+        );
+      }
+      if (vId) {
+        setFleetVehicles((prev) =>
+          prev.map((v) => (v.id === vId ? { ...v, status: status === 'On Trip' ? 'On Trip' : released ? 'Available' : v.status } : v))
+        );
+      }
+      addAuditLog('Trip Status Changed', 'DISPATCH', `Booking ${updated.pnr} → ${status}`);
+      // Optional auto-invoice when a trip completes (if none exists yet).
+      if (status === 'Completed' && !updated.invoiceId && !prevBooking?.invoiceId) {
+        void generateInvoiceFromBooking(bookingId);
+      }
+      return { success: true, booking: updated };
+    } catch (e) {
+      return { success: false, error: (e as Error).message || 'Status change failed.' };
+    }
+  };
+
+  const generateInvoiceFromBooking = async (
+    bookingId: string
+  ): Promise<{ success: boolean; error?: string; invoiceId?: string }> => {
+    const booking = bookings.find((b) => b.id === bookingId);
+    if (!booking) return { success: false, error: 'Booking not found.' };
+    if (booking.invoiceId) return { success: true, invoiceId: booking.invoiceId };
+    const today = new Date().toISOString().slice(0, 10);
+    const pax = booking.paxCount && booking.paxCount > 0 ? booking.paxCount : 1;
+    const unitCost = Math.round((booking.totalQAR / pax) * 100) / 100;
+    try {
+      const inv = await api.post<{ id: string; invoiceNumber: string }>('/api/invoices', {
+        customerName: booking.passengerName,
+        customerPhone: booking.passengerPhone,
+        customerEmail: booking.passengerEmail,
+        invoiceDate: today,
+        currency: 'QAR',
+        items: [
+          {
+            name: booking.packageName,
+            description: `PNR ${booking.pnr}${booking.bookingDate ? ` · ${booking.bookingDate}` : ''}`,
+            qty: pax,
+            unit: 'pax',
+            unitCost,
+            vatPercent: 0,
+          },
+        ],
+        source: 'Booking',
+        bookingId: booking.id,
+        bookingPnr: booking.pnr,
+        notes: `Generated from booking ${booking.pnr}.`,
+      });
+      // Record the amount collected at the desk so the invoice reflects payment.
+      if (booking.totalQAR > 0) {
+        await api
+          .post(`/api/invoices/${inv.id}/payments`, {
+            date: today,
+            method: booking.paymentMethod || 'Cash',
+            amount: booking.totalQAR,
+            note: `Collected at booking (${booking.pnr})`,
+          })
+          .catch(() => {});
+      }
+      updateBooking(bookingId, { invoiceId: inv.id });
+      addAuditLog('Invoice Generated', 'FINANCE', `Invoice ${inv.invoiceNumber} created from booking ${booking.pnr} (${booking.totalQAR} QAR)`);
+      return { success: true, invoiceId: inv.id };
+    } catch (e) {
+      return { success: false, error: (e as Error).message || 'Invoice generation failed.' };
+    }
   };
 
   const approveBooking = (bookingId: string) => {
@@ -2389,7 +2546,7 @@ export const AppProvider: React.FC<{
       // 1. Sync with Finance Expenses: automatically add record
       addExpense({
         date: 'Oct 09, 2026',
-        category: 'Chauffeur Per Diem',
+        category: 'Driver Per Diem',
         description: `Staff Salary Payout to ${emp.name} (${emp.role}) for ${month}${notes ? ` - ${notes}` : ''}`,
         amountQAR: amountPaid,
         approvedBy: roleConfig.userDisplayName,
@@ -2613,6 +2770,10 @@ export const AppProvider: React.FC<{
           ...prev.currentCashDrawer,
           QAR: prev.currentCashDrawer.QAR + bookingData.totalQAR,
         },
+        systemExpected: {
+          ...prev.systemExpected,
+          QAR: prev.systemExpected.QAR + bookingData.totalQAR,
+        },
         transactionsCount: prev.transactionsCount + 1,
       }));
       if (bookingData.deskCode) {
@@ -2628,6 +2789,12 @@ export const AppProvider: React.FC<{
       setShiftDrawer((prev) => ({
         ...prev,
         posCardTotalQAR: prev.posCardTotalQAR + bookingData.totalQAR,
+        transactionsCount: prev.transactionsCount + 1,
+      }));
+    } else if (bookingData.paymentMethod === 'Payment Link Online') {
+      setShiftDrawer((prev) => ({
+        ...prev,
+        paymentLinkTotalQAR: prev.paymentLinkTotalQAR + bookingData.totalQAR,
         transactionsCount: prev.transactionsCount + 1,
       }));
     }
@@ -2819,6 +2986,9 @@ export const AppProvider: React.FC<{
         syncWebsiteFleet,
         tourGuides,
         assignDriverAndGuide,
+        assignTrip,
+        transitionTrip,
+        generateInvoiceFromBooking,
         approveBooking,
         salaryRecords,
         updateSalaryPayout,

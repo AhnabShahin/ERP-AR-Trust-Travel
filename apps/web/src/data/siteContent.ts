@@ -67,7 +67,7 @@ export const SITE_CONTENT_DEFAULTS: Record<string, ContentDef> = {
       {
         title: 'Premier Airport Transit & Fleet',
         titleAr: 'خدمات استقبال المطار والأسطول الفاخر',
-        highlight: 'With VIP Chauffeur & Transfers',
+        highlight: 'With VIP Driver & Transfers',
         highlightAr: 'مع خدمة السائق الخاص الفاخر',
         caption: 'Luxury Mercedes-Benz V-Class, Land Cruisers & seamless Hamad International Airport layover tours with guaranteed punctual return.',
         captionAr: 'سيارات مرسيدس V-Class ولاند كروزر فاخرة لجولات ترانزيت سلسة ومضمونة لمسافري مطار حمد الدولي.',
@@ -98,7 +98,7 @@ export const SITE_CONTENT_DEFAULTS: Record<string, ContentDef> = {
   // ---- Homepage section headings --------------------------------------
   'home.tours.title': { value: 'Popular Tour Packages', group: 'Homepage · Sections', label: 'Tours heading', kind: 'text' },
   'home.tours.subtitle': { value: 'Handcrafted Qatar experiences, from desert safaris to dhow cruises.', group: 'Homepage · Sections', label: 'Tours subheading', kind: 'textarea' },
-  'home.fleet.title': { value: 'Luxury Fleet & Chauffeurs', group: 'Homepage · Sections', label: 'Fleet heading', kind: 'text' },
+  'home.fleet.title': { value: 'Luxury Fleet & Drivers', group: 'Homepage · Sections', label: 'Fleet heading', kind: 'text' },
   'home.fleet.subtitle': { value: 'Mercedes V-Class, Land Cruisers & VIP vans with professional drivers.', group: 'Homepage · Sections', label: 'Fleet subheading', kind: 'textarea' },
   'home.services.title': { value: 'Our Core Services', group: 'Homepage · Sections', label: 'Services heading', kind: 'text' },
   'home.services.subtitle': { value: 'End-to-end travel management for Qatar and beyond.', group: 'Homepage · Sections', label: 'Services subheading', kind: 'textarea' },

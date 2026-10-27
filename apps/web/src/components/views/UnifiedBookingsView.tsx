@@ -22,7 +22,9 @@ import {
   X,
   Calendar,
   Eye,
+  ReceiptText,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { useApp } from '../../context/AppContext';
 import { Booking, HotelBooking } from '../../types';
 import { DateFilterBar } from '../common/DateFilterBar';
@@ -34,8 +36,11 @@ export const UnifiedBookingsView: React.FC = () => {
     hotelBookings,
     cancelHotelBooking,
     drivers,
+    fleetVehicles,
     tourGuides,
-    assignDriverAndGuide,
+    assignTrip,
+    transitionTrip,
+    generateInvoiceFromBooking,
     approveBooking,
     updateBooking,
     deleteBooking,
@@ -55,8 +60,46 @@ export const UnifiedBookingsView: React.FC = () => {
   // Selected booking for assigning driver/guide modal
   const [assigningBooking, setAssigningBooking] = useState<Booking | null>(null);
   const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
-  const [selectedDriverId, setSelectedDriverId] = useState(drivers[0]?.id || 'drv-01');
-  const [selectedGuideId, setSelectedGuideId] = useState(tourGuides[0]?.id || 'tg-01');
+  const [selectedDriverId, setSelectedDriverId] = useState('');
+  const [selectedVehicleId, setSelectedVehicleId] = useState('');
+  const [selectedGuideId, setSelectedGuideId] = useState('');
+  const [assignError, setAssignError] = useState<string | null>(null);
+  const [assignBusy, setAssignBusy] = useState(false);
+  const [tripBusyId, setTripBusyId] = useState<string | null>(null);
+
+  // Available drivers / vehicles for assignment (plus whoever is already on the booking).
+  const isDriverFree = (d: typeof drivers[number]) => d.status === 'Available' || d.status === 'Standby';
+  const isVehicleFree = (v: typeof fleetVehicles[number]) => (v.status || 'Available') === 'Available' || (v.status || 'Available') === 'Reserved';
+
+  const openAssign = (b: Booking) => {
+    setAssignError(null);
+    setSelectedDriverId(b.driverId || '');
+    setSelectedVehicleId(b.vehicleId || '');
+    setSelectedGuideId(b.guideId || '');
+    setAssigningBooking(b);
+  };
+
+  const runTransition = async (b: Booking, status: NonNullable<Booking['tripStatus']>) => {
+    setTripBusyId(b.id);
+    const res = await transitionTrip(b.id, status);
+    setTripBusyId(null);
+    if (!res.success) window.alert(res.error || 'Could not update trip status.');
+  };
+
+  const router = useRouter();
+  const [invoiceBusyId, setInvoiceBusyId] = useState<string | null>(null);
+
+  const handleInvoice = async (b: Booking) => {
+    if (b.invoiceId) {
+      router.push(`/dashboard/invoices/${b.invoiceId}`);
+      return;
+    }
+    setInvoiceBusyId(b.id);
+    const res = await generateInvoiceFromBooking(b.id);
+    setInvoiceBusyId(null);
+    if (res.success && res.invoiceId) router.push(`/dashboard/invoices/${res.invoiceId}`);
+    else window.alert(res.error || 'Could not generate invoice.');
+  };
 
   const isWebBooking = (source?: string) =>
     source === 'Website Direct Lead' ||
@@ -71,10 +114,10 @@ export const UnifiedBookingsView: React.FC = () => {
     const pkgName = (b.packageName || '').toLowerCase();
     if (
       notes.includes('fleet') ||
-      notes.includes('chauffeur') ||
+      notes.includes('driver') ||
       pkgName.includes('mercedes') ||
       pkgName.includes('land cruiser') ||
-      pkgName.includes('chauffeur') ||
+      pkgName.includes('driver') ||
       pkgName.includes('vip transit')
     ) {
       return 'fleet';
@@ -155,11 +198,19 @@ export const UnifiedBookingsView: React.FC = () => {
   const hotelCount = hotelBookings.length;
   const pendingCount = bookings.filter((b) => b.qrStatus === 'pending').length;
 
-  const handleConfirmAssignment = (e: React.FormEvent) => {
+  const handleConfirmAssignment = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!assigningBooking) return;
-    assignDriverAndGuide(assigningBooking.id, selectedDriverId, selectedGuideId);
-    setAssigningBooking(null);
+    setAssignBusy(true);
+    setAssignError(null);
+    const res = await assignTrip(assigningBooking.id, {
+      driverId: selectedDriverId || undefined,
+      vehicleId: selectedVehicleId || undefined,
+      guideId: selectedGuideId || undefined,
+    });
+    setAssignBusy(false);
+    if (res.success) setAssigningBooking(null);
+    else setAssignError(res.error || 'Assignment failed.');
   };
 
   return (
@@ -178,20 +229,20 @@ export const UnifiedBookingsView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           {/* Channel stats badges */}
-          <div className="flex items-center gap-2 text-xs font-mono">
-            <span className="px-3 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+            <span className="whitespace-nowrap px-3 py-1 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold border border-blue-200 dark:border-blue-800">
               {webCount} Website Direct Leads
             </span>
-            <span className="px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800">
+            <span className="whitespace-nowrap px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800">
               {airportCount} Agent Desk
             </span>
-            <span className="px-3 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold border border-purple-200 dark:border-purple-800">
+            <span className="whitespace-nowrap px-3 py-1 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold border border-purple-200 dark:border-purple-800">
               {hotelCount} Hotel Bookings
             </span>
             {pendingCount > 0 && (
-              <span className="px-3 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 animate-pulse">
+              <span className="whitespace-nowrap px-3 py-1 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 font-bold border border-amber-200 dark:border-amber-800 animate-pulse">
                 {pendingCount} Pending
               </span>
             )}
@@ -199,10 +250,10 @@ export const UnifiedBookingsView: React.FC = () => {
 
           <button
             onClick={() => openModal('new-booking')}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold shadow-xs"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold shadow-xs whitespace-nowrap shrink-0"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>+ New Reservation</span>
+            <span>New Reservation</span>
           </button>
         </div>
       </div>
@@ -307,7 +358,7 @@ export const UnifiedBookingsView: React.FC = () => {
                   )}
                 </h4>
                 <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
-                  Direct bookings submitted by visitors on the public website. Categorized into Direct Services, Holiday Packages, and Fleet Chauffeur transfers.
+                  Direct bookings submitted by visitors on the public website. Categorized into Direct Services, Holiday Packages, and Fleet Driver transfers.
                 </p>
               </div>
             </div>
@@ -377,7 +428,7 @@ export const UnifiedBookingsView: React.FC = () => {
               }`}
             >
               <Car className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Fleet & Chauffeur ({webFleetCount})</span>
+              <span>Fleet & Driver ({webFleetCount})</span>
             </button>
           </div>
         </div>
@@ -476,7 +527,7 @@ export const UnifiedBookingsView: React.FC = () => {
                 <th className="py-3 px-4">Lead Guest</th>
                 <th className="py-3 px-4">Booking Date & Time</th>
                 <th className="py-3 px-4">Package Service</th>
-                <th className="py-3 px-4">Chauffeur & Guide</th>
+                <th className="py-3 px-4">Driver & Guide</th>
                 <th className="py-3 px-4 text-right rtl:text-left">Revenue Total</th>
                 <th className="py-3 px-4 text-center">Lifecycle Flow</th>
                 <th className="py-3 px-4 text-right rtl:text-left">Operational Action</th>
@@ -560,12 +611,18 @@ export const UnifiedBookingsView: React.FC = () => {
                     <span className="text-[10px] text-slate-400 font-mono">Meeting: {b.pickupBay}</span>
                   </td>
 
-                  {/* Chauffeur & Guide */}
+                  {/* Driver, Vehicle & Guide */}
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-1 text-slate-800 dark:text-slate-200">
-                      <Car className="w-3.5 h-3.5 text-slate-400" />
+                      <UserCheck className="w-3.5 h-3.5 text-slate-400" />
                       <span className="truncate max-w-[120px]">{b.driverName || 'Unassigned'}</span>
                     </div>
+                    {b.vehicleName && (
+                      <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        <Car className="w-3 h-3" />
+                        <span className="truncate max-w-[120px]">{b.vehicleName}{b.vehiclePlate ? ` · ${b.vehiclePlate}` : ''}</span>
+                      </div>
+                    )}
                     {b.guideName && (
                       <div className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
                         <Compass className="w-3 h-3" />
@@ -582,23 +639,24 @@ export const UnifiedBookingsView: React.FC = () => {
                     <div className="text-[10px] text-slate-400">{b.paymentMethod}</div>
                   </td>
 
-                  {/* Lifecycle Flow Status */}
+                  {/* Lifecycle Flow Status (trip) */}
                   <td className="py-3 px-4 text-center">
-                    <span
-                      className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono capitalize ${
-                        b.qrStatus === 'pending'
-                          ? 'bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 border border-amber-300 dark:border-amber-700 animate-pulse font-extrabold'
-                          : b.qrStatus === 'confirmed'
-                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300'
-                          : b.qrStatus === 'driver-assigned'
-                          ? 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300'
-                          : b.qrStatus === 'checked-in'
+                    {(() => {
+                      const ts = b.tripStatus || 'Scheduled';
+                      const cls =
+                        ts === 'On Trip'
+                          ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 animate-pulse'
+                          : ts === 'Completed'
                           ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                          : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                      }`}
-                    >
-                      {b.qrStatus === 'pending' ? 'Pending Approval (قيد الموافقة)' : b.qrStatus.replace('-', ' ')}
-                    </span>
+                          : ts === 'Cancelled' || ts === 'No Show'
+                          ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                          : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+                      return (
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold ${cls}`}>
+                          {ts}
+                        </span>
+                      );
+                    })()}
                   </td>
 
                   {/* Operational Action */}
@@ -621,12 +679,57 @@ export const UnifiedBookingsView: React.FC = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          setAssigningBooking(b);
+                          openAssign(b);
                         }}
                         className="px-2.5 py-1 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-[10px] font-semibold"
-                        title="Schedule Chauffeur & Guide"
+                        title="Assign driver, vehicle & guide"
                       >
-                        Schedule
+                        Assign
+                      </button>
+
+                      {/* Trip lifecycle actions */}
+                      {(b.tripStatus || 'Scheduled') === 'Scheduled' && b.driverId && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); runTransition(b, 'On Trip'); }}
+                          disabled={tripBusyId === b.id}
+                          className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-[10px] disabled:opacity-60"
+                          title="Dispatch — mark On Trip (occupies driver & vehicle)"
+                        >
+                          Dispatch
+                        </button>
+                      )}
+                      {b.tripStatus === 'On Trip' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); runTransition(b, 'Completed'); }}
+                          disabled={tripBusyId === b.id}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] disabled:opacity-60"
+                          title="Complete trip — releases driver & vehicle"
+                        >
+                          Complete
+                        </button>
+                      )}
+                      {((b.tripStatus || 'Scheduled') === 'Scheduled' || b.tripStatus === 'On Trip') && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); if (window.confirm('Cancel this trip?')) runTransition(b, 'Cancelled'); }}
+                          disabled={tripBusyId === b.id}
+                          className="px-2 py-1 rounded-lg border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-400 text-[10px] font-semibold disabled:opacity-60"
+                          title="Cancel trip"
+                        >
+                          Cancel
+                        </button>
+                      )}
+
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleInvoice(b); }}
+                        disabled={invoiceBusyId === b.id}
+                        className={`p-1.5 rounded-lg border text-[10px] font-semibold disabled:opacity-60 ${
+                          b.invoiceId
+                            ? 'border-teal-300 dark:border-teal-800 bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300'
+                            : 'border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300'
+                        }`}
+                        title={b.invoiceId ? 'View invoice' : 'Generate invoice from this booking'}
+                      >
+                        <ReceiptText className="w-3.5 h-3.5" />
                       </button>
 
                       <button
@@ -695,27 +798,49 @@ export const UnifiedBookingsView: React.FC = () => {
 
               <form onSubmit={handleConfirmAssignment} className="space-y-3 text-xs">
                 <div>
-                  <label className="block text-slate-500 dark:text-slate-400 font-medium mb-1">Select Chauffeur & 4x4 / Van</label>
+                  <label className="block text-slate-500 dark:text-slate-400 font-medium mb-1">Driver (available only)</label>
                   <select
                     value={selectedDriverId}
                     onChange={(e) => setSelectedDriverId(e.target.value)}
                     className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium"
                   >
-                    {drivers.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} — {d.vehicle} ({d.plateNumber}) · {d.status}
-                      </option>
-                    ))}
+                    <option value="">— No driver —</option>
+                    {drivers
+                      .filter((d) => isDriverFree(d) || d.id === assigningBooking.driverId)
+                      .map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name}{d.driverType === 'third-party' ? ' (3rd-party)' : ''} · {d.status}
+                        </option>
+                      ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-slate-500 dark:text-slate-400 font-medium mb-1">Select Licensed Multilingual Guide</label>
+                  <label className="block text-slate-500 dark:text-slate-400 font-medium mb-1">Vehicle (available only)</label>
+                  <select
+                    value={selectedVehicleId}
+                    onChange={(e) => setSelectedVehicleId(e.target.value)}
+                    className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium"
+                  >
+                    <option value="">— No vehicle —</option>
+                    {fleetVehicles
+                      .filter((v) => isVehicleFree(v) || v.id === assigningBooking.vehicleId)
+                      .map((v) => (
+                        <option key={v.id} value={v.id}>
+                          {v.name}{v.plateNumber ? ` · ${v.plateNumber}` : ''} · {v.status || 'Available'}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-500 dark:text-slate-400 font-medium mb-1">Licensed Guide (optional)</label>
                   <select
                     value={selectedGuideId}
                     onChange={(e) => setSelectedGuideId(e.target.value)}
                     className="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-medium"
                   >
+                    <option value="">— No guide —</option>
                     {tourGuides.map((g) => (
                       <option key={g.id} value={g.id}>
                         {g.name} ({g.languages.join('/')}) — {g.specialty}
@@ -723,6 +848,12 @@ export const UnifiedBookingsView: React.FC = () => {
                     ))}
                   </select>
                 </div>
+
+                {assignError && (
+                  <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-[11px] font-semibold">
+                    {assignError}
+                  </div>
+                )}
 
                 <div className="flex justify-end gap-2 pt-2">
                   <button
@@ -734,9 +865,10 @@ export const UnifiedBookingsView: React.FC = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold"
+                    disabled={assignBusy}
+                    className="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold disabled:opacity-60"
                   >
-                    Confirm Assignment & Dispatch
+                    {assignBusy ? 'Saving…' : 'Save Assignment'}
                   </button>
                 </div>
               </form>
@@ -911,7 +1043,7 @@ export const UnifiedBookingsView: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Assigned Chauffeur
+                    Assigned Driver
                   </label>
                   <select
                     value={editingBooking.driverId || ''}

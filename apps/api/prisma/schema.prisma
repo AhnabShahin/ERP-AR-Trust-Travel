@@ -73,7 +73,9 @@ model User {
   licenseCategory   String?
   experienceYears   Int?
   spokenLanguages   Json?
-  companyName       String?
+  companyName       String? // also used as the third-party driver's company
+  // Driver sourcing (role = driver-guide): in-house vs. external/contracted.
+  driverType        String? // first-party | third-party
   bio               String?   @db.Text
 
   // Staff-profile fields — only meaningful when role = staff. They let a staff
@@ -180,6 +182,18 @@ model Booking {
   deskCode        String?
   source          String   @default("Airport Desk")
   leadType        String? // tour | package | fleet | service
+  // ---- Service / trip layer (unified booking = consumed service record) ----
+  serviceType     String    @default("tour-service") // tour-service | tour-package | transfer
+  customerId      String? // link to a Guest (CRM)
+  vehicleId       String? // fleet vehicle assigned FOR THIS TRIP
+  vehicleName     String?
+  vehiclePlate    String?
+  tripStatus      String    @default("Scheduled") // Scheduled | On Trip | Completed | Cancelled | No Show
+  scheduledStart  DateTime?
+  scheduledEnd    DateTime?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  invoiceId       String? // set when an invoice is generated from this booking
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -191,7 +205,28 @@ model Booking {
 
   @@index([qrStatus])
   @@index([source])
+  @@index([tripStatus])
+  @@index([serviceType])
   @@map("bookings")
+}
+
+// Lifecycle timeline for a booking/trip — every status transition is logged so
+// the ops & reporting views can show when each service was taken / completed.
+model TripStatusLog {
+  id          String   @id @default(cuid())
+  bookingId   String
+  serviceType String?
+  fromStatus  String?
+  toStatus    String
+  driverId    String?
+  vehicleId   String?
+  actorId     String?
+  actorName   String?
+  note        String?  @db.Text
+  at          DateTime @default(now())
+
+  @@index([bookingId])
+  @@map("trip_status_logs")
 }
 
 // ---------------------------------------------------------------------
@@ -218,6 +253,9 @@ model FleetVehicle {
   make               String?
   model              String?
   color              String?
+  // Operational availability + sourcing (owned fleet vs. a third-party car).
+  status             String   @default("Available") // Available | On Trip | Maintenance | Reserved
+  ownership          String   @default("owned") // owned | third-party
   showOnWebsite      Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
@@ -236,17 +274,22 @@ model Driver {
   name             String
   nameAr           String?
   phone            String
-  vehicle          String
-  plateNumber      String
-  vehicleType      String
-  status           String // Dispatched | At Airport Bay | En Route | Standby | Off Duty | Maintenance
+  // Driver sourcing: in-house staff vs. an external/contracted driver.
+  driverType       String   @default("first-party") // first-party | third-party
+  company          String? // third-party company / vendor name
+  // DEPRECATED free-text vehicle fields — a vehicle is assigned per-trip on the
+  // Booking now, and these columns are dropped in Phase 2 once the UI is rewired.
+  vehicle          String?
+  plateNumber      String?
+  vehicleType      String?
+  status           String // Available | On Trip | Standby | Off Duty | Maintenance
   currentMission   String?
   activePassengers Int?
   totalTripsToday  Int      @default(0)
   location         String
   rating           Float    @default(0)
   image            String?  @db.Text
-  fleetVehicleId   String?
+  fleetVehicleId   String? // optional default / home vehicle (not the trip assignment)
   priceQAR         Float?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

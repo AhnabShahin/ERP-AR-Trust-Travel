@@ -146,7 +146,7 @@ async function seedDrivers(): Promise<Array<{ id: string; name: string }>> {
         status: 'active',
         isEmailVerified: true,
         phone: d.phone,
-        department: 'Chauffeur Fleet & Transfers',
+        department: 'Driver Fleet & Transfers',
         jobTitle: 'Driver',
         staffStatus: 'Available',
       },
@@ -344,15 +344,15 @@ async function seedSiteContent() {
 const TOURS = [
   { name: 'Half-Day Desert Safari & Inland Sea', nameAr: 'سفاري نصف يوم والبحر الداخلي', category: 'Desert Safari', duration: '6 Hours', priceQAR: 320, image: '/media/inland-sea-safari-hero.jpg', badge: 'Best Seller', groupSize: '1 - 6 Guests', rating: 4.9, reviewCount: 428, description: 'Thrilling dune bashing across Qatar’s golden sands to the UNESCO Khor Al Adaid inland sea, with Bedouin tea and camel rides.', includes: ['Hotel pickup & drop-off', '4x4 Land Cruiser dune bashing', 'Inland Sea (Khor Al Adaid) visit', 'Bedouin camp refreshments'] },
   { name: 'Doha City Tour & Dhow Cruise', nameAr: 'جولة الدوحة ورحلة الداو', category: 'City Tour', duration: '5 Hours', priceQAR: 250, image: '/media/dhow-cruise-heritage-hero.jpg', badge: 'Popular', groupSize: '1 - 10 Guests', rating: 4.8, reviewCount: 356, description: 'Discover Souq Waqif, Katara Cultural Village, the Pearl-Qatar and a traditional wooden dhow cruise across Doha Bay.', includes: ['Private AC vehicle', 'Souq Waqif & Katara', 'Corniche & Pearl-Qatar', 'Traditional dhow cruise'] },
-  { name: 'Private Transit Layover City Tour', nameAr: 'جولة الترانزيت الخاصة', category: 'Airport Transit', duration: '4 Hours', priceQAR: 290, image: '/media/vip-airport-transit-hero.jpg', badge: 'Guaranteed Return', groupSize: '1 - 4 Guests', rating: 5.0, reviewCount: 512, description: 'Make the most of your Hamad International layover with a private highlights tour and guaranteed on-time airport return.', includes: ['Airport meet & greet', 'Private chauffeur', 'Key Doha landmarks', 'Guaranteed on-time return'] },
+  { name: 'Private Transit Layover City Tour', nameAr: 'جولة الترانزيت الخاصة', category: 'Airport Transit', duration: '4 Hours', priceQAR: 290, image: '/media/vip-airport-transit-hero.jpg', badge: 'Guaranteed Return', groupSize: '1 - 4 Guests', rating: 5.0, reviewCount: 512, description: 'Make the most of your Hamad International layover with a private highlights tour and guaranteed on-time airport return.', includes: ['Airport meet & greet', 'Private driver', 'Key Doha landmarks', 'Guaranteed on-time return'] },
   { name: 'Sunset Dune Buggy Adventure', nameAr: 'مغامرة عربة الكثبان عند الغروب', category: 'Desert Safari', duration: '4 Hours', priceQAR: 450, image: '/media/explore-qatar-hero.jpg', badge: 'Adventure', groupSize: '1 - 2 Guests', rating: 4.9, reviewCount: 187, description: 'Self-drive dune buggy thrills across the desert at golden hour with a professional safari guide escort.', includes: ['Dune buggy & safety gear', 'Professional guide', 'Sunset photo stop', 'Bottled water'] },
-  { name: 'Private Luxury Doha Experience', nameAr: 'تجربة الدوحة الفاخرة الخاصة', category: 'Private Luxury', duration: '8 Hours', priceQAR: 980, image: '/media/mercedes-v-class.jpg', badge: 'VIP', groupSize: '1 - 6 Guests', rating: 5.0, reviewCount: 143, description: 'A bespoke full-day private tour in a Mercedes V-Class with a dedicated guide, fine dining and premium experiences.', includes: ['Mercedes V-Class + chauffeur', 'Dedicated private guide', 'Lunch at a 5-star venue', 'Flexible custom itinerary'] },
+  { name: 'Private Luxury Doha Experience', nameAr: 'تجربة الدوحة الفاخرة الخاصة', category: 'Private Luxury', duration: '8 Hours', priceQAR: 980, image: '/media/mercedes-v-class.jpg', badge: 'VIP', groupSize: '1 - 6 Guests', rating: 5.0, reviewCount: 143, description: 'A bespoke full-day private tour in a Mercedes V-Class with a dedicated guide, fine dining and premium experiences.', includes: ['Mercedes V-Class + driver', 'Dedicated private guide', 'Lunch at a 5-star venue', 'Flexible custom itinerary'] },
   { name: 'Full-Day North Qatar Heritage Tour', nameAr: 'جولة شمال قطر التراثية', category: 'City Tour', duration: '7 Hours', priceQAR: 390, image: '/media/toyota-land-cruiser.jpg', badge: 'New', groupSize: '1 - 6 Guests', rating: 4.7, reviewCount: 98, description: 'Explore Al Zubarah UNESCO fort, Purple Island mangroves and the northern coast’s historic sites.', includes: ['Private 4x4 vehicle', 'Al Zubarah Fort', 'Purple Island mangroves', 'Snacks & water'] },
 ];
 
 const HOLIDAY_PACKAGES = [
   { name: '3-Day Doha Discovery Escape', nameAr: 'باقة اكتشاف الدوحة 3 أيام', category: 'Holiday Package', duration: '3 Days / 2 Nights', priceQAR: 2450, image: '/media/holiday-packages-hero.jpg', badge: 'All-Inclusive', days: 3, nights: 2, description: 'A perfectly balanced short break: city highlights, desert safari and cultural immersion with 5-star comfort.', includes: ['2 nights 5-star hotel', 'Private airport transfers', 'Daily breakfast', 'City tour + desert safari'], highlights: ['Day 1: VIP airport reception & Doha city orientation', 'Day 2: Full-day desert safari & inland sea', 'Day 3: Souq Waqif & departure transfer'], excluded: ['International airfare', 'Personal expenses', 'Travel insurance'] },
-  { name: '5-Day Qatar Luxury Explorer', nameAr: 'باقة قطر الفاخرة 5 أيام', category: 'Holiday Package', duration: '5 Days / 4 Nights', priceQAR: 4850, image: '/media/explore-qatar-hero.jpg', badge: 'Premium', days: 5, nights: 4, description: 'The complete Qatar experience — desert, sea, culture and luxury — across five curated days.', includes: ['4 nights luxury hotel', 'Private chauffeur throughout', 'Daily breakfast & 2 dinners', 'All tours & entrance fees'], highlights: ['Day 1: Arrival & Pearl-Qatar evening', 'Day 2: Desert safari & dune buggy', 'Day 3: Dhow cruise & Katara', 'Day 4: North Qatar heritage', 'Day 5: Leisure & departure'], excluded: ['International airfare', 'Personal shopping', 'Optional spa treatments'] },
+  { name: '5-Day Qatar Luxury Explorer', nameAr: 'باقة قطر الفاخرة 5 أيام', category: 'Holiday Package', duration: '5 Days / 4 Nights', priceQAR: 4850, image: '/media/explore-qatar-hero.jpg', badge: 'Premium', days: 5, nights: 4, description: 'The complete Qatar experience — desert, sea, culture and luxury — across five curated days.', includes: ['4 nights luxury hotel', 'Private driver throughout', 'Daily breakfast & 2 dinners', 'All tours & entrance fees'], highlights: ['Day 1: Arrival & Pearl-Qatar evening', 'Day 2: Desert safari & dune buggy', 'Day 3: Dhow cruise & Katara', 'Day 4: North Qatar heritage', 'Day 5: Leisure & departure'], excluded: ['International airfare', 'Personal shopping', 'Optional spa treatments'] },
   { name: '4-Day Family Adventure Package', nameAr: 'باقة المغامرة العائلية 4 أيام', category: 'Holiday Package', duration: '4 Days / 3 Nights', priceQAR: 3600, image: '/media/dhow-cruise-heritage-hero.jpg', badge: 'Family', days: 4, nights: 3, description: 'Kid-friendly adventure blending desert fun, cultural stops and family-sized comfort transport.', includes: ['3 nights family hotel', 'Family MPV transfers', 'Daily breakfast', 'Desert safari + dhow cruise'], highlights: ['Day 1: Airport welcome & Corniche', 'Day 2: Family desert safari', 'Day 3: Dhow cruise & Katara', 'Day 4: Souq Waqif & departure'], excluded: ['International airfare', 'Personal expenses'] },
 ];
 
@@ -382,7 +382,7 @@ async function seedTourPackages() {
 const REVIEWS = [
   { author: 'David Sterling', country: 'United Kingdom', rating: 5, tour: 'Desert Safari & Inland Sea', comment: 'Absolutely world-class. The dune bashing was exhilarating and our guide made the inland sea unforgettable. Punctual, professional, premium.' },
   { author: 'Elena Rostova', country: 'Russia', rating: 5, tour: 'Doha City Tour & Dhow Cruise', comment: 'The dhow cruise at sunset was magical and Souq Waqif came alive with our guide’s stories. AR Trust exceeded every expectation.' },
-  { author: 'Sultan Al-Otaibi', country: 'Saudi Arabia', rating: 5, tour: 'Private Luxury Experience', comment: 'Flawless VIP service in a spotless Mercedes V-Class. The chauffeur and private guide were exceptional. Highly recommended.' },
+  { author: 'Sultan Al-Otaibi', country: 'Saudi Arabia', rating: 5, tour: 'Private Luxury Experience', comment: 'Flawless VIP service in a spotless Mercedes V-Class. The driver and private guide were exceptional. Highly recommended.' },
   { author: 'Maria Gonzalez', country: 'Spain', rating: 5, tour: 'Transit Layover City Tour', comment: 'Perfect for a long layover — they got us back to the airport with time to spare. Saw all the highlights of Doha stress-free.' },
   { author: 'James Carter', country: 'United States', rating: 5, tour: 'Sunset Dune Buggy Adventure', comment: 'The dune buggy ride at golden hour was the highlight of our Qatar trip. Safe, thrilling and beautifully organised.' },
   { author: 'Aiko Tanaka', country: 'Japan', rating: 5, tour: 'Family Adventure Package', comment: 'Our family felt cared for from airport to departure. The kids loved the desert and the team was warm and attentive throughout.' },
@@ -395,6 +395,27 @@ async function seedReviews() {
   }));
   const res = await prisma.review.createMany({ data });
   console.log(`✓ reviews: ${res.count}`);
+}
+
+async function seedAirportDesks() {
+  const data = [
+    { id: 'desk-hia-01', airportCode: 'DOH', airportName: 'Hamad International Airport (DOH)', deskCode: 'HIA-CTR-04', deskName: 'Main Arrivals Concourse Counter 4', deskNameAr: 'صالة القادمون الرئيسية - كاونتر 4', terminal: 'Terminal 1 - Arrivals Hall', zone: 'Arrivals Ground Level, Opposite Carousel Belt 4-6', assignedEmployeeId: 'emp-102', assignedEmployeeName: 'Zaid Qasim', assignedEmployeeRole: 'Transit Desk Lead Agent', status: 'Active', shiftTiming: '06:00 AM - 14:30 PM (Morning Shift)', phoneExt: '+974 4010 8841', notes: 'Primary walk-in sales counter for layover passengers and desert safari pickups.' },
+    { id: 'desk-hia-02', airportCode: 'DOH', airportName: 'Hamad International Airport (DOH)', deskCode: 'HIA-CTR-07', deskName: 'Transit Concourse C & D Service Desk', deskNameAr: 'كونكورس C و D - مكتب الترانزيت السريع', terminal: 'Airside Transit Hub', zone: 'Duty Free Plaza, Near Lamp Bear Sculpture', assignedEmployeeId: 'emp-101', assignedEmployeeName: 'Tariq Al-Sulaiti', assignedEmployeeRole: 'Airport Operations Lead', status: 'Active', shiftTiming: '14:00 PM - 22:30 PM (Evening Shift)', phoneExt: '+974 4010 8847', notes: 'Handles 4-hour to 8-hour international transit city tours and express vouchers.' },
+    { id: 'desk-hia-03', airportCode: 'DOH', airportName: 'Hamad International Airport (DOH)', deskCode: 'HIA-VIP-01', deskName: 'Al Maha VIP Lounge Concierge Desk', deskNameAr: 'مكتب استقبال صالة المها لكبار الشخصيات', terminal: 'Al Maha VIP Terminal', zone: 'Private VIP Meet & Assist Lounge Concourse', assignedEmployeeId: 'emp-103', assignedEmployeeName: 'Noor Al-Huda', assignedEmployeeRole: 'VIP Concierge Specialist', status: 'Active', shiftTiming: '24/7 Rotational Concierge', phoneExt: '+974 4010 9901', notes: 'Dedicated Mercedes-Benz S-Class driver dispatch and fast-track immigration.' },
+  ];
+  const res = await prisma.airportDesk.createMany({ data, skipDuplicates: true });
+  console.log(`✓ airport desks: ${res.count}`);
+}
+
+async function seedGuestTiers() {
+  const data = [
+    { name: 'Standard', nameAr: 'عادي', discountPercentage: 0, badgeColor: 'blue', minSpendQAR: 0, description: 'Entry level — standard pricing on all tours, services and hotel stays.' },
+    { name: 'VIP Silver', nameAr: 'فضي VIP', discountPercentage: 5, badgeColor: 'slate', minSpendQAR: 10000, description: 'Loyalty tier with 5% discount on all tours & services.' },
+    { name: 'VIP Gold', nameAr: 'ذهبي VIP', discountPercentage: 10, badgeColor: 'amber', minSpendQAR: 25000, description: 'Premium tier with 10% discount plus priority airport desk service.' },
+    { name: 'VIP Platinum', nameAr: 'بلاتيني VIP', discountPercentage: 15, badgeColor: 'purple', minSpendQAR: 50000, description: 'Top tier with 15% discount, dedicated concierge and VIP lounge access.' },
+  ];
+  const res = await prisma.guestTier.createMany({ data, skipDuplicates: true });
+  console.log(`✓ guest tiers: ${res.count}`);
 }
 
 async function main() {
@@ -410,7 +431,9 @@ async function main() {
   await seedSiteContent();
   await seedTourPackages();
   await seedReviews();
-  console.log('\n✅ Seed complete — super-admin, drivers, PDF fleet/hotels/platforms, full website content + tours + reviews.');
+  await seedGuestTiers();
+  await seedAirportDesks();
+  console.log('\n✅ Seed complete — super-admin, drivers, PDF fleet/hotels/platforms, full website content + tours + reviews + guest tiers.');
 }
 
 main()

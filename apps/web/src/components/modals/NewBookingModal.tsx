@@ -22,6 +22,7 @@ export const NewBookingModal: React.FC = () => {
     closeModal,
     addBooking,
     drivers,
+    fleetVehicles,
     flights,
     convertAmount,
     currency,
@@ -39,7 +40,10 @@ export const NewBookingModal: React.FC = () => {
   const [paxCount, setPaxCount] = useState(2);
   const [paymentCurrency, setPaymentCurrency] = useState<Currency>(currency);
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'POS Card' | 'Payment Link' | 'Prepaid OTA'>('POS Card');
-  const [selectedDriverId, setSelectedDriverId] = useState(drivers[0].id);
+  const [selectedDriverId, setSelectedDriverId] = useState('');
+  const [selectedVehicleId, setSelectedVehicleId] = useState('');
+  const availableDrivers = drivers.filter((d) => d.status === 'Available' || d.status === 'Standby');
+  const availableVehicles = fleetVehicles.filter((v) => (v.status || 'Available') === 'Available' || (v.status || 'Available') === 'Reserved');
   const [bookingDate, setBookingDate] = useState('2026-10-15');
   const [bookingTime, setBookingTime] = useState('14:30');
   const [notes, setNotes] = useState('Agent Desk Counter walk-in passenger');
@@ -50,8 +54,17 @@ export const NewBookingModal: React.FC = () => {
     nameAr: 'رحلة سفاري',
     priceQAR: 480,
   };
-  const selectedDriver = drivers.find((d) => d.id === selectedDriverId) || drivers[0];
+  const selectedDriver = drivers.find((d) => d.id === selectedDriverId);
+  const selectedVehicle = fleetVehicles.find((v) => v.id === selectedVehicleId);
   const flightObj = flights.find((f) => f.flightNumber === selectedFlight) || flights[0];
+
+  // Map the chosen package's catalogue service type to the booking's serviceType.
+  const bookingServiceType: 'tour-service' | 'tour-package' | 'transfer' =
+    (selectedPkg as { serviceType?: string }).serviceType === 'Transfer Service'
+      ? 'transfer'
+      : (selectedPkg as { serviceType?: string }).serviceType === 'Tour Package'
+      ? 'tour-package'
+      : 'tour-service';
 
   const totalQAR = selectedPkg.priceQAR * paxCount;
   const convertedTotal = convertAmount(totalQAR, paymentCurrency);
@@ -80,10 +93,14 @@ export const NewBookingModal: React.FC = () => {
       totalQAR,
       paymentCurrency,
       paymentMethod,
-      driverId: selectedDriver.id,
-      driverName: selectedDriver.name,
-      driverVehicle: `${selectedDriver.vehicle} (${selectedDriver.plateNumber})`,
-      driverPhone: selectedDriver.phone,
+      driverId: selectedDriver?.id,
+      driverName: selectedDriver?.name,
+      driverPhone: selectedDriver?.phone,
+      vehicleId: selectedVehicle?.id,
+      vehicleName: selectedVehicle?.name,
+      vehiclePlate: selectedVehicle?.plateNumber,
+      serviceType: bookingServiceType,
+      tripStatus: 'Scheduled',
       qrStatus: 'checked-in',
       qrCodeUrl: `https://artrust.qa/voucher/${pnr}`,
       voucherSent: false,
@@ -107,7 +124,7 @@ export const NewBookingModal: React.FC = () => {
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                {language === 'ar' ? 'إنشاء حجز مكتب وكيل / استلام وفود' : 'New Agent Desk Reservation & Chauffeur'}
+                {language === 'ar' ? 'إنشاء حجز مكتب وكيل / استلام وفود' : 'New Agent Desk Reservation & Driver'}
               </h3>
               <p className="text-[11px] text-slate-500 font-mono">
                 Agent Desk Station · Doha, Qatar
@@ -273,7 +290,7 @@ export const NewBookingModal: React.FC = () => {
 
             <div>
               <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">
-                Select Tour / Chauffeur Service
+                Select Tour / Driver Service
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
                 {packages.map((pkg) => {
@@ -306,29 +323,49 @@ export const NewBookingModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Chauffeur & Payment Settlement */}
+          {/* Driver & Payment Settlement */}
           <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
             <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
               <Car className="w-3.5 h-3.5 text-blue-500" />
-              <span>Chauffeur Allocation & Multi-Currency Tender</span>
+              <span>Driver Allocation & Multi-Currency Tender</span>
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">
-                  Assign Driver & Vehicle
-                </label>
-                <select
-                  value={selectedDriverId}
-                  onChange={(e) => setSelectedDriverId(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                >
-                  {drivers.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name} — {d.vehicle} ({d.status})
-                    </option>
-                  ))}
-                </select>
+              <div className="space-y-2">
+                <div>
+                  <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">
+                    Assign Driver <span className="text-slate-400 font-normal">(available only — optional)</span>
+                  </label>
+                  <select
+                    value={selectedDriverId}
+                    onChange={(e) => setSelectedDriverId(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                  >
+                    <option value="">— No driver (assign later) —</option>
+                    {availableDrivers.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}{d.driverType === 'third-party' ? ' (3rd-party)' : ''} · {d.status}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">
+                    Assign Vehicle <span className="text-slate-400 font-normal">(available only — optional)</span>
+                  </label>
+                  <select
+                    value={selectedVehicleId}
+                    onChange={(e) => setSelectedVehicleId(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                  >
+                    <option value="">— No vehicle —</option>
+                    {availableVehicles.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.name}{v.plateNumber ? ` · ${v.plateNumber}` : ''} · {v.status || 'Available'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div>

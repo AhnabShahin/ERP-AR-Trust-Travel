@@ -99,7 +99,7 @@ export interface SalaryRecord {
 
 export interface CommissionRule {
   id: string;
-  targetRole: 'Transit Desk Agent' | 'Field Chauffeur' | 'Licensed Tour Guide';
+  targetRole: 'Transit Desk Agent' | 'Field Driver' | 'Licensed Tour Guide';
   ruleDescription: string;
   type: 'FIXED_PER_BOOKING' | 'PERCENTAGE_REVENUE' | 'PER_TRIP_COMPLETED';
   rateValue: number; // e.g. 25 QAR, 12%, 45 QAR
@@ -128,7 +128,7 @@ export interface Booking {
   paymentMethod: 'Cash' | 'POS Card' | 'Payment Link' | 'Prepaid OTA' | 'Website Online Gateway';
   driverId: string;
   driverName: string;
-  driverVehicle: string;
+  driverVehicle?: string; // deprecated — use vehicleId/vehicleName (per-trip vehicle)
   driverPhone: string;
   guideId?: string;
   guideName?: string;
@@ -143,6 +143,18 @@ export interface Booking {
   createdAt: string;
   source: 'Airport Desk' | 'Agent Desk' | 'Online Web' | 'VIP Concierge' | 'OTA Partner' | 'Website Direct Lead' | 'Web Integration API' | string;
   leadType?: 'tour' | 'package' | 'fleet' | 'service';
+  // ---- Service / trip layer (unified booking = consumed service record) ----
+  serviceType?: 'tour-service' | 'tour-package' | 'transfer';
+  customerId?: string; // link to a Guest (CRM)
+  vehicleId?: string; // fleet vehicle assigned for this trip
+  vehicleName?: string;
+  vehiclePlate?: string;
+  tripStatus?: 'Scheduled' | 'On Trip' | 'Completed' | 'Cancelled' | 'No Show';
+  scheduledStart?: string;
+  scheduledEnd?: string;
+  startedAt?: string;
+  completedAt?: string;
+  invoiceId?: string;
 }
 
 // ---- Billing: payment accounts + invoices (BizBill-style) ---------------
@@ -348,6 +360,9 @@ export interface FleetVehicle {
   make?: string;
   model?: string;
   color?: string;
+  // Operational availability + sourcing.
+  status?: 'Available' | 'On Trip' | 'Maintenance' | 'Reserved';
+  ownership?: 'owned' | 'third-party';
   showOnWebsite?: boolean;
 }
 
@@ -372,10 +387,14 @@ export interface Driver {
   name: string;
   nameAr: string;
   phone: string;
-  vehicle: string;
-  plateNumber: string;
-  vehicleType: '4x4 SUV' | 'VIP Van' | 'Luxury Sedan' | 'Mini Bus' | 'Luxury Limousine' | 'Coaster Bus' | string;
-  status: 'Dispatched' | 'At Airport Bay' | 'En Route' | 'Standby' | 'Off Duty' | 'Maintenance';
+  // Sourcing: in-house staff vs. external/contracted driver.
+  driverType?: 'first-party' | 'third-party';
+  company?: string; // third-party company / vendor name
+  // DEPRECATED free-text vehicle fields — a vehicle is assigned per-trip now.
+  vehicle?: string;
+  plateNumber?: string;
+  vehicleType?: '4x4 SUV' | 'VIP Van' | 'Luxury Sedan' | 'Mini Bus' | 'Luxury Limousine' | 'Coaster Bus' | string;
+  status: 'Dispatched' | 'At Airport Bay' | 'En Route' | 'Standby' | 'Off Duty' | 'Maintenance' | 'Available' | 'On Trip';
   currentMission?: string;
   activePassengers?: number;
   totalTripsToday: number;
@@ -577,7 +596,7 @@ export type ExpenseCategory =
   | 'Airport Apron Permits'
   | 'Camp Maintenance'
   | 'Hospitality / Karak'
-  | 'Chauffeur Per Diem'
+  | 'Driver Per Diem'
   | 'Vehicle Maintenance'
   | 'Marketing & Collateral'
   | 'Marketing & PR'
@@ -751,4 +770,6 @@ export interface UserAccount {
   bio?: string;
   staffStatus?: string;
   jobTitle?: string;
+  // Driver sourcing (role = driver-guide): in-house vs. external/contracted.
+  driverType?: 'first-party' | 'third-party';
 }

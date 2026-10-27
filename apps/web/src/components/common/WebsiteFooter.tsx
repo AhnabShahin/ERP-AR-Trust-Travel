@@ -128,7 +128,7 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
                   {
                     icon: Gift,
                     title: 'Priority Curbside Meet & Greet',
-                    desc: 'Uniformed chauffeur holding a personalized digital nameboard at HIA Arrivals',
+                    desc: 'Uniformed driver holding a personalized digital nameboard at HIA Arrivals',
                   },
                   {
                     icon: ShieldCheck,
@@ -212,7 +212,7 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
                       <div className="grid grid-cols-2 gap-2">
                         {[
                           { id: 'Desert Safari', label: 'Desert Safari', icon: '🏜️' },
-                          { id: 'Airport Chauffeur', label: 'Airport Chauffeur', icon: '🚘' },
+                          { id: 'Airport Driver', label: 'Airport Driver', icon: '🚘' },
                           { id: 'City Tour', label: 'Doha City Tour', icon: '🏙️' },
                           { id: 'Holiday Packages', label: 'Holiday Packages', icon: '🏖️' },
                         ].map((opt) => (

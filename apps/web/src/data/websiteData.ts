@@ -174,7 +174,7 @@ export const WEBSITE_FLEET: FleetVehicle[] = [
     luggage: 7,
     priceQAR: 280,
     rateType: 'per airport transfer',
-    features: ['Leather Captain Seats', 'High-Speed Wi-Fi', 'Bottled Evian Water', 'Chauffeur in Formal Attire', 'Curbside Greeting'],
+    features: ['Leather Captain Seats', 'High-Speed Wi-Fi', 'Bottled Evian Water', 'Driver in Formal Attire', 'Curbside Greeting'],
     image: mercedesVClass,
     idealFor: 'Executive VIPs, Diplomats & Luxury Family Transit',
   },
@@ -186,7 +186,7 @@ export const WEBSITE_FLEET: FleetVehicle[] = [
     luggage: 4,
     priceQAR: 220,
     rateType: 'per trip / transfer',
-    features: ['Reinforced Roll Cages', 'High-Clearance Suspension', 'Desert Recovery Gear', 'Licensed Safari Chauffeur', 'Dual AC Climate Zones'],
+    features: ['Reinforced Roll Cages', 'High-Clearance Suspension', 'Desert Recovery Gear', 'Licensed Safari Driver', 'Dual AC Climate Zones'],
     image: toyotaLandCruiser,
     idealFor: 'Desert Dune Safaris, Inland Sea Expeditions & Offroad Tours',
   },
@@ -212,7 +212,7 @@ export const WEBSITE_FLEET: FleetVehicle[] = [
     rateType: 'per transfer',
     features: ['Panoramic Sunroof', 'Acoustic Sound Insulation', 'Supple Leather Seating', 'Hamad Airport Arrival Tracking', 'Digital Infotainment'],
     image: bestuneB70,
-    idealFor: 'Corporate Business Commutes & Hotel Chauffeur Transfers',
+    idealFor: 'Corporate Business Commutes & Hotel Driver Transfers',
   },
   {
     id: 'fleet-5',
@@ -341,7 +341,7 @@ export const MULTI_DAY_PACKAGES: MultiDayPackage[] = [
       'Day 2: Full-Day Desert Safari, Dune Bashing, Camel Riding & Bedouin Beach BBQ',
       'Day 3: The Pearl-Qatar yacht cruise, Lusail Marina Promenade & VIP Airport departure',
     ],
-    included: ['5-Star Luxury Hotel (2 Nights)', 'Dedicated Private Chauffeur & Vehicle', 'Full Desert Safari with Bedouin Majlis BBQ', 'Museum Entrance Fees', 'Breakfast & Special Dinner'],
+    included: ['5-Star Luxury Hotel (2 Nights)', 'Dedicated Private Driver & Vehicle', 'Full Desert Safari with Bedouin Majlis BBQ', 'Museum Entrance Fees', 'Breakfast & Special Dinner'],
     excluded: ['Visa Fees (if applicable)', 'Optional Water Sports'],
     badge: 'Best Value',
     image: 'https://artrusttravel.com/wp-content/uploads/2026/01/Doha-Desert-Safari_-Dune-Bashing-Inland-Sea-Adventure-2-1000x1000.jpg',
@@ -440,7 +440,7 @@ export const CORE_SERVICES = [
     titleAr: 'استقبال وتوديع كبار الشخصيات بمطار حمد',
     icon: 'ShieldCheck',
     description: 'Breeze through Hamad International Airport with dedicated VIP escorts, fast-track immigration clearance, porter assistance, and private lounge access.',
-    benefits: ['Fast-Track Immigration Pass', 'Dedicated Luggage Porter', 'Al Maha Lounge Access', 'Curbside Chauffeur Link'],
+    benefits: ['Fast-Track Immigration Pass', 'Dedicated Luggage Porter', 'Al Maha Lounge Access', 'Curbside Driver Link'],
   },
 ];
 
@@ -587,7 +587,7 @@ export function getAllExperienceItems(
     image: f.image,
     badge: f.idealFor,
     rateType: f.rateType,
-    description: `Private chauffeur service in Qatar with ${f.name}. Includes airport meet & greet and fuel.`,
+    description: `Private driver service in Qatar with ${f.name}. Includes airport meet & greet and fuel.`,
     includes: f.features,
     type: 'fleet',
   }));

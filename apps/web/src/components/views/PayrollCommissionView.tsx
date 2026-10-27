@@ -114,7 +114,7 @@ export const PayrollCommissionView: React.FC = () => {
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>+ Log Expense</span>
+            <span>Log Expense</span>
           </button>
         </div>
       </div>
@@ -329,7 +329,7 @@ export const PayrollCommissionView: React.FC = () => {
                   <option value="Airport Apron Permits">Airport Apron Permits (HIA Access)</option>
                   <option value="Camp Maintenance">Camp Maintenance (Khor Al Adaid)</option>
                   <option value="Hospitality / Karak">Hospitality / Karak & Dates for Guests</option>
-                  <option value="Chauffeur Per Diem">Chauffeur Per Diem</option>
+                  <option value="Driver Per Diem">Driver Per Diem</option>
                 </select>
               </div>
 

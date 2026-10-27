@@ -37,6 +37,7 @@ export interface UserAccount {
   companyName?: string | null;
   bio?: string | null;
   staffStatus?: string | null;
+  driverType?: string | null;
 }
 
 export interface AuthResponse {

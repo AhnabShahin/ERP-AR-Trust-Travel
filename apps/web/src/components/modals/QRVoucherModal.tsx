@@ -42,7 +42,7 @@ export const QRVoucherModal: React.FC = () => {
   if (!booking) return null;
 
   const handleShareWhatsApp = () => {
-    const text = `AR TRUST TRAVEL & TOURISM (QATAR)\nDigital Boarding Voucher #${booking.pnr}\nPassenger: ${booking.passengerName}\nFlight: ${booking.flightNumber} (${booking.arrivalAirport})\nPickup: Hamad Airport ${booking.pickupBay}\nChauffeur: ${booking.driverName} (${booking.driverVehicle} - ${booking.driverPhone})\nPackage: ${booking.packageName}\nDigital Pass: https://artrust.qa/voucher/${booking.pnr}`;
+    const text = `AR TRUST TRAVEL & TOURISM (QATAR)\nDigital Boarding Voucher #${booking.pnr}\nPassenger: ${booking.passengerName}\nFlight: ${booking.flightNumber} (${booking.arrivalAirport})\nPickup: Hamad Airport ${booking.pickupBay}\nDriver: ${booking.driverName} (${booking.driverVehicle} - ${booking.driverPhone})\nPackage: ${booking.packageName}\nDigital Pass: https://artrust.qa/voucher/${booking.pnr}`;
     navigator.clipboard?.writeText(text);
     setCopied(true);
     toggleVoucherSent(booking.id);
@@ -129,10 +129,10 @@ export const QRVoucherModal: React.FC = () => {
               </div>
             </div>
 
-            {/* Chauffeur Information */}
+            {/* Driver Information */}
             <div className="py-3 border-b border-slate-200/80 dark:border-slate-700/80 grid grid-cols-2 gap-3 text-xs">
               <div>
-                <span className="text-[10px] uppercase font-bold text-slate-400">ASSIGNED CHAUFFEUR</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400">ASSIGNED DRIVER</span>
                 <div className="font-semibold text-slate-900 dark:text-white mt-0.5 flex items-center gap-1">
                   <Car className="w-3.5 h-3.5 text-slate-400" />
                   <span>{booking.driverName}</span>
@@ -143,7 +143,7 @@ export const QRVoucherModal: React.FC = () => {
               </div>
 
               <div>
-                <span className="text-[10px] uppercase font-bold text-slate-400">CHAUFFEUR DIRECT LINE</span>
+                <span className="text-[10px] uppercase font-bold text-slate-400">DRIVER DIRECT LINE</span>
                 <div className="font-semibold text-slate-900 dark:text-white mt-0.5 flex items-center gap-1">
                   <Phone className="w-3.5 h-3.5 text-emerald-500" />
                   <span className="font-mono">{booking.driverPhone}</span>

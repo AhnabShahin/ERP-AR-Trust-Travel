@@ -147,7 +147,7 @@ export const SERVICES_CATALOG: ServiceItem[] = [
       'Official Qatar Tourism approved Hotel Confirmation Voucher',
       'All applicable hotel service charges, municipality fees, and local taxes included',
       'Direct liaison with hotel management for VIP welcome amenities and special occasions',
-      'Seamless link to private airport chauffeur transfer at Hamad International Airport',
+      'Seamless link to private airport driver transfer at Hamad International Airport',
     ],
     whyChooseUs: [
       {
@@ -323,13 +323,13 @@ export const SERVICES_CATALOG: ServiceItem[] = [
     startingPriceQAR: 280,
     rateType: 'per passenger from',
     overview:
-      'Transform your arrival, departure, or transit through Hamad International Airport (DOH) into a luxurious, effortless experience with AR Trust Travel’s VIP Meet & Assist services. As your dedicated host at Skytrax’s World’s Best Airport, our uniformed VIP liaison awaits you right at the aircraft aerobridge or terminal arrivals gate with personalized signage. You will be whisked through dedicated fast-track immigration lanes and security checkpoints, escorted to the prestigious Al Maha Lounge, and met seamlessly by our private chauffeur fleet at the VIP curbside.',
+      'Transform your arrival, departure, or transit through Hamad International Airport (DOH) into a luxurious, effortless experience with AR Trust Travel’s VIP Meet & Assist services. As your dedicated host at Skytrax’s World’s Best Airport, our uniformed VIP liaison awaits you right at the aircraft aerobridge or terminal arrivals gate with personalized signage. You will be whisked through dedicated fast-track immigration lanes and security checkpoints, escorted to the prestigious Al Maha Lounge, and met seamlessly by our private driver fleet at the VIP curbside.',
     highlights: [
       'Personal uniformed VIP concierge greeting right at the aircraft aerobridge exit gate',
       'Exclusive expedited priority immigration, passport control, and security clearance lanes',
       'Dedicated luggage porter handling all baggage retrieval from the carousel',
       'Complimentary access to the luxurious Al Maha Transit Lounge with fine dining buffet & showers',
-      'Direct curbside coordination with your awaiting Mercedes-Benz or Land Cruiser chauffeur',
+      'Direct curbside coordination with your awaiting Mercedes-Benz or Land Cruiser driver',
     ],
     inclusions: [
       'Personalized greeting nameboard at aircraft aerobridge',
@@ -347,8 +347,8 @@ export const SERVICES_CATALOG: ServiceItem[] = [
         desc: 'Have a short 60-90 minute international layover? Our airside escort fast-tracks you directly across terminals to ensure you never miss your connecting flight.',
       },
       {
-        title: 'Seamless Chauffeur Handoff',
-        desc: 'Our airport escort coordinates in real-time with your private AR Trust chauffeur, ensuring your car is waiting curbside the moment you exit.',
+        title: 'Seamless Driver Handoff',
+        desc: 'Our airport escort coordinates in real-time with your private AR Trust driver, ensuring your car is waiting curbside the moment you exit.',
       },
     ],
     processSteps: [
@@ -390,14 +390,14 @@ export const SERVICES_CATALOG: ServiceItem[] = [
     inquiryConfig: {
       serviceTypeLabel: 'Service Scope / Service Package',
       options: [
-        'VIP Arrival Meet & Assist (Gate to Curbside Chauffeur)',
+        'VIP Arrival Meet & Assist (Gate to Curbside Driver)',
         'VIP Departure Meet & Assist (Curbside to Boarding Gate)',
         'Transit Fast-Track Connection Escort (Flight to Flight)',
         'VIP Family Package (with Electric Terminal Buggy)',
         'Al Maha Premium Lounge Access Inclusion',
         'VVIP Diplomatic / Private Jet Protocol Escort',
       ],
-      defaultOption: 'VIP Arrival Meet & Assist (Gate to Curbside Chauffeur)',
+      defaultOption: 'VIP Arrival Meet & Assist (Gate to Curbside Driver)',
       dateLabel: 'Flight Arrival / Departure Date',
       paxLabel: 'Number of Passengers (Adults & Children)',
       notesPrompt: 'e.g. Airline & Flight Number (e.g. QR 004), arrival time, number of check-in bags...',
@@ -417,7 +417,7 @@ export const SERVICES_CATALOG: ServiceItem[] = [
     startingPriceQAR: 1200,
     rateType: 'custom project quote',
     overview:
-      'AR Trust Travel & Tourism W.L.L. is a premier Destination Management Company in Qatar trusted by multinational corporations, governmental bodies, sports organizations, and international event organizers. We orchestrate comprehensive ground transportation, VIP executive chauffeur dispatch, group airport receptions, and curated gala hospitality programs for events hosted at the Doha Exhibition and Convention Centre (DECC), Qatar National Convention Centre (QNCC), and major international sports venues.',
+      'AR Trust Travel & Tourism W.L.L. is a premier Destination Management Company in Qatar trusted by multinational corporations, governmental bodies, sports organizations, and international event organizers. We orchestrate comprehensive ground transportation, VIP executive driver dispatch, group airport receptions, and curated gala hospitality programs for events hosted at the Doha Exhibition and Convention Centre (DECC), Qatar National Convention Centre (QNCC), and major international sports venues.',
     highlights: [
       'Comprehensive ground transportation fleet: executive sedans, Mercedes V-Class, and 50-seater luxury coaches',
       'Dedicated On-Site Logistics Coordinator and 24/7 Operations Command Center in Doha',

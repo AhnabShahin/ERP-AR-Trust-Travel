@@ -34,6 +34,7 @@ export function toPublicUser(user: User): UserAccount {
     companyName: user.companyName,
     bio: user.bio,
     staffStatus: user.staffStatus,
+    driverType: user.driverType,
   };
 }
 

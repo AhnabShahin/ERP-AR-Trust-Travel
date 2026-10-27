@@ -36,7 +36,7 @@ export const AddHotelRoomModal: React.FC = () => {
   const [availableAmenities, setAvailableAmenities] = useState<string[]>([
     'Complimentary Buffet Breakfast',
     'High-Speed Wi-Fi',
-    'Hamad Airport Chauffeur Transfer',
+    'Hamad Airport Driver Transfer',
     'Executive Club Lounge Access',
     'Private Balcony with Sea View',
     'Espresso Machine & Premium Tea',
@@ -45,7 +45,7 @@ export const AddHotelRoomModal: React.FC = () => {
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>([
     'Complimentary Buffet Breakfast',
     'High-Speed Wi-Fi',
-    'Hamad Airport Chauffeur Transfer',
+    'Hamad Airport Driver Transfer',
   ]);
 
   const [feedbackSuccess, setFeedbackSuccess] = useState<string | null>(null);

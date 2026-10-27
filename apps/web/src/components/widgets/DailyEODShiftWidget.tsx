@@ -13,27 +13,23 @@ import {
 import { useApp } from '../../context/AppContext';
 
 export const DailyEODShiftWidget: React.FC = () => {
-  const { shiftDrawer, openModal, convertAmount, activeDesk, airportDesks, activeDeskId, setActiveDeskId, bookings, hotelBookings, language, t } = useApp();
+  const { shiftDrawer, openModal, convertAmount, activeDesk, activeDeskId, language, t } = useApp();
 
   const deskName = activeDesk ? `${activeDesk.deskCode} · ${activeDesk.deskName}` : shiftDrawer.counterName;
   const dutyAgent = activeDesk?.assignedEmployeeName || shiftDrawer.agentName;
 
-  // Synced cash & card for this desk
-  const deskCashSales = bookings
-    .filter((b) => (b.deskId === activeDeskId || b.deskCode === activeDesk?.deskCode) && b.paymentMethod === 'Cash')
-    .reduce((sum, b) => sum + b.totalQAR, 0);
+  // All figures come straight from the live, persisted shift drawer. Each cash,
+  // POS-card and payment-link booking updates this record (see addBooking /
+  // addHotelBooking), so no re-summing of bookings here — that would double-count.
+  const currentQAR = shiftDrawer.currentCashDrawer.QAR;
+  const expectedQAR = shiftDrawer.systemExpected.QAR;
+  const posCardQAR = shiftDrawer.posCardTotalQAR;
+  const paymentLinkQAR = shiftDrawer.paymentLinkTotalQAR;
 
-  const deskPosCard = bookings
-    .filter((b) => (b.deskId === activeDeskId || b.deskCode === activeDesk?.deskCode) && b.paymentMethod === 'POS Card')
-    .reduce((sum, b) => sum + b.totalQAR, 0) +
-    hotelBookings
-      .filter((hb) => hb.deskCode === activeDesk?.deskCode && hb.paymentMethod === 'POS Card')
-      .reduce((sum, hb) => sum + hb.totalQAR, 0);
-
-  const currentQAR = (activeDesk?.currentDrawerCashQAR || shiftDrawer.currentCashDrawer.QAR) + deskCashSales;
-  const expectedQAR = currentQAR;
-  const qarDiff = currentQAR - expectedQAR;
-  const isBalanced = qarDiff === 0;
+  // Real variance: counted drawer vs system-recorded expectation (0 until the
+  // physical count at shift close introduces a genuine difference).
+  const qarDiff = Math.round((currentQAR - expectedQAR) * 100) / 100;
+  const isBalanced = Math.abs(qarDiff) < 0.005;
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs transition-colors flex flex-col justify-between">
@@ -118,7 +114,7 @@ export const DailyEODShiftWidget: React.FC = () => {
               <span>{t('cardPosTotal')} (QNB NAPS / Visa / MC)</span>
             </div>
             <span className="font-mono font-bold text-slate-900 dark:text-white tabular-nums">
-              {convertAmount(deskPosCard || shiftDrawer.posCardTotalQAR).formatted}
+              {convertAmount(posCardQAR).formatted}
             </span>
           </div>
 
@@ -128,7 +124,7 @@ export const DailyEODShiftWidget: React.FC = () => {
               <span>{t('paymentLinks')} (Apple Pay / WhatsApp Link)</span>
             </div>
             <span className="font-mono font-bold text-slate-900 dark:text-white tabular-nums">
-              {convertAmount(shiftDrawer.paymentLinkTotalQAR).formatted}
+              {convertAmount(paymentLinkQAR).formatted}
             </span>
           </div>
         </div>
@@ -150,7 +146,7 @@ export const DailyEODShiftWidget: React.FC = () => {
             <div>
               <span className="font-bold">{t('variance')}: </span>
               <span className="font-mono font-bold">
-                {isBalanced ? '+/- 0.00 QAR' : `${qarDiff > 0 ? '+' : ''}${qarDiff} QAR`}
+                {isBalanced ? '+/- 0.00 QAR' : `${qarDiff > 0 ? '+' : ''}${qarDiff.toFixed(2)} QAR`}
               </span>
             </div>
           </div>
@@ -177,7 +173,7 @@ export const DailyEODShiftWidget: React.FC = () => {
                 ...shiftDrawer.systemExpected,
                 QAR: expectedQAR,
               },
-              posCardTotalQAR: deskPosCard || shiftDrawer.posCardTotalQAR,
+              posCardTotalQAR: posCardQAR,
             })
           }
           className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 hover:from-blue-600 hover:to-indigo-600 text-white font-semibold text-xs shadow-md shadow-blue-700/25 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"

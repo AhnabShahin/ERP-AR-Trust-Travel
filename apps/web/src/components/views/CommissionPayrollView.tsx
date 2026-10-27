@@ -15,12 +15,12 @@ export const CommissionPayrollView: React.FC = () => {
   const { drivers, convertAmount, language, t } = useApp();
 
   const driverCommissions = [
-    { id: 'drv-1', name: 'Tariq Al-Kuwari', role: 'Senior Safari & 4x4 Chauffeur', tours: 4, safariTrips: 2, airportTransfers: 2, earnedCommissionQAR: 380, bonusQAR: 50, status: 'Approved' },
-    { id: 'drv-2', name: 'Rashid Mansoor', role: 'VIP Mercedes Limousine Chauffeur', tours: 3, safariTrips: 0, airportTransfers: 3, earnedCommissionQAR: 210, bonusQAR: 75, status: 'Approved' },
-    { id: 'drv-3', name: 'Ahmed El-Sayed', role: 'Airport Express Chauffeur', tours: 2, safariTrips: 0, airportTransfers: 2, earnedCommissionQAR: 90, bonusQAR: 0, status: 'Pending' },
+    { id: 'drv-1', name: 'Tariq Al-Kuwari', role: 'Senior Safari & 4x4 Driver', tours: 4, safariTrips: 2, airportTransfers: 2, earnedCommissionQAR: 380, bonusQAR: 50, status: 'Approved' },
+    { id: 'drv-2', name: 'Rashid Mansoor', role: 'VIP Mercedes Limousine Driver', tours: 3, safariTrips: 0, airportTransfers: 3, earnedCommissionQAR: 210, bonusQAR: 75, status: 'Approved' },
+    { id: 'drv-3', name: 'Ahmed El-Sayed', role: 'Airport Express Driver', tours: 2, safariTrips: 0, airportTransfers: 2, earnedCommissionQAR: 90, bonusQAR: 0, status: 'Pending' },
     { id: 'drv-4', name: 'Nasser Al-Nuaimi', role: 'Desert Safari Specialist', tours: 5, safariTrips: 3, airportTransfers: 2, earnedCommissionQAR: 510, bonusQAR: 100, status: 'Approved' },
     { id: 'drv-5', name: 'Farhan Malik', role: 'Multi-lingual Cultural Guide', tours: 2, safariTrips: 1, airportTransfers: 1, earnedCommissionQAR: 165, bonusQAR: 0, status: 'Pending' },
-    { id: 'drv-6', name: 'Salem Al-Marri', role: 'VIP Al Maha Escort Chauffeur', tours: 3, safariTrips: 0, airportTransfers: 3, earnedCommissionQAR: 285, bonusQAR: 120, status: 'Approved' },
+    { id: 'drv-6', name: 'Salem Al-Marri', role: 'VIP Al Maha Escort Driver', tours: 3, safariTrips: 0, airportTransfers: 3, earnedCommissionQAR: 285, bonusQAR: 120, status: 'Approved' },
   ];
 
   const totalCommissionsQAR = driverCommissions.reduce((sum, d) => sum + d.earnedCommissionQAR + d.bonusQAR, 0);
@@ -32,7 +32,7 @@ export const CommissionPayrollView: React.FC = () => {
         <div>
           <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <BadgePercent className="w-5 h-5 text-emerald-500" />
-            <span>{language === 'ar' ? 'العمولات والرواتب (السائقون والمرشدون)' : 'Commission & Chauffeur Payroll Ledger'}</span>
+            <span>{language === 'ar' ? 'العمولات والرواتب (السائقون والمرشدون)' : 'Commission & Driver Payroll Ledger'}</span>
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
             12% Safari dune commission, QAR 45 per HIA transfer & VIP customer gratuities
@@ -62,7 +62,7 @@ export const CommissionPayrollView: React.FC = () => {
           <table className="w-full text-left rtl:text-right border-collapse">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                <th className="py-3 px-4">Chauffeur / Guide</th>
+                <th className="py-3 px-4">Driver / Guide</th>
                 <th className="py-3 px-4">Duty Role</th>
                 <th className="py-3 px-4 text-center">Tours Today</th>
                 <th className="py-3 px-4 text-center">Safari / Transfers</th>

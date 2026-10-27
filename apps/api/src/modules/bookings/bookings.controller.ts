@@ -11,21 +11,43 @@ const createSchema = z.object({
   flightNumber: z.string().min(1),
   arrivalAirport: z.string().min(1),
   arrivalTime: z.string().min(1),
+  terminalGate: z.string().optional(),
+  pickupBay: z.string().optional(),
   packageId: z.string().min(1),
   packageName: z.string().min(1),
+  packageNameAr: z.string().optional(),
   paxCount: z.number().int().positive().default(1),
   totalQAR: z.number().nonnegative().default(0),
   paymentCurrency: z.string().default('QAR'),
   paymentMethod: z.string().min(1),
   qrStatus: z.string().default('pending'),
+  qrCodeUrl: z.string().optional(),
+  voucherSent: z.boolean().optional(),
   source: z.string().default('Airport Desk'),
+  leadType: z.string().optional(),
   driverId: z.string().optional(),
   driverName: z.string().optional(),
+  driverPhone: z.string().optional(),
+  driverVehicle: z.string().optional(),
   guideId: z.string().optional(),
   guideName: z.string().optional(),
+  deskId: z.string().optional(),
+  deskCode: z.string().optional(),
   bookingDate: z.string().optional(),
   bookingTime: z.string().optional(),
   notes: z.string().optional(),
+  // ---- Service / trip layer ----
+  serviceType: z.string().optional(),
+  customerId: z.string().optional(),
+  vehicleId: z.string().optional(),
+  vehicleName: z.string().optional(),
+  vehiclePlate: z.string().optional(),
+  tripStatus: z.string().optional(),
+  scheduledStart: z.string().datetime().optional(),
+  scheduledEnd: z.string().datetime().optional(),
+  startedAt: z.string().datetime().optional(),
+  completedAt: z.string().datetime().optional(),
+  invoiceId: z.string().optional(),
 });
 
 const updateSchema = createSchema.partial();
@@ -71,4 +93,30 @@ export async function update(req: Request, res: Response) {
 export async function remove(req: Request, res: Response) {
   await service.remove(req.params.id);
   res.json({ ok: true, data: { id: req.params.id } });
+}
+
+const assignSchema = z.object({
+  driverId: z.string().nullish(),
+  driverName: z.string().nullish(),
+  driverPhone: z.string().nullish(),
+  vehicleId: z.string().nullish(),
+  vehicleName: z.string().nullish(),
+  vehiclePlate: z.string().nullish(),
+  guideId: z.string().nullish(),
+  guideName: z.string().nullish(),
+});
+
+export async function assign(req: Request, res: Response) {
+  const input = assignSchema.parse(req.body);
+  res.json({ ok: true, data: await service.assign(req.params.id, input, req.user) });
+}
+
+const transitionSchema = z.object({
+  status: z.enum(['Scheduled', 'On Trip', 'Completed', 'Cancelled', 'No Show']),
+  note: z.string().optional(),
+});
+
+export async function transition(req: Request, res: Response) {
+  const { status, note } = transitionSchema.parse(req.body);
+  res.json({ ok: true, data: await service.transition(req.params.id, status, req.user, note) });
 }

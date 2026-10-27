@@ -278,7 +278,7 @@ export const LiveAirportBookingsWidget: React.FC<LiveAirportBookingsWidgetProps>
               <th className="py-2.5 px-3">Lead Passenger</th>
               <th className="py-2.5 px-3">Package Tour</th>
               <th className="py-2.5 px-3 text-right rtl:text-left">Amount ({currency})</th>
-              <th className="py-2.5 px-3">Driver / Chauffeur</th>
+              <th className="py-2.5 px-3">Driver</th>
               <th className="py-2.5 px-3 text-center">QR Status</th>
               <th className="py-2.5 px-3 text-right rtl:text-left">Voucher</th>
             </tr>
@@ -810,7 +810,7 @@ export const LiveAirportBookingsWidget: React.FC<LiveAirportBookingsWidgetProps>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Chauffeur
+                    Driver
                   </label>
                   <select
                     value={editingBooking.driverId || ''}

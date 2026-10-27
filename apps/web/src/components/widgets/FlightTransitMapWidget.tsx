@@ -50,7 +50,7 @@ export const FlightTransitMapWidget: React.FC = () => {
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             {language === 'ar'
               ? 'متابعة مباشرة لهبوط الطائرات، بوابات القدوم، وتوجيه سيارات الاستقبال'
-              : 'Real-time flight apron arrivals, pickup bays & chauffeur dispatch'}
+              : 'Real-time flight apron arrivals, pickup bays & driver dispatch'}
           </p>
         </div>
 
@@ -140,7 +140,7 @@ export const FlightTransitMapWidget: React.FC = () => {
           </div>
 
           <div className="absolute top-3 right-3 rtl:right-auto rtl:left-3 bg-slate-900/90 backdrop-blur-xs border border-slate-800 rounded-lg px-2.5 py-1 text-[11px] text-emerald-400 font-mono z-10">
-            28 CHAUFFEURS ON GRID
+            28 DRIVERS ON GRID
           </div>
 
           {/* Waypoints & Pins */}

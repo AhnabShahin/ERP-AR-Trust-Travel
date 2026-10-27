@@ -320,7 +320,7 @@ export const WEBSITE_TRANSLATIONS: Record<WebsiteLanguageCode, WebsiteTranslatio
       },
       {
         title: 'Premier Airport Transit & Fleet',
-        highlight: 'With VIP Chauffeur & Transfers',
+        highlight: 'With VIP Driver & Transfers',
         caption: 'Luxury Mercedes-Benz V-Class, Land Cruisers & seamless Hamad International Airport layover tours with guaranteed punctual return.',
         tag: 'Hamad Airport & Luxury Fleet',
       },
@@ -339,8 +339,8 @@ export const WEBSITE_TRANSLATIONS: Record<WebsiteLanguageCode, WebsiteTranslatio
       toursTitle: 'Elite Qatar Tour Adventures',
       toursSubtitle: 'Handcrafted tours combining heart-pounding desert safaris, traditional wooden dhow cruises, and fast-track transit city experiences.',
       toursViewAll: 'View All Tours Page',
-      fleetTitle: 'Executive Chauffeur & Airport Fleet',
-      fleetSubtitle: 'Chauffeured Mercedes-Benz V-Class, Toyota Land Cruisers, and luxury coaches with live flight tracking and 24/7 curbside dispatch.',
+      fleetTitle: 'Executive Driver & Airport Fleet',
+      fleetSubtitle: 'Driven Mercedes-Benz V-Class, Toyota Land Cruisers, and luxury coaches with live flight tracking and 24/7 curbside dispatch.',
       fleetViewAll: 'View All Fleet Vehicles',
       packagesTitle: 'Curated Holiday Comfort Packages',
       packagesSubtitle: 'All-inclusive multi-day holiday packages combining 5-star hotel stays, curated Doha excursions, wild Inland Sea dune bashing, and VIP airport escort.',
@@ -367,13 +367,13 @@ export const WEBSITE_TRANSLATIONS: Record<WebsiteLanguageCode, WebsiteTranslatio
     },
 
     fleetPage: {
-      heroTitle: 'Our Premium Transfer & Chauffeur Fleet',
+      heroTitle: 'Our Premium Transfer & Driver Fleet',
       heroSubtitle: 'From executive Mercedes-Benz V-Class and rugged Toyota Land Cruisers to spacious family MPVs and luxury group coaches. Punctual Hamad Airport greetings.',
       allFleet: 'All Fleet',
       flightDelayTracking: 'Flight Delay Tracking',
       flightDelayTrackingDesc: 'Auto-adjusted pickup if your flight arrives early or late',
       curbsideGreeting: 'Curbside Greeting',
-      curbsideGreetingDesc: 'Uniformed chauffeur holding a personalized digital nameboard',
+      curbsideGreetingDesc: 'Uniformed driver holding a personalized digital nameboard',
       complimentaryWater: 'Chilled Water & Wi-Fi',
       complimentaryWaterDesc: 'On-board refreshments and high-speed in-cabin Wi-Fi',
       climateControl: 'Dual-Zone Climate Control',
@@ -437,7 +437,7 @@ export const WEBSITE_TRANSLATIONS: Record<WebsiteLanguageCode, WebsiteTranslatio
 
     footer: {
       aboutTitle: 'About AR Trust Travel',
-      aboutDesc: 'AR Trust Travel & Tourism is an officially licensed Qatar Destination Management Company (DMC) delivering desert safaris, luxury airport transfers, VIP chauffeur services, and custom holiday tours.',
+      aboutDesc: 'AR Trust Travel & Tourism is an officially licensed Qatar Destination Management Company (DMC) delivering desert safaris, luxury airport transfers, VIP driver services, and custom holiday tours.',
       quickLinksTitle: 'Quick Links',
       servicesTitle: 'Our Core Services',
       vipClubTitle: 'Official Qatar Travel Club',

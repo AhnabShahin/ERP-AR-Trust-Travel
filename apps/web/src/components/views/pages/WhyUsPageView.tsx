@@ -31,7 +31,7 @@ export const WhyUsPageView: React.FC<WhyUsPageViewProps> = ({
   const pillars = [
     {
       title: 'Official Qatar Tourism DMC Licensing',
-      desc: 'Accredited under License #QTA-QA-8819. We adhere strictly to Qatar Tourism safety protocols, certified equipment, and licensed chauffeurs.',
+      desc: 'Accredited under License #QTA-QA-8819. We adhere strictly to Qatar Tourism safety protocols, certified equipment, and licensed drivers.',
       icon: ShieldCheck,
     },
     {

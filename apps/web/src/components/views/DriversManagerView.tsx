@@ -24,7 +24,7 @@ interface DriverForm {
   status: 'active' | 'inactive';
 }
 
-const blank = (): DriverForm => ({ name: '', username: '', email: '', phone: '', department: 'Chauffeur Fleet & Transfers', password: '', status: 'active' });
+const blank = (): DriverForm => ({ name: '', username: '', email: '', phone: '', department: 'Driver Fleet & Transfers', password: '', status: 'active' });
 
 export function DriversManagerView() {
   const [drivers, setDrivers] = useState<UserAccount[]>([]);
@@ -101,7 +101,7 @@ export function DriversManagerView() {
           <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <Car className="w-5 h-5 text-cyan-500" /> Drivers
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Chauffeur accounts (user role: driver-guide), linked to fleet vehicles.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Driver accounts (user role: driver-guide), linked to fleet vehicles.</p>
         </div>
         <button onClick={() => setEditing(blank())} className="px-4 py-2 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white flex items-center gap-1.5">
           <Plus className="w-4 h-4" /> Add driver

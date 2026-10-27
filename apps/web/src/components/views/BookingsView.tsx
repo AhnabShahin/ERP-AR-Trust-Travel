@@ -74,7 +74,7 @@ export const BookingsView: React.FC = () => {
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs transition cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>+ New Reservation</span>
+            <span>New Reservation</span>
           </button>
         </div>
       </div>
@@ -128,7 +128,7 @@ export const BookingsView: React.FC = () => {
                 <th className="py-3 px-4">PNR / Ref</th>
                 <th className="py-3 px-4">Passenger Details</th>
                 <th className="py-3 px-4">Service Package</th>
-                <th className="py-3 px-4">Chauffeur</th>
+                <th className="py-3 px-4">Driver</th>
                 <th className="py-3 px-4 text-right rtl:text-left">Total Value</th>
                 <th className="py-3 px-4 text-center">Status</th>
                 <th className="py-3 px-4 text-right rtl:text-left">Actions</th>

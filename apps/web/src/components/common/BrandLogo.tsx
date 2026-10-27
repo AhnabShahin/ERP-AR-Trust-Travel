@@ -95,7 +95,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         <div className="flex flex-col min-w-0">
           <div className="flex items-center gap-1.5">
             <span
-              className={`font-black text-sm sm:text-base tracking-tight uppercase font-sans ${
+              className={`font-black text-sm sm:text-base tracking-tight uppercase font-sans whitespace-nowrap ${
                 tone === 'auto'
                   ? 'text-slate-900 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-white dark:via-[#E7CF8A] dark:to-[#D4AF37]'
                   : 'text-transparent bg-clip-text bg-gradient-to-r from-white via-[#E7CF8A] to-[#D4AF37] drop-shadow-xs'
@@ -106,7 +106,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
           </div>
 
           <span
-            className={`text-[11px] sm:text-xs font-black tracking-wider uppercase ${
+            className={`text-[11px] sm:text-xs font-black tracking-wider uppercase whitespace-nowrap ${
               tone === 'auto'
                 ? 'text-[#0D3A48] dark:text-[#E7CF8A]'
                 : 'text-[#E7CF8A] drop-shadow-xs'

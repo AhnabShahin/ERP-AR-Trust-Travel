@@ -326,7 +326,7 @@ export const HotelBookingView: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm hover:shadow transition-all cursor-pointer active:scale-95"
           >
             <Plus className="w-4 h-4" />
-            <span>{isRtl ? '+ حجز فندقي جديد' : '+ New Hotel Booking'}</span>
+            <span>{isRtl ? 'حجز فندقي جديد' : 'New Hotel Booking'}</span>
           </button>
         </div>
       </div>

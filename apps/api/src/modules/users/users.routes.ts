@@ -26,6 +26,8 @@ const EDITABLE = [
   'address', 'city', 'country', 'nationality', 'passportNumber', 'companyName', 'bio',
   // Staff/driver duty status — set from the dispatch board + staff screen.
   'staffStatus', 'jobTitle',
+  // Driver profile — sourcing type (first/third party) + license details.
+  'driverType', 'licenseNumber', 'licenseCategory', 'experienceYears', 'spokenLanguages',
 ] as const;
 
 export const usersRouter = Router();

@@ -204,7 +204,7 @@ export const HolidayPackagesPageView: React.FC<HolidayPackagesPageViewProps> = (
             Want a Custom Multi-Day Itinerary or Private Yacht Glamping?
           </h2>
           <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto">
-            Our luxury travel designers customize hotel stays, desert Majlis glamping, and VIP chauffeur schedules according to your group size and preferences.
+            Our luxury travel designers customize hotel stays, desert Majlis glamping, and VIP driver schedules according to your group size and preferences.
           </p>
           <div className="pt-2">
             <a

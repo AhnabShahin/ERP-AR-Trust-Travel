@@ -607,13 +607,18 @@ export const AirportDeskPOSView: React.FC = () => {
             <select
               value={activeDeskId}
               onChange={(e) => setActiveDeskId(e.target.value)}
-              className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white focus:outline-none"
+              disabled={airportDesks.length === 0}
+              className="px-2.5 py-1 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700 text-xs font-bold text-slate-900 dark:text-white focus:outline-none disabled:opacity-60"
             >
-              {airportDesks.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.airportCode}: {d.deskCode} - {d.deskName} ({d.assignedEmployeeName || 'Unassigned'})
-                </option>
-              ))}
+              {airportDesks.length === 0 ? (
+                <option value="">No desks configured yet</option>
+              ) : (
+                airportDesks.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.airportCode}: {d.deskCode} - {d.deskName} ({d.assignedEmployeeName || 'Unassigned'})
+                  </option>
+                ))
+              )}
             </select>
           </div>
         </div>
@@ -777,7 +782,7 @@ export const AirportDeskPOSView: React.FC = () => {
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>+ Add New Agent Desk</span>
+                <span>Add New Agent Desk</span>
               </button>
             </div>
           </div>
@@ -1244,7 +1249,7 @@ export const AirportDeskPOSView: React.FC = () => {
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer self-start md:self-auto shrink-0"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Station / Assign Staff to Desk</span>
+              <span>Station / Assign Staff to Desk</span>
             </button>
           </div>
 
@@ -1660,7 +1665,7 @@ export const AirportDeskPOSView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-slate-500 text-[11px] mb-1">Assign Chauffeur / Guide:</label>
+                <label className="block text-slate-500 text-[11px] mb-1">Assign Driver / Guide:</label>
                 <select
                   value={selectedDriverId}
                   onChange={(e) => setSelectedDriverId(e.target.value)}

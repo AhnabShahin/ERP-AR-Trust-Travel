@@ -33,7 +33,7 @@ export const DispatchOpsView: React.FC = () => {
   });
 
   const handleSendDispatchAlert = (driver: Driver) => {
-    const msg = `AR Trust Dispatch: Chauffeur ${driver.name}, your assigned pickup at HIA Bay is confirmed. Active passengers: ${driver.activePassengers}. Mission: ${driver.currentMission}`;
+    const msg = `AR Trust Dispatch: Driver ${driver.name}, your assigned pickup at HIA Bay is confirmed. Active passengers: ${driver.activePassengers}. Mission: ${driver.currentMission}`;
     navigator.clipboard?.writeText(msg);
     setDispatchedId(driver.id);
     setTimeout(() => setDispatchedId(null), 2500);
@@ -49,7 +49,7 @@ export const DispatchOpsView: React.FC = () => {
             <span>{language === 'ar' ? 'غرفة العمليات والتوجيه الميداني (السائقون والمرشدون)' : 'Dispatch & Field Operations Control'}</span>
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Real-time telemetry, airport apron pickup permits & desert safari chauffeur dispatching
+            Real-time telemetry, airport apron pickup permits & desert safari driver dispatching
           </p>
         </div>
 

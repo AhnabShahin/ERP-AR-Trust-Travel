@@ -156,7 +156,7 @@ export const MyAccountView: React.FC = () => {
     { label: 'Executive Gold', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80' },
     { label: 'Operations Blue', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80' },
     { label: 'Airport Agent', url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80' },
-    { label: 'VIP Chauffeur', url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80' },
+    { label: 'VIP Driver', url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80' },
     { label: 'Female Executive', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' },
     { label: 'Traveler Guest', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80' },
   ];
@@ -484,7 +484,7 @@ export const MyAccountView: React.FC = () => {
               : currentRole === 'driver-guide'
               ? isRtl
                 ? 'بيانات السائق ورخصة القيادة'
-                : 'Chauffeur & License Details'
+                : 'Driver & License Details'
               : currentRole === 'vendor-partner'
               ? isRtl
                 ? 'بيانات الفندق والشركاء'
@@ -919,7 +919,7 @@ export const MyAccountView: React.FC = () => {
             <form onSubmit={handleSaveRoleDetails} className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-md">
               <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2 mb-6">
                 <Car className="w-5 h-5 text-amber-500" />
-                <span>{isRtl ? 'بيانات رخصة القيادة والأسطول الميداني' : 'Chauffeur License & Fleet Credentials'}</span>
+                <span>{isRtl ? 'بيانات رخصة القيادة والأسطول الميداني' : 'Driver License & Fleet Credentials'}</span>
               </h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -968,7 +968,7 @@ export const MyAccountView: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    value={currentUser.department || 'Chauffeur Fleet & Desert Guides'}
+                    value={currentUser.department || 'Driver Fleet & Desert Guides'}
                     readOnly
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 text-xs text-slate-500 cursor-not-allowed"
                   />

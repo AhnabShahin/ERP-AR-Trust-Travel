@@ -97,7 +97,7 @@ export const FlightDetailModal: React.FC = () => {
                         {b.packageName} · {b.paxCount} PAX
                       </div>
                       <div className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">
-                        Chauffeur: {b.driverName} ({b.driverVehicle})
+                        Driver: {b.driverName} ({b.driverVehicle})
                       </div>
                     </div>
 

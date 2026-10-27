@@ -142,7 +142,7 @@ export const TripInquiryModal: React.FC<TripInquiryModalProps> = ({
                 </optgroup>
                 <optgroup label="🚗 Airport Transfers & Fleet">
                   <option value="Mercedes-Benz V-Class VIP Airport Transfer">Mercedes-Benz V-Class VIP Transfer (QAR 280)</option>
-                  <option value="Toyota Land Cruiser 4x4 Chauffeur Transfer">Toyota Land Cruiser 4x4 Transfer (QAR 220)</option>
+                  <option value="Toyota Land Cruiser 4x4 Driver Transfer">Toyota Land Cruiser 4x4 Transfer (QAR 220)</option>
                   <option value="Executive Sedan Airport Pickup">Executive Sedan Transfer (QAR 120)</option>
                   <option value="Hyundai Staria / Group Van Transfer">Group Van Transfer (QAR 190)</option>
                 </optgroup>
