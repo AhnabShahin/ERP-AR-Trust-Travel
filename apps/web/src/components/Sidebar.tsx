@@ -37,7 +37,6 @@ import {
 import { useApp } from '../context/AppContext';
 import { imgSrc } from '../../lib/uploads';
 import { BrandLogo } from './common/BrandLogo';
-import { getRoleDashboardSlug } from '../utils/roleSlugs';
 
 export const Sidebar: React.FC = () => {
   const {
@@ -52,6 +51,10 @@ export const Sidebar: React.FC = () => {
     expenses,
     hotelVendors,
     hotelBookings,
+    bookings,
+    drivers,
+    guests,
+    employees,
     sidebarOpen,
     toggleSidebar,
     t,
@@ -151,13 +154,13 @@ export const Sidebar: React.FC = () => {
           id: 'dashboard',
           label: getDashboardNavLabel(),
           icon: LayoutDashboard,
-          badge: currentRole === 'super-admin' ? '/dashboard' : getRoleDashboardSlug(currentRole),
         },
         {
           id: 'my-account',
           label: language === 'ar' ? 'حسابي وبياناتي الشخصية' : 'My Account & Profile',
           icon: UserCheck,
-          badge: currentUser?.isEmailVerified ? 'Verified' : 'Verify Email',
+          // Email-verification badge: shown only when the account's verified flag is true.
+          badge: currentUser?.isEmailVerified ? 'Verified' : undefined,
           alert: !currentUser?.isEmailVerified,
         },
       ],
@@ -173,46 +176,40 @@ export const Sidebar: React.FC = () => {
           label: language === 'ar' ? 'بوابة وإحصائيات الفندق الشريك' : 'Hotel Partner Console & Bookings',
           icon: Building2,
           count: vendorHotelBookingsCount,
-          badge: currentRole === 'vendor-partner' ? 'My Hotel' : 'Partner',
         },
         {
           id: 'bookings',
           label: language === 'ar' ? 'حجوزات المنظومة الموحدة' : 'Unified Bookings Engine',
           icon: CalendarCheck2,
-          count: 8,
+          count: bookings.length,
         },
         {
           id: 'hotel-bookings',
           label: language === 'ar' ? 'منظومة حجز الفنادق' : 'Hotel Booking System',
           icon: Building2,
           count: hotelBookings.length,
-          badge: 'Qatar',
         },
         {
           id: 'vendors',
           label: language === 'ar' ? 'فنادق وشركاء قطر (Vendors)' : 'Hotel Vendors & Partners',
           icon: Building2,
           count: hotelVendors.length,
-          badge: '5★',
         },
         {
           id: 'platforms',
           label: language === 'ar' ? 'المنصات (جولات/نقل المطار)' : 'Online Platforms (Tour/Transfer)',
           icon: Share2,
-          badge: 'New',
         },
         {
           id: 'pos',
           label: language === 'ar' ? 'نقطة بيع مكاتب الوكلاء' : 'Agent Desk POS',
           icon: Store,
-          badge: 'Agent',
         },
         {
           id: 'guests',
           label: language === 'ar' ? 'لوحة العملاء والمسافرين (Customers)' : 'Customer & Guest Dashboard',
           icon: UserCheck,
-          count: 7,
-          badge: 'Customers',
+          count: guests.length,
         },
       ],
     },
@@ -226,25 +223,23 @@ export const Sidebar: React.FC = () => {
           id: 'dispatch',
           label: language === 'ar' ? 'توجيه الأسطول والكوادر' : 'Fleet & Field Ops',
           icon: Compass,
-          count: 28,
+          count: drivers.length,
         },
         {
           id: 'services',
           label: language === 'ar' ? 'باقات وخدمات الرحلات' : 'Tour Services & Packages',
           icon: Sparkles,
-          badge: currentRole === 'super-admin' ? 'Admin' : undefined,
         },
         {
           id: 'drivers-manager',
           label: language === 'ar' ? 'إدارة السائقين' : 'Drivers',
           icon: Car,
-          badge: 'New',
+          count: drivers.length,
         },
         {
           id: 'driver-portal',
           label: language === 'ar' ? 'لوحة مهام السائق' : 'Driver Mission Console',
           icon: Compass,
-          badge: 'Driver',
         },
       ],
     },
@@ -258,7 +253,7 @@ export const Sidebar: React.FC = () => {
           id: 'employees',
           label: language === 'ar' ? 'الموظفون' : 'Staff',
           icon: Users,
-          badge: 'Staff',
+          count: employees.length,
         },
         {
           id: 'payroll',
@@ -277,7 +272,6 @@ export const Sidebar: React.FC = () => {
           id: 'invoices',
           label: language === 'ar' ? 'الفواتير والمبيعات' : 'Invoices & Billing',
           icon: ReceiptText,
-          badge: 'New',
         },
         {
           id: 'payment-accounts',
@@ -295,7 +289,6 @@ export const Sidebar: React.FC = () => {
           label: language === 'ar' ? 'مصروفات الشركة واعتماداتها' : 'Company Expenses & Approvals',
           icon: DollarSign,
           count: pendingExpensesCount > 0 ? pendingExpensesCount : undefined,
-          badge: pendingExpensesCount > 0 ? `${pendingExpensesCount} Review` : undefined,
           alert: pendingExpensesCount > 0,
         },
         {
@@ -307,13 +300,11 @@ export const Sidebar: React.FC = () => {
           id: 'reports',
           label: language === 'ar' ? 'التقارير والأرباح (P&L)' : 'Financial Reports & P&L',
           icon: FileText,
-          badge: '68% Margin',
         },
         {
           id: 'reports-center',
           label: language === 'ar' ? 'مركز التقارير التحليلية' : 'Reports Center',
           icon: BarChart3,
-          badge: 'New',
         },
       ],
     },
@@ -345,7 +336,6 @@ export const Sidebar: React.FC = () => {
           id: 'accounts',
           label: language === 'ar' ? 'حسابات الدخول وكلمات المرور' : 'Accounts & Passwords (Admin)',
           icon: KeyRound,
-          badge: currentRole === 'super-admin' ? 'Admin' : undefined,
         },
         {
           id: 'audit-logs',

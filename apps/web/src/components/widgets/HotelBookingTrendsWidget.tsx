@@ -1,79 +1,149 @@
 import React, { useState, useMemo } from 'react';
-import { Building2, TrendingUp, ArrowUpRight, BedDouble, Globe, Store, ShieldCheck, Compass } from 'lucide-react';
+import { Building2, ArrowUpRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { CURRENT_APP_DATE, parseRecordDate } from '../../utils/dateFilter';
+import type { HotelBooking } from '../../types';
+
+const isOnline = (b: HotelBooking) => b.bookingSource === 'Online Web Portal';
+const isDesk = (b: HotelBooking) =>
+  b.bookingSource === 'Agent Desk (Hotel Lobby)' ||
+  b.bookingSource === 'Airport Desk Counter' ||
+  b.bookingSource === 'VIP Concierge Direct' ||
+  !b.bookingSource;
+
+// Parse a hotel booking's sale timestamp (createdAt), tolerant of the app's
+// "13:05 PM Today", ISO and generic date formats.
+function saleDateTime(b: HotelBooking): Date | null {
+  const s = (b.createdAt || b.checkInDate || '').trim();
+  if (!s) return null;
+  const lower = s.toLowerCase();
+  if (lower.includes('today') || lower.includes('yesterday') || lower.includes('now')) {
+    const base = lower.includes('yesterday') ? new Date(2026, 9, 8) : new Date(CURRENT_APP_DATE);
+    const tm = s.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (tm) {
+      let h = parseInt(tm[1], 10);
+      const m = parseInt(tm[2], 10);
+      const mer = tm[3]?.toUpperCase();
+      if (mer === 'PM' && h < 12) h += 12;
+      if (mer === 'AM' && h === 12) h = 0;
+      base.setHours(h, m, 0, 0);
+    }
+    return base;
+  }
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d;
+  return parseRecordDate(s);
+}
+
+const sameDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+const dayStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+interface Bucket {
+  label: string;
+  desk: number;
+  online: number;
+  deskVal: number;
+  onlineVal: number;
+}
 
 export const HotelBookingTrendsWidget: React.FC = () => {
-  const { language, convertAmount, hotelBookings, hotelVendors } = useApp();
+  const { language, convertAmount, hotelBookings } = useApp();
   const [timeline, setTimeline] = useState<'today' | '7d' | '30d'>('today');
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
 
-  // Compute live metrics from real AppContext hotelBookings
-  const metrics = useMemo(() => {
-    const total = hotelBookings.length;
-    const onlineList = hotelBookings.filter(
-      (b) => b.bookingSource === 'Online Web Portal'
-    );
-    const deskList = hotelBookings.filter(
-      (b) =>
-        b.bookingSource === 'Agent Desk (Hotel Lobby)' ||
-        b.bookingSource === 'Airport Desk Counter' ||
-        b.bookingSource === 'VIP Concierge Direct' ||
-        !b.bookingSource
-    );
+  const windowList = useMemo(() => {
+    const today = dayStart(CURRENT_APP_DATE);
+    return hotelBookings.filter((b) => {
+      const dt = saleDateTime(b);
+      if (!dt) return false;
+      if (timeline === 'today') return sameDay(dt, CURRENT_APP_DATE);
+      const diff = (today.getTime() - dayStart(dt).getTime()) / 86400000;
+      if (timeline === '7d') return diff >= 0 && diff < 7;
+      return diff >= 0 && diff < 30;
+    });
+  }, [hotelBookings, timeline]);
 
+  const metrics = useMemo(() => {
+    const total = windowList.length;
+    const onlineList = windowList.filter(isOnline);
+    const deskList = windowList.filter(isDesk);
     const onlineCount = onlineList.length;
     const deskCount = deskList.length;
+    const onlineRevQAR = onlineList.reduce((s, b) => s + (b.totalQAR || 0), 0);
+    const deskRevQAR = deskList.reduce((s, b) => s + (b.totalQAR || 0), 0);
+    const classified = deskCount + onlineCount;
+    const deskShare = classified > 0 ? Math.round((deskCount / classified) * 100) : 0;
+    const onlineShare = classified > 0 ? 100 - deskShare : 0;
+    return { total, onlineCount, deskCount, onlineRevQAR, deskRevQAR, deskShare, onlineShare };
+  }, [windowList]);
 
-    const onlineRevQAR = onlineList.reduce((sum, b) => sum + (b.totalQAR || 0), 0);
-    const deskRevQAR = deskList.reduce((sum, b) => sum + (b.totalQAR || 0), 0);
-    const totalRevQAR = onlineRevQAR + deskRevQAR;
-
-    const deskShare = total > 0 ? Math.round((deskCount / total) * 100) : 60;
-    const onlineShare = total > 0 ? Math.round((onlineCount / total) * 100) : 40;
-
-    return {
-      total,
-      onlineCount,
-      deskCount,
-      onlineRevQAR,
-      deskRevQAR,
-      totalRevQAR,
-      deskShare,
-      onlineShare,
+  const chartData = useMemo<Bucket[]>(() => {
+    const today = dayStart(CURRENT_APP_DATE);
+    const add = (bucket: Bucket, b: HotelBooking) => {
+      if (isOnline(b)) {
+        bucket.online += 1;
+        bucket.onlineVal += b.totalQAR || 0;
+      } else {
+        bucket.desk += 1;
+        bucket.deskVal += b.totalQAR || 0;
+      }
     };
-  }, [hotelBookings]);
 
-  // Hourly / daily chart distribution for hotel reservations
-  const timelineData = useMemo(() => {
     if (timeline === 'today') {
-      return [
-        { label: '06:00', desk: 2, online: 1, deskVal: 3800, onlineVal: 1900 },
-        { label: '09:00', desk: 5, online: 3, deskVal: 9500, onlineVal: 5700 },
-        { label: '12:00', desk: 8, online: 5, deskVal: 15200, onlineVal: 9500 },
-        { label: '15:00', desk: 12, online: 7, deskVal: 22800, onlineVal: 13300 },
-        { label: '18:00', desk: 16, online: 10, deskVal: 30400, onlineVal: 19000 },
-        { label: '21:00', desk: 19, online: 13, deskVal: 36100, onlineVal: 24700 },
-        { label: '23:00', desk: 22, online: 15, deskVal: 41800, onlineVal: 28500 },
-      ];
-    } else if (timeline === '7d') {
-      return [
-        { label: 'Mon', desk: 14, online: 9, deskVal: 26600, onlineVal: 17100 },
-        { label: 'Tue', desk: 18, online: 11, deskVal: 34200, onlineVal: 20900 },
-        { label: 'Wed', desk: 22, online: 14, deskVal: 41800, onlineVal: 26600 },
-        { label: 'Thu', desk: 28, online: 19, deskVal: 53200, onlineVal: 36100 },
-        { label: 'Fri', desk: 35, online: 24, deskVal: 66500, onlineVal: 45600 },
-        { label: 'Sat', desk: 31, online: 22, deskVal: 58900, onlineVal: 41800 },
-        { label: 'Sun', desk: 24, online: 16, deskVal: 45600, onlineVal: 30400 },
-      ];
-    } else {
-      return [
-        { label: 'Week 1', desk: 82, online: 54, deskVal: 155800, onlineVal: 102600 },
-        { label: 'Week 2', desk: 96, online: 68, deskVal: 182400, onlineVal: 129200 },
-        { label: 'Week 3', desk: 115, online: 79, deskVal: 218500, onlineVal: 150100 },
-        { label: 'Week 4', desk: 138, online: 92, deskVal: 262200, onlineVal: 174800 },
-      ];
+      const slots = [6, 9, 12, 15, 18, 21, 23];
+      const buckets: Bucket[] = slots.map((h) => ({
+        label: `${String(h).padStart(2, '0')}:00`,
+        desk: 0,
+        online: 0,
+        deskVal: 0,
+        onlineVal: 0,
+      }));
+      for (const b of windowList) {
+        const dt = saleDateTime(b);
+        if (!dt) continue;
+        const h = dt.getHours();
+        let idx = slots.findIndex((s, i) => h >= s && (i === slots.length - 1 || h < slots[i + 1]));
+        if (h < slots[0]) idx = 0;
+        if (idx === -1) idx = slots.length - 1;
+        add(buckets[idx], b);
+      }
+      return buckets;
     }
-  }, [timeline]);
+
+    if (timeline === '7d') {
+      const buckets: Bucket[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const day = new Date(today.getTime() - i * 86400000);
+        buckets.push({ label: WEEKDAY_SHORT[day.getDay()], desk: 0, online: 0, deskVal: 0, onlineVal: 0 });
+      }
+      for (const b of windowList) {
+        const dt = saleDateTime(b);
+        if (!dt) continue;
+        const diff = Math.floor((today.getTime() - dayStart(dt).getTime()) / 86400000);
+        const idx = 6 - diff;
+        if (idx >= 0 && idx < 7) add(buckets[idx], b);
+      }
+      return buckets;
+    }
+
+    const buckets: Bucket[] = [0, 1, 2, 3].map((w) => ({
+      label: `Week ${w + 1}`,
+      desk: 0,
+      online: 0,
+      deskVal: 0,
+      onlineVal: 0,
+    }));
+    for (const b of windowList) {
+      const dt = saleDateTime(b);
+      if (!dt) continue;
+      const diff = Math.floor((today.getTime() - dayStart(dt).getTime()) / 86400000);
+      const weekFromNow = Math.min(3, Math.floor(diff / 7));
+      add(buckets[3 - weekFromNow], b);
+    }
+    return buckets;
+  }, [windowList, timeline]);
 
   // SVG Chart Dimensions
   const width = 500;
@@ -82,22 +152,34 @@ export const HotelBookingTrendsWidget: React.FC = () => {
   const paddingY = 20;
 
   const maxVal = useMemo(() => {
-    const highest = Math.max(...timelineData.map((d) => Math.max(d.desk, d.online)), 20);
-    return Math.ceil(highest * 1.2);
-  }, [timelineData]);
+    const highest = Math.max(...chartData.map((d) => Math.max(d.desk, d.online)), 4);
+    return Math.ceil(highest * 1.25);
+  }, [chartData]);
 
   const getX = (index: number) =>
-    paddingX + (index * (width - 2 * paddingX)) / (timelineData.length - 1);
-  const getY = (val: number) =>
-    height - paddingY - (val * (height - 2 * paddingY)) / maxVal;
+    paddingX + (index * (width - 2 * paddingX)) / Math.max(1, chartData.length - 1);
+  const getY = (val: number) => height - paddingY - (val * (height - 2 * paddingY)) / maxVal;
 
-  const deskPoints = timelineData.map((d, i) => `${getX(i)},${getY(d.desk)}`).join(' ');
-  const onlinePoints = timelineData.map((d, i) => `${getX(i)},${getY(d.online)}`).join(' ');
+  const deskPoints = chartData.map((d, i) => `${getX(i)},${getY(d.desk)}`).join(' ');
+  const onlinePoints = chartData.map((d, i) => `${getX(i)},${getY(d.online)}`).join(' ');
 
-  const deskArea = `${deskPoints} ${getX(timelineData.length - 1)},${height - paddingY} ${getX(0)},${height - paddingY}`;
-  const onlineArea = `${onlinePoints} ${getX(timelineData.length - 1)},${height - paddingY} ${getX(0)},${height - paddingY}`;
+  const deskArea = `${deskPoints} ${getX(chartData.length - 1)},${height - paddingY} ${getX(0)},${height - paddingY}`;
+  const onlineArea = `${onlinePoints} ${getX(chartData.length - 1)},${height - paddingY} ${getX(0)},${height - paddingY}`;
 
-  const currentHover = hoveredPoint !== null ? timelineData[hoveredPoint] : timelineData[timelineData.length - 1];
+  const currentHover =
+    hoveredPoint !== null ? chartData[hoveredPoint] : chartData[chartData.length - 1];
+
+  // Top hotel by booking volume in the window.
+  const topHotel = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const b of windowList) counts.set(b.hotelName, (counts.get(b.hotelName) || 0) + 1);
+    let best: { name: string; count: number } | null = null;
+    for (const [name, count] of counts) if (!best || count > best.count) best = { name, count };
+    const pct = best && windowList.length > 0 ? Math.round((best.count / windowList.length) * 100) : 0;
+    return best ? { name: best.name, pct } : null;
+  }, [windowList]);
+
+  const gridLines = [0, Math.round(maxVal / 2), maxVal];
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs transition-colors flex flex-col justify-between">
@@ -181,14 +263,12 @@ export const HotelBookingTrendsWidget: React.FC = () => {
           <div className="mt-1.5 flex items-baseline justify-between gap-2">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black font-mono text-slate-900 dark:text-white tabular-nums">
-                {metrics.deskCount || 22}
+                {metrics.deskCount}
               </span>
-              <span className="text-xs text-slate-500 font-mono font-semibold">
-                Stays Booked
-              </span>
+              <span className="text-xs text-slate-500 font-mono font-semibold">Stays Booked</span>
             </div>
             <span className="text-xs font-mono font-bold text-purple-700 dark:text-purple-300">
-              {convertAmount(metrics.deskRevQAR || 41800).formatted}
+              {convertAmount(metrics.deskRevQAR).formatted}
             </span>
           </div>
           <div className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
@@ -212,14 +292,12 @@ export const HotelBookingTrendsWidget: React.FC = () => {
           <div className="mt-1.5 flex items-baseline justify-between gap-2">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black font-mono text-slate-900 dark:text-white tabular-nums">
-                {metrics.onlineCount || 15}
+                {metrics.onlineCount}
               </span>
-              <span className="text-xs text-slate-500 font-mono font-semibold">
-                Stays Booked
-              </span>
+              <span className="text-xs text-slate-500 font-mono font-semibold">Stays Booked</span>
             </div>
             <span className="text-xs font-mono font-bold text-indigo-700 dark:text-indigo-300">
-              {convertAmount(metrics.onlineRevQAR || 28500).formatted}
+              {convertAmount(metrics.onlineRevQAR).formatted}
             </span>
           </div>
           <div className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
@@ -230,10 +308,7 @@ export const HotelBookingTrendsWidget: React.FC = () => {
 
       {/* Interactive SVG Chart */}
       <div className="relative pt-1">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="w-full h-36 overflow-visible"
-        >
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-36 overflow-visible">
           <defs>
             <linearGradient id="hotelDeskFill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#9333ea" stopOpacity="0.25" />
@@ -246,7 +321,7 @@ export const HotelBookingTrendsWidget: React.FC = () => {
           </defs>
 
           {/* Grid lines */}
-          {[0, Math.round(maxVal / 2), maxVal].map((v) => (
+          {gridLines.map((v) => (
             <line
               key={v}
               x1={paddingX}
@@ -283,7 +358,7 @@ export const HotelBookingTrendsWidget: React.FC = () => {
           />
 
           {/* Data Points */}
-          {timelineData.map((d, i) => {
+          {chartData.map((d, i) => {
             const x = getX(i);
             const yDesk = getY(d.desk);
             const yOnline = getY(d.online);
@@ -302,7 +377,6 @@ export const HotelBookingTrendsWidget: React.FC = () => {
                     strokeDasharray="2 2"
                   />
                 )}
-                {/* Desk dot */}
                 <circle
                   cx={x}
                   cy={yDesk}
@@ -310,7 +384,6 @@ export const HotelBookingTrendsWidget: React.FC = () => {
                   className="fill-purple-600 stroke-white dark:stroke-slate-900 transition-all"
                   strokeWidth="2"
                 />
-                {/* Online dot */}
                 <circle
                   cx={x}
                   cy={yOnline}
@@ -325,7 +398,7 @@ export const HotelBookingTrendsWidget: React.FC = () => {
 
         {/* X-Axis Labels */}
         <div className="flex justify-between px-6 text-[10px] font-mono text-slate-400 mt-1">
-          {timelineData.map((d, i) => (
+          {chartData.map((d, i) => (
             <span
               key={d.label}
               onMouseEnter={() => setHoveredPoint(i)}
@@ -343,19 +416,19 @@ export const HotelBookingTrendsWidget: React.FC = () => {
       <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-mono font-semibold text-slate-500 dark:text-slate-400">
-            {currentHover.label}:
+            {currentHover?.label}:
           </span>
           <span className="text-purple-600 dark:text-purple-400 font-semibold font-mono">
-            Hotel Desk: {currentHover.desk} stays ({convertAmount(currentHover.deskVal).formatted})
+            Hotel Desk: {currentHover?.desk ?? 0} stays ({convertAmount(currentHover?.deskVal || 0).formatted})
           </span>
           <span className="text-slate-300 dark:text-slate-600">·</span>
           <span className="text-indigo-600 dark:text-indigo-400 font-semibold font-mono">
-            Online: {currentHover.online} stays ({convertAmount(currentHover.onlineVal).formatted})
+            Online: {currentHover?.online ?? 0} stays ({convertAmount(currentHover?.onlineVal || 0).formatted})
           </span>
         </div>
 
         <div className="text-[10px] text-slate-400 font-mono">
-          Top Hotel: Katara Towers (42% volume)
+          {topHotel ? `Top Hotel: ${topHotel.name} (${topHotel.pct}% volume)` : 'No hotel stays in range'}
         </div>
       </div>
     </div>

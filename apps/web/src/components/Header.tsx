@@ -350,18 +350,6 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
           {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
         </button>
 
-        {/* Direct Link to Public Website */}
-        {onNavigateToHome && (
-          <button
-            onClick={onNavigateToHome}
-            className="hidden xl:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-teal-500/30 bg-teal-50/70 dark:bg-teal-950/40 hover:bg-teal-100/60 text-xs font-semibold text-teal-800 dark:text-teal-300 transition-all cursor-pointer shadow-xs"
-            title="Switch to Public Website (/)"
-          >
-            <Globe className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-            <span className="hidden md:inline">Website (/)</span>
-          </button>
-        )}
-
         {/* Notifications Bell */}
         <div className="relative">
           <button

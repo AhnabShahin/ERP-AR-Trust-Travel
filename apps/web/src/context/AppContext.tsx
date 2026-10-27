@@ -302,7 +302,7 @@ const TRANSLATIONS: Record<string, { en: string; ar: string }> = {
 
   // Header
   searchPlaceholder: { en: 'Search PNR, passenger name, flight number, voucher...', ar: 'ابحث برقم الحجز، اسم الراكب، رقم الرحلة، القسيمة...' },
-  newBooking: { en: '+ New Booking', ar: '+ حجز جديد' },
+  newBooking: { en: 'New Booking', ar: 'حجز جديد' },
   liveFx: { en: 'Live FX', ar: 'أسعار الصرف' },
   activeBranch: { en: 'Hamad Int’l Airport (HIA) - Counter 4', ar: 'مطار حمد الدولي - كاونتر 4' },
 

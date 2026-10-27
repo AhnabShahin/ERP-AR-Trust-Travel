@@ -1,60 +1,164 @@
 import React, { useState, useMemo } from 'react';
-import { TrendingUp, ArrowUpRight, Compass, Globe, Store } from 'lucide-react';
+import { TrendingUp, ArrowUpRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { CURRENT_APP_DATE, parseRecordDate } from '../../utils/dateFilter';
+import type { Booking } from '../../types';
+
+const DESK_SOURCES = ['Airport Desk', 'Agent Desk'];
+const ONLINE_SOURCES = [
+  'Website Direct Lead',
+  'Web Integration API',
+  'Online Web',
+  'Website Online Gateway',
+  'Website Online Lead',
+  'OTA Partner',
+];
+
+const isDesk = (b: Booking) => DESK_SOURCES.includes(b.source);
+const isOnline = (b: Booking) => ONLINE_SOURCES.includes(b.source);
+
+// Parse a booking's sale timestamp (createdAt). Handles the "13:05 PM Today",
+// ISO strings and the generic date formats used across the app.
+function saleDateTime(b: Booking): Date | null {
+  const s = (b.createdAt || b.bookingDate || '').trim();
+  if (!s) return null;
+  const lower = s.toLowerCase();
+  if (lower.includes('today') || lower.includes('yesterday') || lower.includes('now')) {
+    const base = lower.includes('yesterday')
+      ? new Date(2026, 9, 8)
+      : new Date(CURRENT_APP_DATE);
+    const tm = s.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (tm) {
+      let h = parseInt(tm[1], 10);
+      const m = parseInt(tm[2], 10);
+      const mer = tm[3]?.toUpperCase();
+      if (mer === 'PM' && h < 12) h += 12;
+      if (mer === 'AM' && h === 12) h = 0;
+      base.setHours(h, m, 0, 0);
+    }
+    return base;
+  }
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d;
+  return parseRecordDate(s);
+}
+
+const sameDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+
+const dayStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+interface Bucket {
+  label: string;
+  desk: number;
+  online: number;
+  deskVal: number;
+  onlineVal: number;
+}
 
 export const BookingTrendsWidget: React.FC = () => {
   const { language, convertAmount, bookings } = useApp();
   const [timeline, setTimeline] = useState<'today' | '7d' | '30d'>('today');
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
 
-  // Compute live metrics from real AppContext bookings
-  const metrics = useMemo(() => {
-    const total = bookings.length;
-    const deskList = bookings.filter(
-      (b) => b.source === 'Airport Desk' || b.source === 'Agent Desk'
-    );
-    const onlineList = bookings.filter(
-      (b) =>
-        b.source === 'Website Direct Lead' ||
-        b.source === 'Web Integration API' ||
-        b.source === 'Online Web' ||
-        b.source === 'Website Online Gateway' ||
-        b.source === 'Website Online Lead'
-    );
+  // Bookings within the selected timeline window (relative to the app's date).
+  const windowList = useMemo(() => {
+    const today = dayStart(CURRENT_APP_DATE);
+    return bookings.filter((b) => {
+      const dt = saleDateTime(b);
+      if (!dt) return false;
+      if (timeline === 'today') return sameDay(dt, CURRENT_APP_DATE);
+      const diff = (today.getTime() - dayStart(dt).getTime()) / 86400000;
+      if (timeline === '7d') return diff >= 0 && diff < 7;
+      return diff >= 0 && diff < 30;
+    });
+  }, [bookings, timeline]);
 
+  const metrics = useMemo(() => {
+    const total = windowList.length;
+    const deskList = windowList.filter(isDesk);
+    const onlineList = windowList.filter(isOnline);
     const deskCount = deskList.length;
     const onlineCount = onlineList.length;
+    const deskRevQAR = deskList.reduce((s, b) => s + (b.totalQAR || 0), 0);
+    const onlineRevQAR = onlineList.reduce((s, b) => s + (b.totalQAR || 0), 0);
+    const classified = deskCount + onlineCount;
+    const deskShare = classified > 0 ? Math.round((deskCount / classified) * 100) : 0;
+    const onlineShare = classified > 0 ? 100 - deskShare : 0;
+    return { total, deskCount, onlineCount, deskRevQAR, onlineRevQAR, deskShare, onlineShare };
+  }, [windowList]);
 
-    const deskRevQAR = deskList.reduce((sum, b) => sum + (b.totalQAR || 0), 0);
-    const onlineRevQAR = onlineList.reduce((sum, b) => sum + (b.totalQAR || 0), 0);
-    const totalRevQAR = deskRevQAR + onlineRevQAR;
+  // Time-series buckets built from the real windowed bookings.
+  const chartData = useMemo<Bucket[]>(() => {
+    const today = dayStart(CURRENT_APP_DATE);
 
-    const deskShare = total > 0 ? Math.round((deskCount / total) * 100) : 57;
-    const onlineShare = total > 0 ? Math.round((onlineCount / total) * 100) : 43;
-
-    return {
-      total,
-      deskCount,
-      onlineCount,
-      deskRevQAR,
-      onlineRevQAR,
-      totalRevQAR,
-      deskShare,
-      onlineShare,
+    const add = (bucket: Bucket, b: Booking) => {
+      if (isDesk(b)) {
+        bucket.desk += 1;
+        bucket.deskVal += b.totalQAR || 0;
+      } else {
+        // everything not an explicit desk sale counts as online/web channel
+        bucket.online += 1;
+        bucket.onlineVal += b.totalQAR || 0;
+      }
     };
-  }, [bookings]);
 
-  // Hourly dataset for Today
-  const hourlyData = [
-    { time: '06:00', desk: 4, online: 3, deskVal: 1600, onlineVal: 1200 },
-    { time: '08:00', desk: 8, online: 6, deskVal: 3200, onlineVal: 2400 },
-    { time: '10:00', desk: 14, online: 9, deskVal: 5800, onlineVal: 3600 },
-    { time: '12:00', desk: 22, online: 15, deskVal: 9100, onlineVal: 6200 },
-    { time: '14:00', desk: 18, online: 12, deskVal: 7600, onlineVal: 4900 },
-    { time: '16:00', desk: 26, online: 16, deskVal: 11200, onlineVal: 6800 },
-    { time: '18:00', desk: 29, online: 21, deskVal: 13400, onlineVal: 9100 },
-    { time: '20:00', desk: 20, online: 17, deskVal: 8800, onlineVal: 7400 },
-  ];
+    if (timeline === 'today') {
+      const slots = [6, 8, 10, 12, 14, 16, 18, 20];
+      const buckets: Bucket[] = slots.map((h) => ({
+        label: `${String(h).padStart(2, '0')}:00`,
+        desk: 0,
+        online: 0,
+        deskVal: 0,
+        onlineVal: 0,
+      }));
+      for (const b of windowList) {
+        const dt = saleDateTime(b);
+        if (!dt) continue;
+        const h = dt.getHours();
+        let idx = slots.findIndex((s, i) => h >= s && (i === slots.length - 1 || h < slots[i + 1]));
+        if (h < slots[0]) idx = 0;
+        if (idx === -1) idx = slots.length - 1;
+        add(buckets[idx], b);
+      }
+      return buckets;
+    }
+
+    if (timeline === '7d') {
+      const buckets: Bucket[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const day = new Date(today.getTime() - i * 86400000);
+        buckets.push({ label: WEEKDAY_SHORT[day.getDay()], desk: 0, online: 0, deskVal: 0, onlineVal: 0 });
+      }
+      for (const b of windowList) {
+        const dt = saleDateTime(b);
+        if (!dt) continue;
+        const diff = Math.floor((today.getTime() - dayStart(dt).getTime()) / 86400000);
+        const idx = 6 - diff;
+        if (idx >= 0 && idx < 7) add(buckets[idx], b);
+      }
+      return buckets;
+    }
+
+    // 30d → 4 weekly buckets (Week 1 = oldest)
+    const buckets: Bucket[] = [0, 1, 2, 3].map((w) => ({
+      label: `Week ${w + 1}`,
+      desk: 0,
+      online: 0,
+      deskVal: 0,
+      onlineVal: 0,
+    }));
+    for (const b of windowList) {
+      const dt = saleDateTime(b);
+      if (!dt) continue;
+      const diff = Math.floor((today.getTime() - dayStart(dt).getTime()) / 86400000);
+      const weekFromNow = Math.min(3, Math.floor(diff / 7));
+      add(buckets[3 - weekFromNow], b);
+    }
+    return buckets;
+  }, [windowList, timeline]);
 
   // SVG Chart Dimensions
   const width = 500;
@@ -62,21 +166,32 @@ export const BookingTrendsWidget: React.FC = () => {
   const paddingX = 30;
   const paddingY = 20;
 
-  const maxVal = 32;
+  const maxVal = useMemo(() => {
+    const highest = Math.max(...chartData.map((d) => Math.max(d.desk, d.online)), 4);
+    return Math.ceil(highest * 1.25);
+  }, [chartData]);
 
   const getX = (index: number) =>
-    paddingX + (index * (width - 2 * paddingX)) / (hourlyData.length - 1);
-  const getY = (val: number) =>
-    height - paddingY - (val * (height - 2 * paddingY)) / maxVal;
+    paddingX + (index * (width - 2 * paddingX)) / Math.max(1, chartData.length - 1);
+  const getY = (val: number) => height - paddingY - (val * (height - 2 * paddingY)) / maxVal;
 
-  // Generate SVG path strings
-  const deskPoints = hourlyData.map((d, i) => `${getX(i)},${getY(d.desk)}`).join(' ');
-  const onlinePoints = hourlyData.map((d, i) => `${getX(i)},${getY(d.online)}`).join(' ');
+  const deskPoints = chartData.map((d, i) => `${getX(i)},${getY(d.desk)}`).join(' ');
+  const onlinePoints = chartData.map((d, i) => `${getX(i)},${getY(d.online)}`).join(' ');
 
-  const deskArea = `${deskPoints} ${getX(hourlyData.length - 1)},${height - paddingY} ${getX(0)},${height - paddingY}`;
-  const onlineArea = `${onlinePoints} ${getX(hourlyData.length - 1)},${height - paddingY} ${getX(0)},${height - paddingY}`;
+  const deskArea = `${deskPoints} ${getX(chartData.length - 1)},${height - paddingY} ${getX(0)},${height - paddingY}`;
+  const onlineArea = `${onlinePoints} ${getX(chartData.length - 1)},${height - paddingY} ${getX(0)},${height - paddingY}`;
 
-  const currentHover = hoveredPoint !== null ? hourlyData[hoveredPoint] : hourlyData[hourlyData.length - 1];
+  const currentHover =
+    hoveredPoint !== null ? chartData[hoveredPoint] : chartData[chartData.length - 1];
+
+  // Peak bucket (by total bookings) for the footer note.
+  const peak = useMemo(() => {
+    let best = chartData[0];
+    for (const d of chartData) if (d.desk + d.online > (best?.desk || 0) + (best?.online || 0)) best = d;
+    return best;
+  }, [chartData]);
+
+  const gridLines = [0, Math.round(maxVal / 2), maxVal];
 
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-xs transition-colors flex flex-col justify-between">
@@ -160,14 +275,14 @@ export const BookingTrendsWidget: React.FC = () => {
           <div className="mt-1.5 flex items-baseline justify-between gap-2">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black font-mono text-slate-900 dark:text-white tabular-nums">
-                {metrics.deskCount || 68}
+                {metrics.deskCount}
               </span>
               <span className="text-xs text-slate-500 font-mono font-semibold">
                 Services Booked
               </span>
             </div>
             <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-300">
-              {convertAmount(metrics.deskRevQAR || 58650).formatted}
+              {convertAmount(metrics.deskRevQAR).formatted}
             </span>
           </div>
           <div className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
@@ -191,14 +306,14 @@ export const BookingTrendsWidget: React.FC = () => {
           <div className="mt-1.5 flex items-baseline justify-between gap-2">
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-black font-mono text-slate-900 dark:text-white tabular-nums">
-                {metrics.onlineCount || 52}
+                {metrics.onlineCount}
               </span>
               <span className="text-xs text-slate-500 font-mono font-semibold">
                 Services Booked
               </span>
             </div>
             <span className="text-xs font-mono font-bold text-blue-700 dark:text-blue-300">
-              {convertAmount(metrics.onlineRevQAR || 44300).formatted}
+              {convertAmount(metrics.onlineRevQAR).formatted}
             </span>
           </div>
           <div className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
@@ -209,10 +324,7 @@ export const BookingTrendsWidget: React.FC = () => {
 
       {/* Interactive SVG Chart */}
       <div className="relative pt-1">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="w-full h-36 overflow-visible"
-        >
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-36 overflow-visible">
           <defs>
             <linearGradient id="deskFill" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
@@ -225,7 +337,7 @@ export const BookingTrendsWidget: React.FC = () => {
           </defs>
 
           {/* Grid lines */}
-          {[0, 10, 20, 30].map((v) => (
+          {gridLines.map((v) => (
             <line
               key={v}
               x1={paddingX}
@@ -262,15 +374,14 @@ export const BookingTrendsWidget: React.FC = () => {
           />
 
           {/* Data Points */}
-          {hourlyData.map((d, i) => {
+          {chartData.map((d, i) => {
             const x = getX(i);
             const yDesk = getY(d.desk);
             const yOnline = getY(d.online);
             const isHovered = hoveredPoint === i;
 
             return (
-              <g key={d.time} className="cursor-pointer" onMouseEnter={() => setHoveredPoint(i)}>
-                {/* Vertical cursor guide when hovered */}
+              <g key={d.label} className="cursor-pointer" onMouseEnter={() => setHoveredPoint(i)}>
                 {isHovered && (
                   <line
                     x1={x}
@@ -282,7 +393,6 @@ export const BookingTrendsWidget: React.FC = () => {
                     strokeDasharray="2 2"
                   />
                 )}
-                {/* Desk dot */}
                 <circle
                   cx={x}
                   cy={yDesk}
@@ -290,7 +400,6 @@ export const BookingTrendsWidget: React.FC = () => {
                   className="fill-emerald-500 stroke-white dark:stroke-slate-900 transition-all"
                   strokeWidth="2"
                 />
-                {/* Online dot */}
                 <circle
                   cx={x}
                   cy={yOnline}
@@ -305,15 +414,15 @@ export const BookingTrendsWidget: React.FC = () => {
 
         {/* X-Axis Labels */}
         <div className="flex justify-between px-6 text-[10px] font-mono text-slate-400 mt-1">
-          {hourlyData.map((d, i) => (
+          {chartData.map((d, i) => (
             <span
-              key={d.time}
+              key={d.label}
               onMouseEnter={() => setHoveredPoint(i)}
               className={`cursor-pointer transition-colors ${
                 hoveredPoint === i ? 'text-slate-900 dark:text-white font-bold' : ''
               }`}
             >
-              {d.time}
+              {d.label}
             </span>
           ))}
         </div>
@@ -323,17 +432,19 @@ export const BookingTrendsWidget: React.FC = () => {
       <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-2">
           <span className="text-[11px] font-mono font-semibold text-slate-500 dark:text-slate-400">
-            {currentHover.time}:
+            {currentHover?.label}:
           </span>
           <span className="text-emerald-600 dark:text-emerald-400 font-semibold font-mono">
-            Desk: {currentHover.desk} bookings ({convertAmount(currentHover.deskVal).formatted})
+            Desk: {currentHover?.desk ?? 0} bookings ({convertAmount(currentHover?.deskVal || 0).formatted})
           </span>
           <span className="text-slate-300 dark:text-slate-600">·</span>
           <span className="text-blue-600 dark:text-blue-400 font-semibold font-mono">
-            Web: {currentHover.online} bookings
+            Web: {currentHover?.online ?? 0} bookings
           </span>
         </div>
-        <span className="text-[10px] text-slate-400 font-mono">Peak hour: 18:00 (Qatar Eve Arrivals)</span>
+        <span className="text-[10px] text-slate-400 font-mono">
+          {peak && peak.desk + peak.online > 0 ? `Peak: ${peak.label}` : 'No sales in range'}
+        </span>
       </div>
     </div>
   );

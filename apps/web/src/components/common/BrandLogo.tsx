@@ -103,15 +103,6 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
             >
               AR TRUST
             </span>
-            <span
-              className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${
-                tone === 'auto'
-                  ? 'text-amber-800 dark:text-[#E7CF8A] bg-amber-100/80 dark:bg-[#D4AF37]/20 border-amber-300 dark:border-[#D4AF37]/40'
-                  : 'text-[#E7CF8A] bg-[#D4AF37]/20 border-[#D4AF37]/50 shadow-xs'
-              }`}
-            >
-              QATAR
-            </span>
           </div>
 
           <span

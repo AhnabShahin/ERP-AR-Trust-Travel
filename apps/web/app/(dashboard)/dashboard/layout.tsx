@@ -73,7 +73,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <button
         type="button"
         onClick={() => router.push('/')}
-        className="fixed bottom-6 left-6 z-40 px-3.5 py-2.5 rounded-2xl bg-slate-900/95 hover:bg-teal-900/90 text-white border border-slate-700 hover:border-teal-500 shadow-2xl flex items-center gap-2 text-xs font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+        className="fixed bottom-6 right-6 rtl:right-auto rtl:left-6 z-40 px-3.5 py-2.5 rounded-2xl bg-slate-900/95 hover:bg-teal-900/90 text-white border border-slate-700 hover:border-teal-500 shadow-2xl flex items-center gap-2 text-xs font-semibold backdrop-blur-md transition-all active:scale-95 cursor-pointer"
         title="View Public Website"
       >
         <Globe className="w-4 h-4 text-teal-400" />
