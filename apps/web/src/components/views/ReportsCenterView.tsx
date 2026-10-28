@@ -20,7 +20,7 @@ const money = (n: number | undefined) =>
   `QAR ${(Number(n) || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 type Preset = 'month' | 'year' | '30d' | 'all' | 'custom';
-type Tab = 'overview' | 'sales' | 'receivables' | 'collections' | 'expenses' | 'bookings';
+type Tab = 'overview' | 'sales' | 'fleet' | 'receivables' | 'collections' | 'expenses' | 'bookings';
 
 function rangeFor(preset: Preset, custom: { from: string; to: string }): { from?: string; to?: string } {
   const now = new Date();
@@ -83,6 +83,9 @@ export function ReportsCenterView() {
     push('Collections by account', data.collectionsByAccount.map((c) => [c.account, c.amount] as [string, number]));
     push('Expenses by category', data.expensesByCategory.map((c) => [c.label, c.amount] as [string, number]));
     push('Bookings by source', data.bookingsBySource.map((c) => [c.label, c.amount] as [string, number]));
+    push('Revenue by service type', data.revenueByServiceType.map((c) => [`${c.label} (${c.count})`, c.amount] as [string, number]));
+    push('Driver utilization (revenue)', data.driverUtilization.map((c) => [`${c.label} (${c.count} trips)`, c.amount] as [string, number]));
+    push('Vehicle utilization (revenue)', data.vehicleUtilization.map((c) => [`${c.label} (${c.count} trips)`, c.amount] as [string, number]));
     push('Top customers (invoiced / outstanding)', data.topCustomers.map((c) => [c.name, `${c.invoiced} / ${c.outstanding}`] as [string, string]));
 
     const blob = new Blob([rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
@@ -104,6 +107,7 @@ export function ReportsCenterView() {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-3.5 h-3.5" /> },
     { id: 'sales', label: 'Sales & Revenue', icon: <TrendingUp className="w-3.5 h-3.5" /> },
+    { id: 'fleet', label: 'Fleet & Services', icon: <Compass className="w-3.5 h-3.5" /> },
     { id: 'receivables', label: 'Receivables', icon: <FileText className="w-3.5 h-3.5" /> },
     { id: 'collections', label: 'Collections', icon: <CreditCard className="w-3.5 h-3.5" /> },
     { id: 'expenses', label: 'Expenses', icon: <Receipt className="w-3.5 h-3.5" /> },
@@ -180,6 +184,7 @@ export function ReportsCenterView() {
               <SeriesTable data={data} />
             </Card>
           )}
+          {tab === 'fleet' && <FleetServicesTab data={data} />}
           {tab === 'receivables' && <ReceivablesTab data={data} />}
           {tab === 'collections' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -224,8 +229,34 @@ export function ReportsCenterView() {
 }
 
 function OverviewTab({ data }: { data: ReportOverview }) {
+  const k = data.kpis;
+  const margin = k.grossRevenue > 0 ? Math.round((k.netProfit / k.grossRevenue) * 100) : 0;
   return (
     <div className="space-y-4">
+      {/* Profit & Loss summary */}
+      <Card title="Profit & Loss (P&L)" icon={<TrendingUp className="w-4 h-4 text-emerald-500" />}>
+        <div className="space-y-1.5 text-sm">
+          <div className="flex items-center justify-between text-slate-700 dark:text-slate-200">
+            <span>Gross revenue <span className="text-[10px] text-slate-400">(invoices + bookings)</span></span>
+            <span className="font-bold tabular-nums">{money(k.grossRevenue)}</span>
+          </div>
+          <div className="flex items-center justify-between text-rose-600 dark:text-rose-400">
+            <span>− Operating expenses</span>
+            <span className="font-semibold tabular-nums">({money(k.expenseTotal)})</span>
+          </div>
+          <div className="flex items-center justify-between text-rose-600 dark:text-rose-400">
+            <span>− Payroll &amp; commissions</span>
+            <span className="font-semibold tabular-nums">({money(k.payrollTotal)})</span>
+          </div>
+          <div className="flex items-center justify-between pt-2 mt-1 border-t border-slate-200 dark:border-slate-700 text-base font-black text-slate-900 dark:text-white">
+            <span>Net profit</span>
+            <span className={`tabular-nums ${k.netProfit >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+              {money(k.netProfit)} <span className="text-xs font-bold">· {margin}% margin</span>
+            </span>
+          </div>
+        </div>
+      </Card>
+
       <Card title="Monthly sales & collections" icon={<TrendingUp className="w-4 h-4 text-teal-500" />}>
         <GroupedBars data={data.salesSeries as unknown as Array<Record<string, number | string>>} series={[
           { key: 'invoiced', label: 'Invoiced', color: PALETTE[0] },
@@ -278,6 +309,29 @@ function ReceivablesTab({ data }: { data: ReportOverview }) {
       <Card title="Top customers by outstanding" icon={<Users className="w-4 h-4 text-rose-500" />}>
         <SimpleTable head={['Customer', 'Invoiced', 'Outstanding']} rows={[...data.topCustomers].sort((x, y) => y.outstanding - x.outstanding).map((c) => [c.name, money(c.invoiced), money(c.outstanding)])} />
       </Card>
+    </div>
+  );
+}
+
+function FleetServicesTab({ data }: { data: ReportOverview }) {
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card title="Revenue by service type" icon={<Compass className="w-4 h-4 text-teal-500" />}>
+          <HBars items={data.revenueByServiceType.map((c) => ({ label: `${c.label} (${c.count})`, value: c.amount }))} format={money} />
+        </Card>
+        <Card title="Trips by lifecycle status" icon={<TrendingUp className="w-4 h-4 text-blue-500" />}>
+          <HBars items={data.tripsByStatus.map((c) => ({ label: `${c.label} (${c.count})`, value: c.amount }))} format={money} />
+        </Card>
+      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card title="Driver utilization (trips & revenue)" icon={<Users className="w-4 h-4 text-emerald-500" />}>
+          <SimpleTable head={['Driver', 'Trips', 'Revenue']} rows={data.driverUtilization.map((d) => [d.label, d.count, money(d.amount)])} />
+        </Card>
+        <Card title="Vehicle utilization (trips & revenue)" icon={<Compass className="w-4 h-4 text-amber-500" />}>
+          <SimpleTable head={['Vehicle', 'Trips', 'Revenue']} rows={data.vehicleUtilization.map((v) => [v.label, v.count, money(v.amount)])} />
+        </Card>
+      </div>
     </div>
   );
 }

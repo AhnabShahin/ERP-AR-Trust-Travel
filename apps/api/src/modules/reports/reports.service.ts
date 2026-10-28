@@ -52,7 +52,7 @@ export async function overview(range: DateRange) {
         balanceDue: true, status: true, customerName: true, currency: true, payments: true,
       },
     }),
-    prisma.booking.findMany({ select: { totalQAR: true, source: true, packageName: true, paymentMethod: true, paxCount: true, createdAt: true } }),
+    prisma.booking.findMany({ select: { totalQAR: true, source: true, packageName: true, paymentMethod: true, paxCount: true, createdAt: true, serviceType: true, tripStatus: true, driverName: true, vehicleName: true } }),
     prisma.financeExpense.findMany({ select: { amountQAR: true, category: true, status: true, date: true } }),
     prisma.salaryRecord.findMany({ select: { fixedBaseMonthlyQAR: true, accruedCommissionQAR: true, netPayableQAR: true } }),
     prisma.paymentAccount.findMany({ select: { title: true, currentBalance: true, currency: true } }),
@@ -125,6 +125,30 @@ export async function overview(range: DateRange) {
   const bookingsByPackage = groupSum(bkInRange, (b) => b.packageName || 'Unknown', (b) => b.totalQAR || 0).slice(0, 8);
   const bookingsByMethod = groupSum(bkInRange, (b) => b.paymentMethod || 'Unknown', (b) => b.totalQAR || 0);
 
+  // ---- service mix + driver/vehicle utilization ---------------------
+  const SERVICE_TYPE_LABELS: Record<string, string> = {
+    'tour-service': 'Tour Services',
+    'tour-package': 'Tour Packages',
+    transfer: 'Transfers',
+  };
+  const revenueByServiceType = groupSum(
+    bkInRange,
+    (b) => SERVICE_TYPE_LABELS[b.serviceType || 'tour-service'] || b.serviceType || 'Unknown',
+    (b) => b.totalQAR || 0
+  );
+  // Trips (count) + revenue per driver / vehicle (assigned bookings only).
+  const driverUtilization = groupSum(
+    bkInRange.filter((b) => b.driverName),
+    (b) => b.driverName as string,
+    (b) => b.totalQAR || 0
+  ).slice(0, 12);
+  const vehicleUtilization = groupSum(
+    bkInRange.filter((b) => b.vehicleName),
+    (b) => b.vehicleName as string,
+    (b) => b.totalQAR || 0
+  ).slice(0, 12);
+  const tripsByStatus = groupSum(bkInRange, (b) => b.tripStatus || 'Scheduled', (b) => b.totalQAR || 0);
+
   // ---- expenses in range --------------------------------------------
   const expInRange = expenses.filter((e) => inRange(dayOf(e.date), range));
   const expenseTotal = round2(expInRange.reduce((s, e) => s + (e.amountQAR || 0), 0));
@@ -182,6 +206,10 @@ export async function overview(range: DateRange) {
     bookingsBySource,
     bookingsByPackage,
     bookingsByMethod,
+    revenueByServiceType,
+    driverUtilization,
+    vehicleUtilization,
+    tripsByStatus,
     accountBalances: accounts.map((a) => ({ account: a.title, currency: a.currency, balance: round2(a.currentBalance || 0) })),
   };
 }

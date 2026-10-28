@@ -66,9 +66,9 @@ export const TopMetricCards: React.FC = () => {
 
     // ---- Card 3: fleet / drivers ------------------------------------
     const onMission = drivers.filter((d) =>
-      ['Dispatched', 'En Route', 'At Airport Bay'].includes(d.status)
+      ['On Trip', 'Dispatched', 'En Route', 'At Airport Bay'].includes(d.status)
     ).length;
-    const standby = drivers.filter((d) => d.status === 'Standby').length;
+    const standby = drivers.filter((d) => d.status === 'Standby' || d.status === 'Available').length;
     const offDuty = drivers.filter((d) => ['Off Duty', 'Maintenance'].includes(d.status)).length;
     const totalDrivers = drivers.length;
     const activeDrivers = onMission + standby;
@@ -196,9 +196,9 @@ export const TopMetricCards: React.FC = () => {
 
         {/* Fleet Allocation */}
         <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-          <span>{metrics.onMission} On Mission</span>
+          <span>{metrics.onMission} On Trip</span>
           <span className="text-slate-300 dark:text-slate-700">·</span>
-          <span>{metrics.standby} Standby</span>
+          <span>{metrics.standby} Available</span>
           <span className="text-slate-300 dark:text-slate-700">·</span>
           <span>{metrics.offDuty} Off Duty</span>
         </div>

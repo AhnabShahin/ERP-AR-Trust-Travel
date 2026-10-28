@@ -291,6 +291,10 @@ export interface ReportOverview {
   bookingsBySource: ReportBreakdownItem[];
   bookingsByPackage: ReportBreakdownItem[];
   bookingsByMethod: ReportBreakdownItem[];
+  revenueByServiceType: ReportBreakdownItem[];
+  driverUtilization: ReportBreakdownItem[];
+  vehicleUtilization: ReportBreakdownItem[];
+  tripsByStatus: ReportBreakdownItem[];
   accountBalances: Array<{ account: string; currency: string; balance: number }>;
 }
 

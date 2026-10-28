@@ -355,8 +355,7 @@ export const Sidebar: React.FC = () => {
     return (
       roleConfig.allowedTabs.includes(itemId) ||
       ((currentRole === 'super-admin' || currentRole === 'admin' || currentRole === 'operations-manager') &&
-        (itemId === 'reports' ||
-          itemId === 'reports-center' ||
+        (itemId === 'reports-center' ||
           itemId === 'audit-logs' ||
           itemId === 'services' ||
           itemId === 'employees' ||

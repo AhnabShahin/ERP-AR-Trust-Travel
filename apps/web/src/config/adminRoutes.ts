@@ -26,7 +26,6 @@ import { EODShiftView } from '../components/views/EODShiftView';
 import { PayrollCommissionView } from '../components/views/PayrollCommissionView';
 import { ExpensesView } from '../components/views/ExpensesView';
 import { MultiCurrencyLedgerView } from '../components/views/MultiCurrencyLedgerView';
-import { FinancialReportsView } from '../components/views/FinancialReportsView';
 import { AuditLogsView } from '../components/views/AuditLogsView';
 import { DriverPortalView } from '../components/views/DriverPortalView';
 import { VendorDashboardView } from '../components/views/VendorDashboardView';
@@ -61,7 +60,6 @@ export const ADMIN_VIEWS: Record<string, ComponentType> = {
   payroll: PayrollCommissionView,
   expenses: ExpensesView,
   ledger: MultiCurrencyLedgerView,
-  reports: FinancialReportsView,
   'reports-center': ReportsCenterView,
   'audit-logs': AuditLogsView,
   'driver-portal': DriverPortalView,

@@ -27,7 +27,6 @@ export const KNOWN_TABS = [
   'payroll',
   'expenses',
   'ledger',
-  'reports',
   'reports-center',
   'audit-logs',
   'driver-portal',
