@@ -9,6 +9,7 @@
 import React, { useEffect, useState } from 'react';
 import { Star, Plus, Trash2, Save, Loader2, Eye, EyeOff, MessageSquareQuote } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { useRealtimeRefresh } from '../../../lib/realtime';
 import { imgSrc } from '../../../lib/uploads';
 
 interface Review {
@@ -33,14 +34,16 @@ export function ReviewsManagerView() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const data = await api.get<Review[]>('/api/reviews?take=200');
       setReviews(Array.isArray(data) ? data : []);
-    } catch { setMsg('Failed to load reviews.'); } finally { setLoading(false); }
+    } catch { if (!silent) setMsg('Failed to load reviews.'); } finally { if (!silent) setLoading(false); }
   };
   useEffect(() => { void load(); }, []);
+  // Live-refresh when a review changes in another session.
+  useRealtimeRefresh(['reviews'], () => { void load(true); });
 
   const save = async () => {
     if (!editing) return;

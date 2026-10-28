@@ -16,6 +16,7 @@ import {
   Pencil, Trash2, Eye, CreditCard, X, Search, FileText, Wallet,
 } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { useRealtimeRefresh } from '../../../lib/realtime';
 import type { Invoice, InvoiceItem, PaymentAccount, Booking } from '../../types';
 import { InvoiceDocument } from '../invoices/InvoiceDocument';
 import { printInvoice } from '../invoices/invoicePrint';
@@ -47,20 +48,22 @@ function InvoiceList() {
   const [query, setQuery] = useState('');
   const [msg, setMsg] = useState('');
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const data = await api.get<Invoice[]>('/api/invoices?take=200');
       setInvoices(Array.isArray(data) ? data : []);
     } catch {
-      setMsg('Failed to load invoices.');
+      if (!silent) setMsg('Failed to load invoices.');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
   useEffect(() => {
     void load();
   }, []);
+  // Live-refresh when an invoice or its payments change in another session.
+  useRealtimeRefresh(['invoices'], () => { void load(true); });
 
   const remove = async (id: string) => {
     if (!window.confirm('Delete this invoice? This cannot be undone.')) return;

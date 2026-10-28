@@ -240,7 +240,7 @@ export const GuestsView: React.FC = () => {
         b.passengerName.toLowerCase().includes(guest.name.toLowerCase()) ||
         guest.name.toLowerCase().includes(b.passengerName.toLowerCase()) ||
         b.passengerPhone === guest.phone ||
-        guest.bookingIds.includes(b.id)
+        (Array.isArray(guest.bookingIds) && guest.bookingIds.includes(b.id))
     );
   };
 
@@ -547,7 +547,7 @@ export const GuestsView: React.FC = () => {
                   <span className="flex items-center gap-1.5 truncate">
                     <Plane className="w-3.5 h-3.5 text-blue-500 shrink-0" />
                     <span className="font-mono font-bold text-slate-700 dark:text-slate-300">{guest.lastFlight}</span>
-                    <span className="truncate">({guest.lastArrivalAirport.split('(')[0].trim()})</span>
+                    <span className="truncate">({(guest.lastArrivalAirport || '').split('(')[0].trim()})</span>
                   </span>
                   <span className="text-[10px] font-mono shrink-0">{guest.lastTripDate}</span>
                 </div>

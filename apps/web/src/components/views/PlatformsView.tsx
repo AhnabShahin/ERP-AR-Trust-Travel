@@ -9,6 +9,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, Save, Loader2, Share2, Pencil, X, Plane, Compass } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { useRealtimeRefresh } from '../../../lib/realtime';
 import type { Platform, PlatformType } from '../../types';
 
 const blank = (type: PlatformType): Partial<Platform> => ({ name: '', type, contactPhone: '', website: '', notes: '', isActive: true });
@@ -21,18 +22,20 @@ export function PlatformsView() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const data = await api.get<Platform[]>('/api/platforms?take=200');
       setPlatforms(Array.isArray(data) ? data : []);
     } catch {
-      setMsg('Failed to load platforms.');
+      if (!silent) setMsg('Failed to load platforms.');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
   useEffect(() => { void load(); }, []);
+  // Live-refresh when a platform is changed in another tab/browser/role.
+  useRealtimeRefresh(['platforms'], () => { void load(true); });
 
   const save = async () => {
     if (!editing) return;

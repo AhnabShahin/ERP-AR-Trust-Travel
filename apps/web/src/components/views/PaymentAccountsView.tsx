@@ -9,6 +9,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, Save, Loader2, Wallet, Pencil, X } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { useRealtimeRefresh } from '../../../lib/realtime';
 import type { PaymentAccount } from '../../types';
 
 const CURRENCIES = ['QAR', 'USD', 'EUR', 'GBP', 'SAR'];
@@ -34,20 +35,22 @@ export function PaymentAccountsView() {
   const [msg, setMsg] = useState('');
   const [query, setQuery] = useState('');
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const data = await api.get<PaymentAccount[]>('/api/payment-accounts?take=200');
       setAccounts(Array.isArray(data) ? data : []);
     } catch {
-      setMsg('Failed to load accounts.');
+      if (!silent) setMsg('Failed to load accounts.');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
   useEffect(() => {
     void load();
   }, []);
+  // Live-refresh when a payment account changes in another session.
+  useRealtimeRefresh(['payment-accounts'], () => { void load(true); });
 
   const save = async () => {
     if (!editing) return;

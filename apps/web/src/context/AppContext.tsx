@@ -36,6 +36,7 @@ import {
 } from '../data/mockData';
 import { api, authApi, ApiError } from '../../lib/api';
 import { useResourceSync, useSettingSync } from '../../lib/data';
+import { useRealtimeRefresh } from '../../lib/realtime';
 import {
   AirportDesk,
   Booking,
@@ -532,6 +533,12 @@ export const AppProvider: React.FC<{
   // True once all collections have been loaded from the API (MySQL).
   const [dataHydrated, setDataHydrated] = useState<boolean>(false);
 
+  // Bumped every time data is mirrored in from the server by the real-time
+  // layer (SSE). Threaded into every useResourceSync / useSettingSync so those
+  // server-sourced changes adopt the new baseline instead of being re-sent as
+  // fresh writes (which would echo endlessly between tabs). See lib/data.ts.
+  const [remoteEpoch, setRemoteEpoch] = useState<number>(0);
+
   useEffect(() => {
     // Update document dir and lang attribute
     document.documentElement.dir = language === 'ar' ? 'rtl' : 'ltr';
@@ -732,37 +739,37 @@ export const AppProvider: React.FC<{
   // Replaces the old localStorage persistence for all business collections.
   // Persist user-account CRUD (create / activate / role change / delete) to the
   // API so accounts, and especially activation, are the DB's source of truth.
-  useResourceSync('users', userAccounts as never, dataHydrated, notifySyncError);
-  useResourceSync('bookings', bookings as never, dataHydrated, notifySyncError);
+  useResourceSync('users', userAccounts as never, dataHydrated, notifySyncError, remoteEpoch);
+  useResourceSync('bookings', bookings as never, dataHydrated, notifySyncError, remoteEpoch);
   // NOTE: drivers are NOT synced as a resource — they are user accounts (role
   // driver-guide). The driver mutators below persist to /api/users directly.
-  useResourceSync('fleet', fleetVehicles as never, dataHydrated, notifySyncError);
-  useResourceSync('tour-guides', tourGuides as never, dataHydrated, notifySyncError);
-  useResourceSync('guests', guests as never, dataHydrated, notifySyncError);
-  useResourceSync('guest-tiers', guestTiers as never, dataHydrated, notifySyncError);
-  useResourceSync('hotel-vendors', hotelVendors as never, dataHydrated, notifySyncError);
-  useResourceSync('hotel-bookings', hotelBookings as never, dataHydrated, notifySyncError);
+  useResourceSync('fleet', fleetVehicles as never, dataHydrated, notifySyncError, remoteEpoch);
+  useResourceSync('tour-guides', tourGuides as never, dataHydrated, notifySyncError, remoteEpoch);
+  useResourceSync('guests', guests as never, dataHydrated, notifySyncError, remoteEpoch);
+  useResourceSync('guest-tiers', guestTiers as never, dataHydrated, notifySyncError, remoteEpoch);
+  useResourceSync('hotel-vendors', hotelVendors as never, dataHydrated, notifySyncError, remoteEpoch);
+  useResourceSync('hotel-bookings', hotelBookings as never, dataHydrated, notifySyncError, remoteEpoch);
   // The `employees` collection is backed by the staff endpoint (users + ledger).
-  useResourceSync('staff', employees as never, dataHydrated, notifySyncError);
-  useResourceSync('expenses', expenses as never, dataHydrated, notifySyncError);
-  useResourceSync('currencies', currencies as never, dataHydrated, notifySyncError);
-  useResourceSync('currency-history', currencyHistory as never, dataHydrated, notifySyncError);
-  useResourceSync('tour-packages', packages as never, dataHydrated, notifySyncError);
-  useResourceSync('airport-desks', airportDesks as never, dataHydrated, notifySyncError);
-  useResourceSync('locations', locations as never, dataHydrated, notifySyncError);
-  useResourceSync('desk-assignments', deskAssignmentHistory as never, dataHydrated, notifySyncError);
+  useResourceSync('staff', employees as never, dataHydrated, notifySyncError, remoteEpoch);
+  useResourceSync('expenses', expenses as never, dataHydrated, notifySyncError, remoteEpoch);
+  useResourceSync('currencies', currencies as never, dataHydrated, notifySyncError, remoteEpoch);
+  useResourceSync('currency-history', currencyHistory as never, dataHydrated, notifySyncError, remoteEpoch);
+  useResourceSync('tour-packages', packages as never, dataHydrated, notifySyncError, remoteEpoch);
+  useResourceSync('airport-desks', airportDesks as never, dataHydrated, notifySyncError, remoteEpoch);
+  useResourceSync('locations', locations as never, dataHydrated, notifySyncError, remoteEpoch);
+  useResourceSync('desk-assignments', deskAssignmentHistory as never, dataHydrated, notifySyncError, remoteEpoch);
 
   // ---- Payroll / audit lists + singleton config → live API (MySQL).
-  useResourceSync('salary-records', salaryRecords as never, dataHydrated, notifySyncError);
-  useResourceSync('commission-rules', commissionRules as never, dataHydrated, notifySyncError);
-  useResourceSync('audit-logs', systemLogs as never, dataHydrated, notifySyncError);
-  useSettingSync('rates', rates, dataHydrated, notifySyncError);
+  useResourceSync('salary-records', salaryRecords as never, dataHydrated, notifySyncError, remoteEpoch);
+  useResourceSync('commission-rules', commissionRules as never, dataHydrated, notifySyncError, remoteEpoch);
+  useResourceSync('audit-logs', systemLogs as never, dataHydrated, notifySyncError, remoteEpoch);
+  useSettingSync('rates', rates, dataHydrated, notifySyncError, remoteEpoch);
   // Single global active display currency — persisted so every console shows
   // the same currency and the choice survives reloads.
-  useSettingSync('activeCurrency', currency, dataHydrated, notifySyncError);
-  useSettingSync('shiftDrawer', shiftDrawer, dataHydrated, notifySyncError);
-  useSettingSync('packageCategories', packageCategories, dataHydrated, notifySyncError);
-  useSettingSync('categoryServiceMap', categoryServiceMap, dataHydrated, notifySyncError);
+  useSettingSync('activeCurrency', currency, dataHydrated, notifySyncError, remoteEpoch);
+  useSettingSync('shiftDrawer', shiftDrawer, dataHydrated, notifySyncError, remoteEpoch);
+  useSettingSync('packageCategories', packageCategories, dataHydrated, notifySyncError, remoteEpoch);
+  useSettingSync('categoryServiceMap', categoryServiceMap, dataHydrated, notifySyncError, remoteEpoch);
 
   // ---- Remaining per-session UI preference — stays in localStorage.
   useEffect(() => {
@@ -813,12 +820,157 @@ export const AppProvider: React.FC<{
     };
   }, [isAuthenticated, liveFeedEnabled]);
 
+  // ---- Real-time cross-tab / cross-browser mirror.
+  // Pull every collection fresh from the API and apply it authoritatively, then
+  // bump `remoteEpoch` so the write-through sync hooks adopt the new data as
+  // baseline (no echo). Used by the SSE subscriber below whenever another
+  // session reports a change. One full pull keeps derived lists (e.g. the
+  // dispatch `drivers` view, derived from users + fleet) correct with no
+  // per-resource mapping to drift.
+  const refreshFromServer = React.useCallback(async () => {
+    const q = '?take=200';
+    const load = <T,>(p: string) => api.get<T[]>(`/api/${p}${q}`).catch(() => null);
+    try {
+      const [
+        bk, dr, fl, tg, gs, gt, hv, hb, emp, exp, cur, ch, pkg, ad, loc, da,
+        usr, sal, com, logs, rol, notif,
+      ] = await Promise.all([
+        load<Booking>('bookings'),
+        load<Driver>('drivers'),
+        load<FleetVehicle>('fleet'),
+        load<TourGuide>('tour-guides'),
+        load<Guest>('guests'),
+        load<GuestTier>('guest-tiers'),
+        load<HotelVendor>('hotel-vendors'),
+        load<HotelBooking>('hotel-bookings'),
+        load<Employee>('staff'),
+        load<FinanceExpense>('expenses'),
+        load<CurrencyItem>('currencies'),
+        load<CurrencyHistoryRecord>('currency-history'),
+        load<TourPackage>('tour-packages'),
+        load<AirportDesk>('airport-desks'),
+        load<Location>('locations'),
+        load<DeskAssignmentRecord>('desk-assignments'),
+        load<UserAccount>('users'),
+        load<SalaryRecord>('salary-records'),
+        load<CommissionRule>('commission-rules'),
+        load<SystemAuditLog>('audit-logs'),
+        api.get<RoleCatalogItem[]>('/api/roles').catch(() => null),
+        api.get<NotificationItem[]>('/api/notifications?take=50').catch(() => null),
+      ]);
+
+      // Singleton config (settings key/value).
+      const [rt, sd, pc, csm, actCur] = await Promise.all([
+        api.get<ExchangeRates>('/api/settings/rates').catch(() => null),
+        api.get<ShiftDrawer>('/api/settings/shiftDrawer').catch(() => null),
+        api.get<string[]>('/api/settings/packageCategories').catch(() => null),
+        api.get<Record<string, ServiceMainType>>('/api/settings/categoryServiceMap').catch(() => null),
+        api.get<string | null>('/api/settings/activeCurrency').catch(() => null),
+      ]);
+
+      // Apply authoritatively — unlike the first hydrate, an empty array means
+      // "the collection is now empty" (a deletion made elsewhere), so reflect
+      // it. `null` means the fetch failed; keep what we have.
+      if (bk) setBookings(bk);
+      if (fl) setFleetVehicles(fl);
+      if (tg) setTourGuides(tg);
+      if (gs) setGuests(gs);
+      if (gt) setGuestTiers(gt);
+      if (hv) setHotelVendors(hv);
+      if (hb) setHotelBookings(hb);
+      if (emp) setEmployees(emp);
+      if (exp) setExpenses(exp);
+      if (cur) setCurrencies(cur);
+      if (ch) setCurrencyHistory(ch);
+      if (pkg) setPackages(pkg);
+      if (ad) setAirportDesks(ad);
+      if (loc) setLocations(loc);
+      if (da) setDeskAssignmentHistory(da);
+      if (sal) setSalaryRecords(sal);
+      if (com) setCommissionRules(com);
+      if (logs) setSystemLogs(logs);
+      if (rol) setRoles(rol);
+      if (usr) setUserAccounts(usr);
+
+      // Re-derive the dispatch `drivers` list from the live users + fleet (see
+      // the hydrate effect — drivers are user accounts, role driver-guide).
+      if (usr) {
+        const DRIVER_STATUSES = ['Available', 'On Trip', 'Dispatched', 'At Airport Bay', 'En Route', 'Standby', 'Off Duty', 'Maintenance'];
+        const flArr = fl || [];
+        const driverRows: Driver[] = usr
+          .filter((u) => u.role === 'driver-guide')
+          .map((u) => {
+            const veh = flArr.find((v) => v.assignedDriverId === u.id);
+            const ss = (u as { staffStatus?: string }).staffStatus || '';
+            return {
+              id: u.id,
+              name: u.name,
+              nameAr: u.nameAr || '',
+              phone: u.phone || '',
+              driverType: (u.driverType as Driver['driverType']) || 'first-party',
+              company: u.companyName,
+              vehicle: veh?.name,
+              plateNumber: veh?.plateNumber,
+              vehicleType: veh?.category,
+              status: (DRIVER_STATUSES.includes(ss) ? ss : 'Available') as Driver['status'],
+              location: u.city || 'Doha',
+              rating: 5,
+              totalTripsToday: 0,
+              image: u.avatar || '',
+              fleetVehicleId: veh?.id,
+            };
+          });
+        setDrivers(driverRows);
+      } else if (dr) {
+        setDrivers(dr);
+      }
+
+      if (rt) setRates(rt);
+      if (sd) setShiftDrawer(sd);
+      if (pc) setPackageCategories(pc);
+      if (csm && Object.keys(csm).length) setCategoryServiceMap(csm);
+      if (actCur && typeof actCur === 'string') setCurrency(actCur as Currency);
+
+      // Notifications: surface a toast for genuinely-new unread items raised by
+      // another session, then replace the local feed.
+      if (notif) {
+        const list = notif.map((n) => ({
+          ...n,
+          titleAr: n.titleAr ?? '',
+          messageAr: n.messageAr ?? '',
+          time: n.time ?? '',
+        }));
+        const unseen = list.filter((n) => n.id && !notifSeenIds.current.has(n.id));
+        for (const n of list) if (n.id) notifSeenIds.current.add(n.id);
+        const toast = unseen.find((n) => !n.read);
+        if (toast) setLatestToastNotification(toast);
+        setNotifications(list);
+      }
+
+      // Mark this render's data as server-sourced so the write-through hooks
+      // adopt it as baseline instead of re-POSTing it.
+      setRemoteEpoch((e) => e + 1);
+    } catch (e) {
+      console.error('[realtime] refresh failed:', (e as Error).message);
+    }
+    // All setters are stable; no reactive deps needed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // SSE subscriber: once authenticated, refresh (debounced) whenever another
+  // tab / browser / role reports a change to any of the shared collections.
+  // The connection is shared with the self-fetching views via lib/realtime.
+  useRealtimeRefresh('*', () => void refreshFromServer(), {
+    enabled: isAuthenticated,
+    debounceMs: 350,
+  });
+
   const toggleTheme = () => {
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
   // User accounts write-through to the API (passwords hashed server-side).
-  useResourceSync('users', userAccounts as never, dataHydrated, notifySyncError);
+  useResourceSync('users', userAccounts as never, dataHydrated, notifySyncError, remoteEpoch);
 
   const login = async (
     usernameOrEmail: string,

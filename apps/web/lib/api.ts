@@ -10,6 +10,21 @@ import type { ApiResponse, AuthResponse, LoginDto, RegisterDto, UserAccount } fr
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 const TOKEN_KEY = 'artrust_token';
 
+/** Base URL of the API, for consumers that open their own connections (SSE). */
+export const API_BASE = BASE_URL;
+
+// A stable id for this browser tab/session. Sent on every mutating request so
+// the real-time change stream can tell a tab apart from its own echo (a tab
+// ignores events it caused and need not refetch its own optimistic write).
+const CLIENT_ID =
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `c_${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+
+export function getClientId(): string {
+  return CLIENT_ID;
+}
+
 export function getToken(): string | null {
   try {
     return localStorage.getItem(TOKEN_KEY);
@@ -39,6 +54,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      'X-Client-Id': CLIENT_ID,
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },

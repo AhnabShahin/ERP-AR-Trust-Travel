@@ -31,9 +31,15 @@ export function useResourceSync(
   path: string,
   items: Row[],
   enabled: boolean,
-  onError?: OnError
+  onError?: OnError,
+  // Bumped by the real-time layer whenever `items` was replaced with data
+  // pulled from the server (not a local edit). When it changes, this run just
+  // re-snapshots the baseline and sends nothing — so a change mirrored in from
+  // another tab/browser is never echoed back to the API as a fresh write.
+  remoteRev: number = 0
 ) {
   const baseline = useRef<Map<string, string> | null>(null);
+  const lastRev = useRef<number>(remoteRev);
 
   useEffect(() => {
     if (!enabled) return;
@@ -46,6 +52,15 @@ export function useResourceSync(
     // First run after hydration: snapshot only, don't re-send the loaded rows.
     if (baseline.current === null) {
       baseline.current = next;
+      lastRev.current = remoteRev;
+      return;
+    }
+
+    // This change came from a server refetch (real-time mirror), not a local
+    // edit: adopt it as the new baseline and send nothing.
+    if (remoteRev !== lastRev.current) {
+      baseline.current = next;
+      lastRev.current = remoteRev;
       return;
     }
 
@@ -82,7 +97,7 @@ export function useResourceSync(
     baseline.current = next;
     // onError is a stable callback; excluded so the deps length never changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, enabled, path]);
+  }, [items, enabled, path, remoteRev]);
 }
 
 /**
@@ -93,15 +108,25 @@ export function useSettingSync(
   key: string,
   value: unknown,
   enabled: boolean,
-  onError?: OnError
+  onError?: OnError,
+  // See useResourceSync: bumped when `value` was mirrored in from the server.
+  remoteRev: number = 0
 ) {
   const baseline = useRef<string | null>(null);
+  const lastRev = useRef<number>(remoteRev);
 
   useEffect(() => {
     if (!enabled) return;
     const snapshot = JSON.stringify(value ?? null);
     if (baseline.current === null) {
       baseline.current = snapshot;
+      lastRev.current = remoteRev;
+      return;
+    }
+    // Server-mirrored change: adopt without re-saving.
+    if (remoteRev !== lastRev.current) {
+      baseline.current = snapshot;
+      lastRev.current = remoteRev;
       return;
     }
     if (baseline.current === snapshot) return;
@@ -112,5 +137,5 @@ export function useSettingSync(
     });
     // onError is a stable callback; excluded so the deps length never changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, enabled, key]);
+  }, [value, enabled, key, remoteRev]);
 }

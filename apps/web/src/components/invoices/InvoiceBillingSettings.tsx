@@ -77,9 +77,9 @@ export function InvoiceBillingSettings() {
         {error && <span className="text-xs font-semibold text-rose-500">{error}</span>}
       </div>
 
-      <div className="flex flex-wrap gap-6">
-        <ImageUploadField value={profile.logo} onChange={(ref) => set({ logo: ref || '' })} label="Company logo" shape="square" className="w-28" />
-        <ImageUploadField value={profile.signatureImage} onChange={(ref) => set({ signatureImage: ref || '' })} label="Authorised signature" shape="square" className="w-28" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <ImageUploadField value={profile.logo} onChange={(ref) => set({ logo: ref || '' })} label="Company logo" shape="square" className="w-full min-w-0" />
+        <ImageUploadField value={profile.signatureImage} onChange={(ref) => set({ signatureImage: ref || '' })} label="Authorised signature" shape="square" className="w-full min-w-0" />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -14,6 +14,7 @@ import { settingsRouter } from './modules/settings/settings.routes.js';
 import { siteContentRouter } from './modules/site-content/site-content.routes.js';
 import { uploadsRouter } from './modules/uploads/uploads.routes.js';
 import { usersRouter } from './modules/users/users.routes.js';
+import { eventsRouter, changeBroadcast } from './modules/events/events.routes.js';
 
 export function createApp() {
   const app = express();
@@ -24,6 +25,13 @@ export function createApp() {
 
   // Health check for uptime monitors / Hostinger.
   app.get('/health', (_req, res) => res.json({ ok: true, data: 'healthy' }));
+
+  // Real-time change stream (clients subscribe here; see lib/events.ts).
+  app.use('/api/events', eventsRouter);
+
+  // Broadcast middleware (defined alongside the SSE route so they share one
+  // client registry). Must run before the feature routes.
+  app.use(changeBroadcast);
 
   // API index — lists the available resource collections.
   app.get('/api', (_req, res) =>

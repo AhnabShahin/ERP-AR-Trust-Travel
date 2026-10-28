@@ -38,6 +38,14 @@
   [dir="rtl"] {
     font-family: var(--font-arabic), var(--font-sans);
   }
+
+  /* Responsive safeguard — media never exceeds its column on small screens. */
+  img,
+  svg,
+  video,
+  canvas {
+    max-width: 100%;
+  }
 }
 
 /* Smooth scrolling for touch momentum */

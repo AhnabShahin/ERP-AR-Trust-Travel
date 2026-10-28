@@ -91,7 +91,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
   const tickerCurrencies = sortedCurrencies.filter((c) => c.code !== 'QAR' && c.rateToQAR > 0);
 
   return (
-    <header className="h-16 px-3 sm:px-5 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md flex items-center justify-between gap-2 sm:gap-3 sticky top-0 z-30 transition-colors select-none">
+    <header className="h-16 px-3 @sm:px-5 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md flex items-center justify-between gap-2 @sm:gap-3 sticky top-0 z-30 transition-colors select-none">
       {/* Zone 0: Left Sidebar Toggle */}
       <button
         onClick={toggleSidebar}
@@ -137,8 +137,10 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
         </form>
       </div>
 
-      {/* Zone 2: Live FX Ticker (QAR, USD, EUR, GBP) */}
-      <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 text-xs">
+      {/* Zone 2: Live FX Ticker (QAR, USD, EUR, GBP) — container-query driven so it
+          only appears when the content column (not the viewport) is wide enough,
+          regardless of whether the sidebar is expanded or collapsed. */}
+      <div className="hidden @6xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 text-xs shrink min-w-0">
         <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold shrink-0">
           <TrendingUp className="w-3.5 h-3.5" />
           <span className="text-[11px] uppercase tracking-wide font-mono">QCB Peg:</span>
@@ -175,7 +177,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
               alt={currentUser?.name || 'User'}
               className="w-6 h-6 rounded-lg object-cover border border-blue-300 dark:border-blue-700 shrink-0"
             />
-            <div className="flex flex-col text-left rtl:text-right max-w-[120px] sm:max-w-[140px]">
+            <div className="hidden @sm:flex flex-col text-left rtl:text-right max-w-[120px] @md:max-w-[140px]">
               <span className="font-extrabold text-[11px] text-slate-900 dark:text-white truncate leading-tight">
                 {currentUser?.name || roleConfig.title}
               </span>
@@ -305,7 +307,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
         </div>
 
         {/* Currency Switcher */}
-        <div className="relative hidden xl:block">
+        <div className="relative hidden @3xl:block">
           <button
             onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-200 transition-colors"
@@ -569,7 +571,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
           title="Scan and verify Qatar digital vouchers & boarding passes"
         >
           <QrCode className="w-4 h-4 text-[#D4AF37]" />
-          <span className="hidden xl:inline">Verify QR Voucher</span>
+          <span className="hidden @4xl:inline">Verify QR Voucher</span>
         </button>
 
         {/* Quick Action: + New Booking */}
@@ -578,7 +580,7 @@ export const Header: React.FC<HeaderProps> = ({ onNavigateToHome }) => {
           className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-semibold shadow-md shadow-emerald-600/20 hover:shadow-emerald-600/30 transition-all cursor-pointer active:scale-95 shrink-0"
         >
           <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span className="hidden lg:inline">{t('newBooking')}</span>
+          <span className="hidden @2xl:inline">{t('newBooking')}</span>
         </button>
       </div>
     </header>

@@ -9,6 +9,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus, Trash2, Save, Loader2, Car, Pencil, X, Phone, CircleCheck, CircleSlash } from 'lucide-react';
 import { api } from '../../../lib/api';
+import { useRealtimeRefresh } from '../../../lib/realtime';
 import type { UserAccount, FleetVehicle } from '../../types';
 
 const slug = (n: string) => n.toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.|\.$/g, '');
@@ -34,8 +35,8 @@ export function DriversManagerView() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
 
-  const load = async () => {
-    setLoading(true);
+  const load = async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const [users, fleet] = await Promise.all([
         api.get<UserAccount[]>('/api/users'),
@@ -44,12 +45,14 @@ export function DriversManagerView() {
       setDrivers((Array.isArray(users) ? users : []).filter((u) => u.role === 'driver-guide'));
       setVehicles(Array.isArray(fleet) ? fleet : []);
     } catch {
-      setMsg('Failed to load drivers.');
+      if (!silent) setMsg('Failed to load drivers.');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
   useEffect(() => { void load(); }, []);
+  // Live-refresh when drivers (users) or fleet change in another session.
+  useRealtimeRefresh(['users', 'fleet'], () => { void load(true); });
 
   const vehiclesFor = (id: string) => vehicles.filter((v) => v.assignedDriverId === id);
 
