@@ -59,6 +59,13 @@ model User {
   // Verification & profile
   isEmailVerified   Boolean   @default(false)
   emailVerifiedAt   DateTime?
+  // Email verification code (6-digit, hashed) issued at signup / resend. The
+  // raw code is only ever emailed to the user; we store a bcrypt hash + expiry
+  // and an attempt counter so the code can't be brute-forced.
+  emailVerifyCodeHash String?   @map("email_verify_code_hash")
+  emailVerifyExpiry   DateTime? @map("email_verify_expiry")
+  emailVerifyAttempts Int       @default(0) @map("email_verify_attempts")
+  emailVerifySentAt   DateTime? @map("email_verify_sent_at")
   address           String?
   city              String?
   country           String?
@@ -74,6 +81,8 @@ model User {
   experienceYears   Int?
   spokenLanguages   Json?
   companyName       String? // also used as the third-party driver's company
+  // Loyalty / VIP tier for customers (role = customer). Matches CustomerTier.name.
+  vipTier           String?
   // Driver sourcing (role = driver-guide): in-house vs. external/contracted.
   driverType        String? // first-party | third-party
   bio               String?   @db.Text
@@ -184,7 +193,7 @@ model Booking {
   leadType        String? // tour | package | fleet | service
   // ---- Service / trip layer (unified booking = consumed service record) ----
   serviceType     String    @default("tour-service") // tour-service | tour-package | transfer
-  customerId      String? // link to a Guest (CRM)
+  customerId      String? // optional link to a customer user (role = customer)
   vehicleId       String? // fleet vehicle assigned FOR THIS TRIP
   vehicleName     String?
   vehiclePlate    String?
@@ -363,10 +372,12 @@ model Employee {
 }
 
 // ---------------------------------------------------------------------
-// Guests / CRM
+// Customer loyalty tiers (VIP tiers + discounts). Customers themselves are
+// just users with role=customer (see User.vipTier); there is no separate
+// Guest table any more.
 // ---------------------------------------------------------------------
 
-model GuestTier {
+model CustomerTier {
   id                 String  @id @default(cuid())
   name               String
   nameAr             String?
@@ -381,34 +392,7 @@ model GuestTier {
   updatedBy     String?
   updatedByName String?
 
-  @@map("guest_tiers")
-}
-
-model Guest {
-  id                 String   @id @default(cuid())
-  name               String
-  nationality        String
-  phone              String
-  email              String
-  vipTier            String
-  passportNo         String?
-  totalBookings      Int      @default(0)
-  totalSpentQAR      Float    @default(0)
-  lastArrivalAirport String?
-  lastFlight         String?
-  lastTripDate       String?
-  specialPreferences String?  @db.Text
-  bookingIds         Json? // string[]
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-
-  // Audit: who created / last modified this row (user id + display name).
-  createdBy     String?
-  createdByName String?
-  updatedBy     String?
-  updatedByName String?
-
-  @@map("guests")
+  @@map("customer_tiers")
 }
 
 // ---------------------------------------------------------------------

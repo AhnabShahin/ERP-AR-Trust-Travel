@@ -38,6 +38,7 @@ export interface UserAccount {
   bio?: string | null;
   staffStatus?: string | null;
   driverType?: string | null;
+  vipTier?: string | null;
 }
 
 /** Every API response is wrapped in this envelope. */
@@ -62,4 +63,15 @@ export interface RegisterDto {
 export interface AuthResponse {
   token: string;
   user: UserAccount;
+}
+
+/** Result of a self-service signup: no token yet — the email must be verified. */
+export interface RegisterResult {
+  user: UserAccount;
+  requiresVerification: true;
+}
+
+export interface VerifyEmailDto {
+  email: string;
+  code: string;
 }

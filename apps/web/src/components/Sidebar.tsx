@@ -31,7 +31,6 @@ import {
   Wallet,
   BarChart3,
   Share2,
-  Car,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { imgSrc } from '../../lib/uploads';
@@ -52,7 +51,7 @@ export const Sidebar: React.FC = () => {
     hotelBookings,
     bookings,
     drivers,
-    guests,
+    userAccounts,
     employees,
     sidebarOpen,
     toggleSidebar,
@@ -206,9 +205,9 @@ export const Sidebar: React.FC = () => {
         },
         {
           id: 'guests',
-          label: language === 'ar' ? 'لوحة العملاء والمسافرين (Customers)' : 'Customer & Guest Dashboard',
+          label: language === 'ar' ? 'العملاء (Customers)' : 'Customers',
           icon: UserCheck,
-          count: guests.length,
+          count: userAccounts.filter((u) => u.role === 'customer').length,
         },
       ],
     },
@@ -228,12 +227,6 @@ export const Sidebar: React.FC = () => {
           id: 'services',
           label: language === 'ar' ? 'باقات وخدمات الرحلات' : 'Tour Services & Packages',
           icon: Sparkles,
-        },
-        {
-          id: 'drivers-manager',
-          label: language === 'ar' ? 'إدارة السائقين' : 'Drivers',
-          icon: Car,
-          count: drivers.length,
         },
         {
           id: 'driver-portal',
@@ -364,7 +357,6 @@ export const Sidebar: React.FC = () => {
           itemId === 'invoices' ||
           itemId === 'payment-accounts' ||
           itemId === 'platforms' ||
-          itemId === 'drivers-manager' ||
           itemId === 'vendors' ||
           itemId === 'hotel-bookings' ||
           itemId === 'vendor-portal' ||

@@ -4,7 +4,7 @@ import { authenticate } from '../middleware/auth.js';
 import { asyncHandler, HttpError } from '../middleware/error.js';
 
 /**
- * Minimal surface of a Prisma model delegate (prisma.booking, prisma.guest…).
+ * Minimal surface of a Prisma model delegate (prisma.booking, prisma.customerTier…).
  * Typed loosely on purpose so one factory can serve every model.
  */
 export interface CrudDelegate {

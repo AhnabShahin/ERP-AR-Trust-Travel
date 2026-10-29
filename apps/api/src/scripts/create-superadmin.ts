@@ -66,7 +66,7 @@ async function main() {
   if (existing && force) {
     const updated = await prisma.user.update({
       where: { id: existing.id },
-      data: { email, passwordHash, status: 'active', name },
+      data: { email, passwordHash, status: 'active', name, isEmailVerified: true, emailVerifiedAt: new Date() },
     });
     console.log(`\n✅ Reset the existing super-admin "${updated.username}" (${updated.email}).\n`);
     return;

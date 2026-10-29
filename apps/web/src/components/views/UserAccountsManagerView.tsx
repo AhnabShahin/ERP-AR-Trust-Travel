@@ -90,6 +90,7 @@ export const UserAccountsManagerView: React.FC = () => {
   const [editPhone, setEditPhone] = useState('');
   const [editDept, setEditDept] = useState('');
   const [editStatus, setEditStatus] = useState<'active' | 'inactive'>('active');
+  const [editEmailVerified, setEditEmailVerified] = useState<boolean>(false);
   const [showEditPass, setShowEditPass] = useState(false);
 
   // Add Modal Form State
@@ -163,7 +164,23 @@ export const UserAccountsManagerView: React.FC = () => {
     setEditPhone(acc.phone || '');
     setEditDept(acc.department || '');
     setEditStatus(acc.status);
+    setEditEmailVerified(!!acc.isEmailVerified);
     setShowEditPass(false);
+  };
+
+  // Quick one-click email verification toggle from the table row (admin only).
+  const handleToggleVerified = (acc: UserAccount) => {
+    const next = !acc.isEmailVerified;
+    const res = updateUserAccount(acc.id, { isEmailVerified: next });
+    if (res.success) {
+      notifySuccess(
+        next
+          ? (isRtl ? `تم تأكيد بريد ${acc.username}.` : `${acc.username}'s email marked as verified.`)
+          : (isRtl ? `تم إلغاء تأكيد بريد ${acc.username}.` : `${acc.username}'s email marked as unverified.`)
+      );
+    } else {
+      notifyError(res.error || 'Failed to update verification status.');
+    }
   };
 
   // Save Edit
@@ -190,6 +207,7 @@ export const UserAccountsManagerView: React.FC = () => {
       phone: editPhone.trim() || undefined,
       department: editDept.trim() || undefined,
       status: editStatus,
+      isEmailVerified: editEmailVerified,
     });
 
     if (res.success) {
@@ -564,19 +582,38 @@ export const UserAccountsManagerView: React.FC = () => {
                       </span>
                     </td>
 
-                    {/* Status badge */}
+                    {/* Status + email-verification badges */}
                     <td className="py-3 px-4">
-                      {acc.status === 'active' ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          <span>Active</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                          <span>Suspended</span>
-                        </span>
-                      )}
+                      <div className="flex flex-col items-start gap-1">
+                        {acc.status === 'active' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>Active</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                            <span>Suspended</span>
+                          </span>
+                        )}
+                        {acc.isEmailVerified ? (
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300"
+                            title="Email verified"
+                          >
+                            <CheckCircle2 className="w-2.5 h-2.5" />
+                            <span>{isRtl ? 'موثّق' : 'Verified'}</span>
+                          </span>
+                        ) : (
+                          <span
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300"
+                            title="Email not verified"
+                          >
+                            <Mail className="w-2.5 h-2.5" />
+                            <span>{isRtl ? 'غير موثّق' : 'Unverified'}</span>
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Last Login */}
@@ -596,6 +633,25 @@ export const UserAccountsManagerView: React.FC = () => {
                         >
                           <Edit2 className="w-3 h-3" />
                           <span>{isRtl ? 'تغيير ID & Pass' : 'Edit ID & Pass'}</span>
+                        </button>
+
+                        {/* Quick Verify Email (admin flag) */}
+                        <button
+                          type="button"
+                          onClick={() => handleToggleVerified(acc)}
+                          className={`px-2.5 py-1.5 rounded-xl font-bold text-[11px] flex items-center gap-1 border transition cursor-pointer active:scale-95 ${
+                            acc.isEmailVerified
+                              ? 'bg-slate-50 hover:bg-slate-100 dark:bg-slate-800/60 dark:hover:bg-slate-700/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                              : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/50 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
+                          }`}
+                          title={acc.isEmailVerified ? 'Mark email as NOT verified' : 'Mark email as verified'}
+                        >
+                          <ShieldCheck className="w-3 h-3" />
+                          <span>
+                            {acc.isEmailVerified
+                              ? (isRtl ? 'إلغاء التوثيق' : 'Unverify')
+                              : (isRtl ? 'توثيق' : 'Verify')}
+                          </span>
                         </button>
 
                         {/* Delete Account */}
@@ -791,6 +847,45 @@ export const UserAccountsManagerView: React.FC = () => {
                     <option value="inactive">{isRtl ? 'معطل (Suspended)' : 'Suspended'}</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Email verification flag */}
+              <div>
+                <label className="block text-slate-600 dark:text-slate-300 font-semibold mb-1">
+                  {isRtl ? 'توثيق البريد الإلكتروني' : 'Email Verification'}
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setEditEmailVerified((v) => !v)}
+                  className={`w-full flex items-center justify-between gap-2 rounded-xl px-3 py-2 border font-semibold transition cursor-pointer ${
+                    editEmailVerified
+                      ? 'bg-sky-50 dark:bg-sky-950/50 border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-300'
+                      : 'bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    {editEmailVerified ? <CheckCircle2 className="w-4 h-4" /> : <Mail className="w-4 h-4" />}
+                    {editEmailVerified
+                      ? (isRtl ? 'البريد موثّق — يمكنه تسجيل الدخول' : 'Verified — can sign in')
+                      : (isRtl ? 'غير موثّق — لا يمكنه تسجيل الدخول' : 'Not verified — cannot sign in')}
+                  </span>
+                  <span
+                    className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition ${
+                      editEmailVerified ? 'bg-sky-500' : 'bg-slate-300 dark:bg-slate-600'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition ${
+                        editEmailVerified ? 'translate-x-4' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </span>
+                </button>
+                <p className="mt-1 text-[11px] text-slate-400">
+                  {isRtl
+                    ? 'يجب أن يكون البريد موثّقًا والحساب نشطًا حتى يتمكن المستخدم من تسجيل الدخول.'
+                    : 'A user can sign in only when their email is verified AND the account is active.'}
+                </p>
               </div>
 
               {/* Phone & Department */}

@@ -13,8 +13,7 @@ import {
   INITIAL_EMPLOYEES,
   INITIAL_FINANCE_EXPENSES,
   INITIAL_FLIGHTS,
-  INITIAL_GUESTS,
-  INITIAL_GUEST_TIERS,
+  INITIAL_CUSTOMER_TIERS,
   INITIAL_NOTIFICATIONS,
   INITIAL_PACKAGE_CATEGORIES,
   DEFAULT_SERVICE_TYPE_CATEGORIES,
@@ -52,8 +51,7 @@ import {
   FinanceExpense,
   FleetVehicle,
   FlightInfo,
-  Guest,
-  GuestTier,
+  CustomerTier,
   HotelBooking,
   HotelVendor,
   HotelRoomOption,
@@ -79,9 +77,11 @@ interface AppContextType {
   currentUser: UserAccount | null;
   isAuthenticated: boolean;
   dataHydrated: boolean;
-  login: (usernameOrEmail: string, password: string) => Promise<{ success: boolean; error?: string; user?: UserAccount }>;
+  login: (usernameOrEmail: string, password: string) => Promise<{ success: boolean; error?: string; user?: UserAccount; needsVerification?: boolean; email?: string }>;
   logout: () => void;
-  signup: (account: Omit<UserAccount, 'id' | 'createdAt'>) => Promise<{ success: boolean; error?: string; user?: UserAccount; pendingActivation?: boolean }>;
+  signup: (account: Omit<UserAccount, 'id' | 'createdAt'>) => Promise<{ success: boolean; error?: string; user?: UserAccount; requiresVerification?: boolean }>;
+  verifyEmail: (email: string, code: string) => Promise<{ success: boolean; error?: string; user?: UserAccount }>;
+  resendVerificationCode: (email: string) => Promise<{ success: boolean; error?: string }>;
   updateUserAccount: (id: string, updates: Partial<UserAccount>) => { success: boolean; error?: string };
   addUserAccount: (account: Omit<UserAccount, 'id' | 'createdAt'>) => { success: boolean; error?: string; user?: UserAccount };
   deleteUserAccount: (id: string) => { success: boolean; error?: string };
@@ -210,15 +210,12 @@ interface AppContextType {
   recordEmployeeSalaryPayment: (employeeId: string, month: string, amountPaid: number, notes?: string) => { success: boolean; error?: string };
   addEmployeeExpense: (employeeId: string, month: string, expenseAmount: number, description: string) => { success: boolean; error?: string };
 
-  // Guests & Passengers Directory
-  guests: Guest[];
-  addGuest: (guest: Omit<Guest, 'id'>) => { success: boolean; error?: string; guest?: Guest };
-  updateGuest: (id: string, updated: Partial<Guest>) => { success: boolean; error?: string };
-  deleteGuest: (id: string) => { success: boolean; error?: string };
-  guestTiers: GuestTier[];
-  addGuestTier: (tier: Omit<GuestTier, 'id'>) => { success: boolean; error?: string; tier?: GuestTier };
-  updateGuestTier: (id: string, updated: Partial<GuestTier>) => { success: boolean; error?: string };
-  deleteGuestTier: (id: string) => { success: boolean; error?: string };
+  // Customer loyalty tiers (VIP tiers + discounts). Customers themselves are
+  // user accounts with role=customer (see userAccounts), not a separate table.
+  customerTiers: CustomerTier[];
+  addCustomerTier: (tier: Omit<CustomerTier, 'id'>) => { success: boolean; error?: string; tier?: CustomerTier };
+  updateCustomerTier: (id: string, updated: Partial<CustomerTier>) => { success: boolean; error?: string };
+  deleteCustomerTier: (id: string) => { success: boolean; error?: string };
 
   // Hotel Vendors & Qatar Luxury Hotel Partners
   hotelVendors: HotelVendor[];
@@ -308,7 +305,7 @@ const TRANSLATIONS: Record<string, { en: string; ar: string }> = {
   'tax-reports': { en: 'Tax & QTA Reports', ar: 'التقارير الضريبية والسياحية' },
   'driver-portal': { en: 'Driver Mission Console', ar: 'لوحة مهام السائق الميدانية' },
   employees: { en: 'Employees & Desk Staff', ar: 'الكوادر وموظفو الكاونترات' },
-  guests: { en: 'Guests & Travelers', ar: 'سجل الضيوف والمسافرين' },
+  guests: { en: 'Customers', ar: 'العملاء' },
   'airport-desks': { en: 'Agent Desks & Hotel Counters', ar: 'مكاتب الوكلاء وكاونترات الفنادق' },
   vendors: { en: 'Hotel Vendors & Partners', ar: 'فنادق وشركاء قطر' },
   hotelBookings: { en: 'Hotel Booking System', ar: 'منظومة حجز الفنادق' },
@@ -497,8 +494,7 @@ export const AppProvider: React.FC<{
     return 'desk-hia-01';
   });
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [guests, setGuests] = useState<Guest[]>([]);
-  const [guestTiers, setGuestTiers] = useState<GuestTier[]>([]);
+  const [customerTiers, setCustomerTiers] = useState<CustomerTier[]>([]);
   const [hotelVendors, setHotelVendors] = useState<HotelVendor[]>([]);
   const [hotelBookings, setHotelBookings] = useState<HotelBooking[]>([]);
 
@@ -605,14 +601,13 @@ export const AppProvider: React.FC<{
       const q = '?take=200';
       const load = <T,>(p: string) => api.get<T[]>(`/api/${p}${q}`).catch(() => null);
       try {
-        const [bk, dr, fl, tg, gs, gt, hv, hb, emp, exp, cur, ch, pkg, ad, loc, da, notif] =
+        const [bk, dr, fl, tg, ct, hv, hb, emp, exp, cur, ch, pkg, ad, loc, da, notif] =
           await Promise.all([
             load<Booking>('bookings'),
             load<Driver>('drivers'),
             load<FleetVehicle>('fleet'),
             load<TourGuide>('tour-guides'),
-            load<Guest>('guests'),
-            load<GuestTier>('guest-tiers'),
+            load<CustomerTier>('customer-tiers'),
             load<HotelVendor>('hotel-vendors'),
             load<HotelBooking>('hotel-bookings'),
             // Staff are users (role=staff) + their ledger; the API returns them
@@ -632,8 +627,7 @@ export const AppProvider: React.FC<{
         if (dr?.length) setDrivers(dr);
         if (fl?.length) setFleetVehicles(fl);
         if (tg?.length) setTourGuides(tg);
-        if (gs?.length) setGuests(gs);
-        if (gt?.length) setGuestTiers(gt);
+        if (ct?.length) setCustomerTiers(ct);
         if (hv?.length) setHotelVendors(hv);
         if (hb?.length) setHotelBookings(hb);
         if (emp?.length) setEmployees(emp);
@@ -745,8 +739,7 @@ export const AppProvider: React.FC<{
   // driver-guide). The driver mutators below persist to /api/users directly.
   useResourceSync('fleet', fleetVehicles as never, dataHydrated, notifySyncError, remoteEpoch);
   useResourceSync('tour-guides', tourGuides as never, dataHydrated, notifySyncError, remoteEpoch);
-  useResourceSync('guests', guests as never, dataHydrated, notifySyncError, remoteEpoch);
-  useResourceSync('guest-tiers', guestTiers as never, dataHydrated, notifySyncError, remoteEpoch);
+  useResourceSync('customer-tiers', customerTiers as never, dataHydrated, notifySyncError, remoteEpoch);
   useResourceSync('hotel-vendors', hotelVendors as never, dataHydrated, notifySyncError, remoteEpoch);
   useResourceSync('hotel-bookings', hotelBookings as never, dataHydrated, notifySyncError, remoteEpoch);
   // The `employees` collection is backed by the staff endpoint (users + ledger).
@@ -832,15 +825,14 @@ export const AppProvider: React.FC<{
     const load = <T,>(p: string) => api.get<T[]>(`/api/${p}${q}`).catch(() => null);
     try {
       const [
-        bk, dr, fl, tg, gs, gt, hv, hb, emp, exp, cur, ch, pkg, ad, loc, da,
+        bk, dr, fl, tg, ct, hv, hb, emp, exp, cur, ch, pkg, ad, loc, da,
         usr, sal, com, logs, rol, notif,
       ] = await Promise.all([
         load<Booking>('bookings'),
         load<Driver>('drivers'),
         load<FleetVehicle>('fleet'),
         load<TourGuide>('tour-guides'),
-        load<Guest>('guests'),
-        load<GuestTier>('guest-tiers'),
+        load<CustomerTier>('customer-tiers'),
         load<HotelVendor>('hotel-vendors'),
         load<HotelBooking>('hotel-bookings'),
         load<Employee>('staff'),
@@ -874,8 +866,7 @@ export const AppProvider: React.FC<{
       if (bk) setBookings(bk);
       if (fl) setFleetVehicles(fl);
       if (tg) setTourGuides(tg);
-      if (gs) setGuests(gs);
-      if (gt) setGuestTiers(gt);
+      if (ct) setCustomerTiers(ct);
       if (hv) setHotelVendors(hv);
       if (hb) setHotelBookings(hb);
       if (emp) setEmployees(emp);
@@ -975,7 +966,7 @@ export const AppProvider: React.FC<{
   const login = async (
     usernameOrEmail: string,
     password: string
-  ): Promise<{ success: boolean; error?: string; user?: UserAccount }> => {
+  ): Promise<{ success: boolean; error?: string; user?: UserAccount; needsVerification?: boolean; email?: string }> => {
     const query = usernameOrEmail.trim();
 
     // 1) Try the live backend API first (JWT auth against MySQL).
@@ -1005,6 +996,15 @@ export const AppProvider: React.FC<{
       // silently falling back to local accounts.
       if (err instanceof ApiError) {
         if (err.status === 403) {
+          const detail = err.details as { code?: string; email?: string } | undefined;
+          if (detail?.code === 'email-not-verified') {
+            return {
+              success: false,
+              needsVerification: true,
+              email: detail.email,
+              error: 'Please verify your email address to activate your account.',
+            };
+          }
           return {
             success: false,
             error: 'This account is inactive — it is pending activation by an admin.',
@@ -1057,7 +1057,7 @@ export const AppProvider: React.FC<{
 
   const signup = async (
     data: Omit<UserAccount, 'id' | 'createdAt'>
-  ): Promise<{ success: boolean; error?: string; user?: UserAccount; pendingActivation?: boolean }> => {
+  ): Promise<{ success: boolean; error?: string; user?: UserAccount; requiresVerification?: boolean }> => {
     const cleanUsername = data.username.trim().toLowerCase();
     const cleanEmail = data.email.trim().toLowerCase();
 
@@ -1070,8 +1070,8 @@ export const AppProvider: React.FC<{
 
     // Public signup always creates an INACTIVE customer account on the backend.
     // We deliberately do NOT authenticate the user — an admin must activate the
-    // account first. The returned `pendingActivation` tells the UI to show a
-    // "waiting for approval" message instead of logging the user in.
+    // account first. The returned `requiresVerification` tells the UI to show
+    // the email code-entry step instead of logging the user in.
     try {
       const { user: apiUser } = await authApi.register({
         name: data.name.trim(),
@@ -1083,9 +1083,9 @@ export const AppProvider: React.FC<{
       addAuditLog(
         'Account Created',
         'SECURITY',
-        `New customer signup pending activation: ${apiUser.name} (${apiUser.username}).`
+        `New customer signup — awaiting email verification: ${apiUser.name} (${apiUser.username}).`
       );
-      return { success: true, user: { ...apiUser, password: data.password } as UserAccount, pendingActivation: true };
+      return { success: true, user: { ...apiUser, password: data.password } as UserAccount, requiresVerification: true };
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         return { success: false, error: 'Username or email is already registered. Please login instead.' };
@@ -1104,8 +1104,48 @@ export const AppProvider: React.FC<{
       createdAt: new Date().toISOString().split('T')[0],
     };
 
-    addAuditLog('Account Created', 'SECURITY', `New customer signup pending activation: ${newAccount.name} (${newAccount.username}).`);
-    return { success: true, user: newAccount, pendingActivation: true };
+    addAuditLog('Account Created', 'SECURITY', `New customer signup — awaiting email verification: ${newAccount.name} (${newAccount.username}).`);
+    return { success: true, user: newAccount, requiresVerification: true };
+  };
+
+  // Confirm the emailed 6-digit code. On success the server returns a session
+  // token and the now-active user, so we sign the user straight in.
+  const verifyEmail = async (
+    email: string,
+    code: string
+  ): Promise<{ success: boolean; error?: string; user?: UserAccount }> => {
+    try {
+      const { user: apiUser } = await authApi.verifyEmail({ email: email.trim().toLowerCase(), code: code.trim() });
+      const mergedUser = { ...apiUser, lastLogin: 'Just now' } as UserAccount;
+      setCurrentUser(mergedUser);
+      setCurrentRole(mergedUser.role);
+      setIsAuthenticated(true);
+      try {
+        localStorage.setItem('artrust_current_user', JSON.stringify(mergedUser));
+        localStorage.setItem('artrust_is_authenticated', JSON.stringify(true));
+      } catch {}
+      addAuditLog('Email Verified', 'SECURITY', `${mergedUser.name} (${mergedUser.username}) verified their email and signed in.`);
+      return { success: true, user: mergedUser };
+    } catch (err) {
+      if (err instanceof ApiError) {
+        return { success: false, error: err.message };
+      }
+      return { success: false, error: 'Verification failed. Please try again.' };
+    }
+  };
+
+  const resendVerificationCode = async (
+    email: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      await authApi.resendCode(email.trim().toLowerCase());
+      return { success: true };
+    } catch (err) {
+      if (err instanceof ApiError) {
+        return { success: false, error: err.message };
+      }
+      return { success: false, error: 'Could not resend the code. Please try again shortly.' };
+    }
   };
 
   const updateUserAccount = (id: string, updates: Partial<UserAccount>): { success: boolean; error?: string } => {
@@ -1583,48 +1623,11 @@ export const AppProvider: React.FC<{
       })
     );
 
-    // 4. Synchronize Guest Directory (Passenger ledger)
-    setGuests((prev) => {
-      const matchIndex = prev.findIndex(
-        (g) =>
-          (bookingData.passengerPhone && g.phone === bookingData.passengerPhone) ||
-          (bookingData.passengerEmail && g.email.toLowerCase() === bookingData.passengerEmail.toLowerCase()) ||
-          g.name.toLowerCase() === bookingData.passengerName.toLowerCase()
-      );
-
-      if (matchIndex >= 0) {
-        const existing = prev[matchIndex];
-        const updatedGuest: Guest = {
-          ...existing,
-          totalBookings: existing.totalBookings + 1,
-          totalSpentQAR: existing.totalSpentQAR + bookingData.totalQAR,
-          lastArrivalAirport: bookingData.arrivalAirport || existing.lastArrivalAirport,
-          lastFlight: bookingData.flightNumber || existing.lastFlight,
-          lastTripDate: 'Oct 09, 2026',
-          bookingIds: [newBooking.id, ...existing.bookingIds.filter((bId) => bId !== newBooking.id)],
-        };
-        const nextList = [...prev];
-        nextList[matchIndex] = updatedGuest;
-        return nextList;
-      } else {
-        const newGuest: Guest = {
-          id: `gst-${Date.now()}`,
-          name: bookingData.passengerName,
-          nationality: bookingData.nationality || 'International',
-          phone: bookingData.passengerPhone || '+974 5500 0000',
-          email: bookingData.passengerEmail || `${bookingData.passengerName.toLowerCase().replace(/[^a-z0-9]/g, '.')}@traveler.com`,
-          vipTier: bookingData.totalQAR >= 2000 || bookingData.paxCount >= 4 ? 'VIP Gold' : 'Standard',
-          totalBookings: 1,
-          totalSpentQAR: bookingData.totalQAR,
-          lastArrivalAirport: bookingData.arrivalAirport || 'Hamad Int’l Airport (DOH)',
-          lastFlight: bookingData.flightNumber || 'QR 138',
-          lastTripDate: 'Oct 09, 2026',
-          specialPreferences: bookingData.notes || 'Counter booking',
-          bookingIds: [newBooking.id],
-        };
-        return [newGuest, ...prev];
-      }
-    });
+    // 4. (Removed) Guest directory sync — passengers are no longer auto-saved
+    // as separate profiles. Customers exist only as user accounts (role=customer)
+    // created via signup or the admin Customers screen; the booking keeps the
+    // passenger's details inline (passengerName/Phone/Email) and an optional
+    // customerId link.
 
     // 5. Synchronize Driver Trip and Mission
     if (bookingData.driverId) {
@@ -1645,7 +1648,7 @@ export const AppProvider: React.FC<{
     addAuditLog(
       'New Booking Created & Synced',
       'POS',
-      `Issued voucher ${newBooking.pnr} for ${newBooking.passengerName} (${newBooking.totalQAR} QAR). Synced with Shift Drawer, Desk, Guest profile and Staff performance.`
+      `Issued voucher ${newBooking.pnr} for ${newBooking.passengerName} (${newBooking.totalQAR} QAR). Synced with Shift Drawer, Desk and Staff performance.`
     );
 
     addNotification({
@@ -2538,7 +2541,6 @@ export const AppProvider: React.FC<{
       localStorage.removeItem('artrust_airport_desks');
       localStorage.removeItem('artrust_desk_assignments');
       localStorage.removeItem('artrust_employees');
-      localStorage.removeItem('artrust_guests');
       localStorage.removeItem('artrust_expenses');
       localStorage.removeItem('artrust_packages');
       localStorage.removeItem('artrust_package_categories');
@@ -2554,7 +2556,7 @@ export const AppProvider: React.FC<{
     setAirportDesks(INITIAL_AIRPORT_DESKS);
     setDeskAssignmentHistory(INITIAL_DESK_ASSIGNMENT_HISTORY);
     setEmployees(INITIAL_EMPLOYEES);
-    setGuests(INITIAL_GUESTS);
+    setCustomerTiers(INITIAL_CUSTOMER_TIERS);
     setHotelVendors(INITIAL_HOTEL_VENDORS);
     setHotelBookings(INITIAL_HOTEL_BOOKINGS);
     setExpenses(INITIAL_FINANCE_EXPENSES);
@@ -2786,55 +2788,29 @@ export const AppProvider: React.FC<{
     return { success: false, error: 'Employee or month record not found.' };
   };
 
-  // Guests Management
-  const addGuest = (guestData: Omit<Guest, 'id'>): { success: boolean; error?: string; guest?: Guest } => {
-    if (!guestData.name.trim()) {
-      return { success: false, error: 'Guest name is required.' };
-    }
-    const newGuest: Guest = {
-      ...guestData,
-      id: `gst-${Math.floor(100 + Math.random() * 900)}`,
-    };
-    setGuests((prev) => [newGuest, ...prev]);
-    addAuditLog('New Guest Profile Created', 'SYSTEM', `Registered traveler "${newGuest.name}" (${newGuest.nationality})`);
-    return { success: true, guest: newGuest };
-  };
-
-  const updateGuest = (id: string, updated: Partial<Guest>): { success: boolean; error?: string } => {
-    setGuests((prev) => prev.map((g) => (g.id === id ? { ...g, ...updated } : g)));
-    addAuditLog('Guest Profile Updated', 'SYSTEM', `Updated guest profile #${id}`);
-    return { success: true };
-  };
-
-  const deleteGuest = (id: string): { success: boolean; error?: string } => {
-    setGuests((prev) => prev.filter((g) => g.id !== id));
-    addAuditLog('Guest Profile Removed', 'SYSTEM', `Removed guest #${id}`);
-    return { success: true };
-  };
-
-  // Guest VIP Tiers & Discount Management
-  const addGuestTier = (tierData: Omit<GuestTier, 'id'>): { success: boolean; error?: string; tier?: GuestTier } => {
+  // Customer VIP Tiers & Discount Management (tiers belong to customers now).
+  const addCustomerTier = (tierData: Omit<CustomerTier, 'id'>): { success: boolean; error?: string; tier?: CustomerTier } => {
     if (!tierData.name.trim()) {
       return { success: false, error: 'Tier name is required.' };
     }
-    const newTier: GuestTier = {
+    const newTier: CustomerTier = {
       ...tierData,
       id: `tier-${Date.now()}`,
     };
-    setGuestTiers((prev) => [...prev, newTier]);
-    addAuditLog('New VIP Tier Created', 'SYSTEM', `Added VIP tier "${newTier.name}" with ${newTier.discountPercentage}% discount`);
+    setCustomerTiers((prev) => [...prev, newTier]);
+    addAuditLog('New Customer Tier Created', 'SYSTEM', `Added tier "${newTier.name}" with ${newTier.discountPercentage}% discount`);
     return { success: true, tier: newTier };
   };
 
-  const updateGuestTier = (id: string, updated: Partial<GuestTier>): { success: boolean; error?: string } => {
-    setGuestTiers((prev) => prev.map((t) => (t.id === id ? { ...t, ...updated } : t)));
-    addAuditLog('VIP Tier Updated', 'SYSTEM', `Modified VIP tier #${id}`);
+  const updateCustomerTier = (id: string, updated: Partial<CustomerTier>): { success: boolean; error?: string } => {
+    setCustomerTiers((prev) => prev.map((t) => (t.id === id ? { ...t, ...updated } : t)));
+    addAuditLog('Customer Tier Updated', 'SYSTEM', `Modified customer tier #${id}`);
     return { success: true };
   };
 
-  const deleteGuestTier = (id: string): { success: boolean; error?: string } => {
-    setGuestTiers((prev) => prev.filter((t) => t.id !== id));
-    addAuditLog('VIP Tier Removed', 'SYSTEM', `Removed VIP tier #${id}`);
+  const deleteCustomerTier = (id: string): { success: boolean; error?: string } => {
+    setCustomerTiers((prev) => prev.filter((t) => t.id !== id));
+    addAuditLog('Customer Tier Removed', 'SYSTEM', `Removed customer tier #${id}`);
     return { success: true };
   };
 
@@ -3095,6 +3071,8 @@ export const AppProvider: React.FC<{
         login,
         logout,
         signup,
+        verifyEmail,
+        resendVerificationCode,
         updateUserAccount,
         addUserAccount,
         deleteUserAccount,
@@ -3176,14 +3154,10 @@ export const AppProvider: React.FC<{
         deleteEmployee,
         recordEmployeeSalaryPayment,
         addEmployeeExpense,
-        guests,
-        addGuest,
-        updateGuest,
-        deleteGuest,
-        guestTiers,
-        addGuestTier,
-        updateGuestTier,
-        deleteGuestTier,
+        customerTiers,
+        addCustomerTier,
+        updateCustomerTier,
+        deleteCustomerTier,
         hotelVendors,
         addHotelVendor,
         updateHotelVendor,

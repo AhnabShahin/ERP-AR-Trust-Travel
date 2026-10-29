@@ -20,13 +20,19 @@ type Group = { label: string; hits: Hit[] };
 export const GlobalSearchView: React.FC = () => {
   const {
     bookings,
-    guests,
+    userAccounts,
     hotelVendors,
     fleetVehicles,
     hotelBookings,
     packages,
     employees,
   } = useApp();
+
+  // Customers are user accounts with role=customer.
+  const customers = useMemo(
+    () => userAccounts.filter((u) => u.role === 'customer'),
+    [userAccounts]
+  );
   const params = useSearchParams();
   const q = (params.get('q') || '').trim();
 
@@ -53,14 +59,14 @@ export const GlobalSearchView: React.FC = () => {
         }))
     );
     push(
-      'Guests',
-      guests
-        .filter((g) => has(g.name, g.id, (g as { phone?: string }).phone, (g as { email?: string }).email))
-        .map((g) => ({
-          id: g.id,
-          title: g.name,
-          subtitle: (g as { nationality?: string }).nationality || g.id,
-          href: `/dashboard/guests/${g.id}`,
+      'Customers',
+      customers
+        .filter((c) => has(c.name, c.id, c.username, c.email, c.phone))
+        .map((c) => ({
+          id: c.id,
+          title: c.name,
+          subtitle: c.email || c.nationality || c.id,
+          href: `/dashboard/guests`,
         }))
     );
     push(
@@ -95,7 +101,7 @@ export const GlobalSearchView: React.FC = () => {
     );
 
     return out;
-  }, [q, bookings, guests, hotelVendors, fleetVehicles, hotelBookings, packages, employees]);
+  }, [q, bookings, customers, hotelVendors, fleetVehicles, hotelBookings, packages, employees]);
 
   const total = groups.reduce((n, g) => n + g.hits.length, 0);
 
@@ -113,7 +119,7 @@ export const GlobalSearchView: React.FC = () => {
                 {total} result{total === 1 ? '' : 's'} for <span className="font-bold">“{q}”</span>
               </>
             ) : (
-              'Type in the search box above to search across bookings, guests, vendors, fleet and more.'
+              'Type in the search box above to search across bookings, customers, vendors, fleet and more.'
             )}
           </p>
         </div>

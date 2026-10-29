@@ -41,8 +41,8 @@ export const HotelBookingView: React.FC = () => {
     updateHotelBooking,
     cancelHotelBooking,
     updateHotelBookingStatus,
-    guests,
-    guestTiers,
+    userAccounts,
+    customerTiers,
     airportDesks,
     setActiveTab,
     openModal,
@@ -52,6 +52,13 @@ export const HotelBookingView: React.FC = () => {
   } = useApp();
 
   const isRtl = language === 'ar';
+
+  // Customers are users with role=customer — the "existing customer" picker
+  // prefills the lead-guest fields from a saved customer account.
+  const customerUsers = useMemo(
+    () => userAccounts.filter((u) => u.role === 'customer'),
+    [userAccounts]
+  );
 
   // Filters State
   const [searchQuery, setSearchQuery] = useState('');
@@ -126,9 +133,9 @@ export const HotelBookingView: React.FC = () => {
   // VIP Tier discount calculation
   const vipDiscountPercentage = useMemo(() => {
     if (!guestVipTier || guestVipTier === 'Standard') return 0;
-    const tier = guestTiers.find((t) => t.name.toLowerCase() === guestVipTier.toLowerCase());
+    const tier = customerTiers.find((t) => t.name.toLowerCase() === guestVipTier.toLowerCase());
     return tier?.discountPercentage || 0;
-  }, [guestTiers, guestVipTier]);
+  }, [customerTiers, guestVipTier]);
 
   // Live total calculation
   const nightlyRate = activeRoomOption?.ratePerNightQAR || 1500;
@@ -154,12 +161,12 @@ export const HotelBookingView: React.FC = () => {
       setGuestNationality('Qatar');
       setGuestVipTier('Standard');
     } else {
-      const g = guests.find((x) => x.id === guestId);
+      const g = customerUsers.find((x) => x.id === guestId);
       if (g) {
         setGuestName(g.name);
-        setGuestPhone(g.phone);
+        setGuestPhone(g.phone || '+974 ');
         setGuestEmail(g.email);
-        setGuestNationality(g.nationality);
+        setGuestNationality(g.nationality || 'Qatar');
         setGuestVipTier(g.vipTier || 'Standard');
       }
     }
@@ -825,16 +832,16 @@ export const HotelBookingView: React.FC = () => {
                     <span>3. Lead Guest Information & VIP Tier</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-400 font-medium">Registered Guests:</span>
+                    <span className="text-slate-400 font-medium">Registered Customers:</span>
                     <select
                       value={selectedExistingGuestId}
                       onChange={(e) => handleGuestSelectChange(e.target.value)}
                       className="px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs"
                     >
                       <option value="new">+ Enter New Guest Details</option>
-                      {guests.map((g) => (
+                      {customerUsers.map((g) => (
                         <option key={g.id} value={g.id}>
-                          {g.name} ({g.nationality}) · {g.vipTier}
+                          {g.name}{g.nationality ? ` (${g.nationality})` : ''}{g.vipTier ? ` · ${g.vipTier}` : ''}
                         </option>
                       ))}
                     </select>
@@ -897,7 +904,7 @@ export const HotelBookingView: React.FC = () => {
                       className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white"
                     >
                       <option value="Standard">Standard (0% discount)</option>
-                      {guestTiers.map((t) => (
+                      {customerTiers.map((t) => (
                         <option key={t.id} value={t.name}>
                           {t.name} ({t.discountPercentage}% Discount)
                         </option>

@@ -24,6 +24,8 @@ const isAdminRole = (role?: string): boolean =>
 const EDITABLE = [
   'name', 'nameAr', 'phone', 'department', 'vendorId', 'avatar',
   'address', 'city', 'country', 'nationality', 'passportNumber', 'companyName', 'bio',
+  // Customer loyalty tier (role = customer).
+  'vipTier',
   // Staff/driver duty status — set from the dispatch board + staff screen.
   'staffStatus', 'jobTitle',
   // Driver profile — sourcing type (first/third party) + license details.
@@ -74,6 +76,11 @@ usersRouter.post(
       role,
       // Every new account starts inactive and must be activated afterwards.
       status: 'inactive',
+      // Accounts created directly by an admin are trusted: there is no
+      // self-service email step, so mark them verified up front (otherwise the
+      // email-verification login gate would lock out staff/driver accounts).
+      isEmailVerified: true,
+      emailVerifiedAt: new Date(),
     };
     for (const k of EDITABLE) if (b[k] !== undefined) (data as Record<string, unknown>)[k] = b[k];
     if (typeof b.id === 'string' && b.id) (data as Record<string, unknown>).id = b.id;
@@ -124,6 +131,21 @@ usersRouter.patch(
         throw new HttpError(403, 'The super-admin account cannot be deactivated');
       }
       data.status = b.status;
+    }
+
+    // Email-verified flag — admin-only, only when it actually changes. Lets an
+    // admin verify (or un-verify) any account directly from the dashboard.
+    if (b.isEmailVerified !== undefined && Boolean(b.isEmailVerified) !== existing.isEmailVerified) {
+      if (!requesterIsAdmin) throw new HttpError(403, 'Only an admin can change verification status');
+      const verified = Boolean(b.isEmailVerified);
+      data.isEmailVerified = verified;
+      data.emailVerifiedAt = verified ? new Date() : null;
+      if (verified) {
+        // Clear any pending code so a stale one can't be reused.
+        data.emailVerifyCodeHash = null;
+        data.emailVerifyExpiry = null;
+        data.emailVerifyAttempts = 0;
+      }
     }
 
     // Role changes — only when the role actually changes: admin-only, a

@@ -85,8 +85,7 @@ async function wipeDatabase() {
     ['service_categories', () => prisma.serviceCategory.deleteMany({})],
     ['airport_desks', () => prisma.airportDesk.deleteMany({})],
     ['locations', () => prisma.location.deleteMany({})],
-    ['guests', () => prisma.guest.deleteMany({})],
-    ['guest_tiers', () => prisma.guestTier.deleteMany({})],
+    ['customer_tiers', () => prisma.customerTier.deleteMany({})],
     ['employees', () => prisma.employee.deleteMany({})],
     ['tour_guides', () => prisma.tourGuide.deleteMany({})],
     ['drivers', () => prisma.driver.deleteMany({})],
@@ -407,15 +406,15 @@ async function seedAirportDesks() {
   console.log(`✓ airport desks: ${res.count}`);
 }
 
-async function seedGuestTiers() {
+async function seedCustomerTiers() {
   const data = [
     { name: 'Standard', nameAr: 'عادي', discountPercentage: 0, badgeColor: 'blue', minSpendQAR: 0, description: 'Entry level — standard pricing on all tours, services and hotel stays.' },
     { name: 'VIP Silver', nameAr: 'فضي VIP', discountPercentage: 5, badgeColor: 'slate', minSpendQAR: 10000, description: 'Loyalty tier with 5% discount on all tours & services.' },
     { name: 'VIP Gold', nameAr: 'ذهبي VIP', discountPercentage: 10, badgeColor: 'amber', minSpendQAR: 25000, description: 'Premium tier with 10% discount plus priority airport desk service.' },
     { name: 'VIP Platinum', nameAr: 'بلاتيني VIP', discountPercentage: 15, badgeColor: 'purple', minSpendQAR: 50000, description: 'Top tier with 15% discount, dedicated concierge and VIP lounge access.' },
   ];
-  const res = await prisma.guestTier.createMany({ data, skipDuplicates: true });
-  console.log(`✓ guest tiers: ${res.count}`);
+  const res = await prisma.customerTier.createMany({ data, skipDuplicates: true });
+  console.log(`✓ customer tiers: ${res.count}`);
 }
 
 async function main() {
@@ -431,9 +430,9 @@ async function main() {
   await seedSiteContent();
   await seedTourPackages();
   await seedReviews();
-  await seedGuestTiers();
+  await seedCustomerTiers();
   await seedAirportDesks();
-  console.log('\n✅ Seed complete — super-admin, drivers, PDF fleet/hotels/platforms, full website content + tours + reviews + guest tiers.');
+  console.log('\n✅ Seed complete — super-admin, drivers, PDF fleet/hotels/platforms, full website content + tours + reviews + customer tiers.');
 }
 
 main()

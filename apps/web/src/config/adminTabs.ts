@@ -17,7 +17,6 @@ export const KNOWN_TABS = [
   'hotel-bookings',
   'vendors',
   'platforms',
-  'drivers-manager',
   'pos',
   'guests',
   'services',

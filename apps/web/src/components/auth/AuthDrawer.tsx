@@ -46,6 +46,8 @@ export const AuthDrawer: React.FC<AuthDrawerProps> = ({
   const {
     login,
     signup,
+    verifyEmail,
+    resendVerificationCode,
     logout,
     isAuthenticated,
     currentUser,
@@ -54,7 +56,12 @@ export const AuthDrawer: React.FC<AuthDrawerProps> = ({
     language,
   } = useApp();
 
-  const [mode, setMode] = useState<'login' | 'signup'>(initialMode);
+  const [mode, setMode] = useState<'login' | 'signup' | 'verify'>(initialMode);
+
+  // Email-verification step state.
+  const [verifyEmailAddr, setVerifyEmailAddr] = useState('');
+  const [verifyCode, setVerifyCode] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   // Login form state
   const [loginId, setLoginId] = useState('customer');
@@ -146,6 +153,15 @@ export const AuthDrawer: React.FC<AuthDrawerProps> = ({
       const res = await login(cleanId, loginPassword);
       setIsLoading(false);
       if (!res.success) {
+        if (res.needsVerification) {
+          // Account exists but the email isn't verified yet. Send a fresh code
+          // (the one from signup may have expired) and open the code step.
+          const target = res.email || cleanId;
+          await resendVerificationCode(target);
+          setSuccess('Your email needs verifying first — we just sent a fresh code to your inbox.');
+          enterVerifyMode(target);
+          return;
+        }
         setError(res.error || 'Invalid credentials. Please verify your username and password.');
       } else {
         setSuccess(`Welcome back, ${res.user?.name || 'Traveler'}!`);
@@ -200,14 +216,70 @@ export const AuthDrawer: React.FC<AuthDrawerProps> = ({
       setIsLoading(false);
       if (!res.success) {
         setError(res.error || 'Registration failed. Please try a different username or email.');
-      } else {
+      } else if (res.requiresVerification) {
         setSuccess(
-          `Account created, ${res.user?.name}! Your account is pending activation by our team. ` +
-            `You'll be able to sign in once it's approved.`
+          `Welcome, ${res.user?.name}! We've emailed a 6-digit verification code to ${signupEmail.trim().toLowerCase()}.`
         );
+        enterVerifyMode(signupEmail.trim().toLowerCase());
+      } else {
+        setSuccess(`Account created, ${res.user?.name}! You can now sign in.`);
         setMode('login');
       }
     }, 550);
+  };
+
+  // Countdown for the "resend code" cooldown.
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
+
+  // Switch into the email-verification step for a given address.
+  const enterVerifyMode = (email: string) => {
+    setVerifyEmailAddr(email);
+    setVerifyCode('');
+    setResendCooldown(60);
+    setMode('verify');
+    setError(null);
+  };
+
+  // Handle verification code submit
+  const handleVerifySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setSuccess(null);
+
+    const code = verifyCode.replace(/\D/g, '');
+    if (code.length !== 6) {
+      setError('Please enter the 6-digit code from your email.');
+      return;
+    }
+
+    setIsLoading(true);
+    setTimeout(async () => {
+      const res = await verifyEmail(verifyEmailAddr, code);
+      setIsLoading(false);
+      if (!res.success) {
+        setError(res.error || 'That code is incorrect or expired. Please try again.');
+      } else {
+        setSuccess(`Email verified — welcome, ${res.user?.name || 'Traveler'}! You're now signed in.`);
+      }
+    }, 350);
+  };
+
+  // Handle resend code
+  const handleResendCode = async () => {
+    if (resendCooldown > 0 || !verifyEmailAddr) return;
+    setError(null);
+    setSuccess(null);
+    const res = await resendVerificationCode(verifyEmailAddr);
+    if (res.success) {
+      setSuccess('A new code is on its way to your inbox.');
+      setResendCooldown(60);
+    } else {
+      setError(res.error || 'Could not resend the code right now.');
+    }
   };
 
   // Password strength helper
@@ -404,7 +476,9 @@ export const AuthDrawer: React.FC<AuthDrawerProps> = ({
             /* STATE 2: NOT AUTHENTICATED (LOGIN / SIGNUP FORM)               */
             /* ════════════════════════════════════════════════════════════════ */
             <>
-              {/* Mode Toggle Switch (Sign In vs Create Account) */}
+              {/* Mode Toggle Switch (Sign In vs Create Account) — hidden during
+                  the email-verification step. */}
+              {mode !== 'verify' && (
               <div className="p-1 rounded-2xl bg-[#05161D] border border-[#C0AB6F]/40 flex gap-1">
                 <button
                   type="button"
@@ -432,8 +506,10 @@ export const AuthDrawer: React.FC<AuthDrawerProps> = ({
                   <span>Create Account</span>
                 </button>
               </div>
+              )}
 
-              {/* VIP Welcome Privilege Banner */}
+              {/* VIP Welcome Privilege Banner — hidden during verification. */}
+              {mode !== 'verify' && (
               <div className="p-3.5 rounded-2xl bg-gradient-to-r from-[#0D3A48]/80 to-[#05161D]/90 border border-[#C0AB6F]/30 flex items-start gap-3 shadow-md">
                 <div className="p-2 rounded-xl bg-[#D4AF37]/20 text-[#E7CF8A] shrink-0 mt-0.5">
                   <Sparkles className="w-4 h-4 text-[#D4AF37]" />
@@ -452,6 +528,7 @@ export const AuthDrawer: React.FC<AuthDrawerProps> = ({
                   </p>
                 </div>
               </div>
+              )}
 
               {/* Alert Feedback Messages */}
               {error && (
@@ -582,7 +659,7 @@ export const AuthDrawer: React.FC<AuthDrawerProps> = ({
                     </button>
                   </div>
                 </form>
-              ) : (
+              ) : mode === 'signup' ? (
                 /* ─── TAB 2: SIGNUP FORM ─── */
                 <form onSubmit={handleSignupSubmit} className="space-y-3.5">
                   {/* Full Name */}
@@ -750,6 +827,79 @@ export const AuthDrawer: React.FC<AuthDrawerProps> = ({
                       className="text-[#D4AF37] font-bold hover:underline cursor-pointer"
                     >
                       Sign In to Account
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                /* ─── TAB 3: EMAIL VERIFICATION FORM ─── */
+                <form onSubmit={handleVerifySubmit} className="space-y-4">
+                  <div className="flex flex-col items-center text-center gap-2 pb-1">
+                    <div className="p-3 rounded-2xl bg-[#D4AF37]/15 border border-[#D4AF37]/30">
+                      <KeyRound className="w-6 h-6 text-[#D4AF37]" />
+                    </div>
+                    <h3 className="text-sm font-black text-white">Verify Your Email</h3>
+                    <p className="text-[11px] text-slate-300 leading-snug max-w-xs">
+                      Enter the 6-digit code we sent to{' '}
+                      <span className="font-bold text-[#E7CF8A] break-all">{verifyEmailAddr}</span>.
+                      It expires in a few minutes.
+                    </p>
+                  </div>
+
+                  {/* 6-digit code input */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-300">Verification Code</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoFocus
+                      maxLength={6}
+                      value={verifyCode}
+                      onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="● ● ● ● ● ●"
+                      className="w-full px-4 py-3 rounded-xl bg-[#05161D] border border-white/15 focus:border-[#D4AF37] text-white text-center text-2xl font-mono tracking-[0.5em] placeholder:tracking-[0.3em] placeholder:text-slate-600 focus:outline-none transition-colors shadow-inner"
+                    />
+                  </div>
+
+                  {/* Submit */}
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#D4AF37] via-[#C0AB6F] to-[#A79257] hover:brightness-110 disabled:opacity-50 text-[#05161D] font-black text-xs uppercase tracking-wider shadow-lg shadow-[#D4AF37]/25 transition cursor-pointer active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-[#05161D]" />
+                        <span>Verifying...</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck className="w-4 h-4 text-[#05161D]" />
+                        <span>Verify & Continue</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Resend */}
+                  <div className="text-center text-xs text-slate-400">
+                    <span>Didn't get the code? </span>
+                    <button
+                      type="button"
+                      onClick={handleResendCode}
+                      disabled={resendCooldown > 0}
+                      className="text-[#D4AF37] font-bold hover:underline cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:no-underline"
+                    >
+                      {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
+                    </button>
+                  </div>
+
+                  {/* Back to login */}
+                  <div className="text-center pt-1 text-xs text-slate-400">
+                    <button
+                      type="button"
+                      onClick={() => switchMode('login')}
+                      className="text-slate-400 hover:text-white hover:underline cursor-pointer"
+                    >
+                      ← Back to Sign In
                     </button>
                   </div>
                 </form>

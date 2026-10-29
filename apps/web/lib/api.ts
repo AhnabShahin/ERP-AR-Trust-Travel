@@ -5,7 +5,15 @@
 // and error handling stay consistent as features move off localStorage.
 // =====================================================================
 
-import type { ApiResponse, AuthResponse, LoginDto, RegisterDto, UserAccount } from './shared-types';
+import type {
+  ApiResponse,
+  AuthResponse,
+  LoginDto,
+  RegisterDto,
+  RegisterResult,
+  UserAccount,
+  VerifyEmailDto,
+} from './shared-types';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000';
 const TOKEN_KEY = 'artrust_token';
@@ -93,11 +101,19 @@ export const authApi = {
     setToken(result.token);
     return result;
   },
-  async register(dto: RegisterDto): Promise<AuthResponse> {
-    const result = await api.post<AuthResponse>('/api/auth/register', dto);
+  // Signup no longer returns a token: the account is unverified, so the user
+  // must confirm the emailed code (verifyEmail) before a session exists.
+  async register(dto: RegisterDto): Promise<RegisterResult> {
+    return api.post<RegisterResult>('/api/auth/register', dto);
+  },
+  // Confirm the emailed 6-digit code; on success the server returns a session
+  // token and the (now active + verified) user.
+  async verifyEmail(dto: VerifyEmailDto): Promise<AuthResponse> {
+    const result = await api.post<AuthResponse>('/api/auth/verify-email', dto);
     setToken(result.token);
     return result;
   },
+  resendCode: (email: string) => api.post<{ ok: true }>('/api/auth/resend-code', { email }),
   me: () => api.get<UserAccount>('/api/auth/me'),
   logout: () => setToken(null),
 };

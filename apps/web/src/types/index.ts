@@ -114,6 +114,7 @@ export interface Booking {
   passengerPhone: string;
   passengerEmail: string;
   nationality: string;
+  passportNumber?: string;
   flightNumber: string;
   arrivalAirport: string;
   arrivalTime: string;
@@ -568,7 +569,7 @@ export interface Employee {
   emergencyContact: string;
 }
 
-export interface GuestTier {
+export interface CustomerTier {
   id: string;
   name: string;
   nameAr?: string;
@@ -576,23 +577,6 @@ export interface GuestTier {
   badgeColor?: string; // e.g. 'purple', 'amber', 'emerald', 'blue'
   minSpendQAR?: number;
   description?: string;
-}
-
-export interface Guest {
-  id: string;
-  name: string;
-  nationality: string;
-  phone: string;
-  email: string;
-  vipTier: string; // Dynamic tier name matching GuestTier.name
-  passportNo?: string;
-  totalBookings: number;
-  totalSpentQAR: number;
-  lastArrivalAirport: string;
-  lastFlight: string;
-  lastTripDate: string;
-  specialPreferences: string;
-  bookingIds: string[];
 }
 
 export type ExpenseCategory =
@@ -776,4 +760,6 @@ export interface UserAccount {
   jobTitle?: string;
   // Driver sourcing (role = driver-guide): in-house vs. external/contracted.
   driverType?: 'first-party' | 'third-party';
+  // Customer loyalty / VIP tier (role = customer). Matches CustomerTier.name.
+  vipTier?: string;
 }

@@ -38,6 +38,7 @@ export interface UserAccount {
   bio?: string | null;
   staffStatus?: string | null;
   driverType?: string | null;
+  vipTier?: string | null;
 }
 
 export interface AuthResponse {

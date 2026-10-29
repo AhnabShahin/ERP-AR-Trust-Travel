@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   X,
   Plane,
+  Package,
   Car,
   User,
   Phone,
@@ -35,7 +36,7 @@ export const NewBookingModal: React.FC = () => {
   const [passengerPhone, setPassengerPhone] = useState('+974 ');
   const [passengerEmail, setPassengerEmail] = useState('');
   const [nationality, setNationality] = useState('United Kingdom');
-  const [selectedFlight, setSelectedFlight] = useState(flights[0].flightNumber);
+  const [passportNumber, setPassportNumber] = useState('');
   const [selectedPackageId, setSelectedPackageId] = useState(packages[0]?.id || 'pkg-1');
   const [paxCount, setPaxCount] = useState(2);
   const [paymentCurrency, setPaymentCurrency] = useState<Currency>(currency);
@@ -56,7 +57,7 @@ export const NewBookingModal: React.FC = () => {
   };
   const selectedDriver = drivers.find((d) => d.id === selectedDriverId);
   const selectedVehicle = fleetVehicles.find((v) => v.id === selectedVehicleId);
-  const flightObj = flights.find((f) => f.flightNumber === selectedFlight) || flights[0];
+  const flightObj = flights[0];
 
   // Map the chosen package's catalogue service type to the booking's serviceType.
   const bookingServiceType: 'tour-service' | 'tour-package' | 'transfer' =
@@ -81,7 +82,8 @@ export const NewBookingModal: React.FC = () => {
       passengerPhone,
       passengerEmail: passengerEmail || `${passengerName.toLowerCase().replace(/\s+/g, '.')}@traveler.com`,
       nationality,
-      flightNumber: selectedFlight,
+      passportNumber,
+      flightNumber: flightObj.flightNumber,
       arrivalAirport: 'Hamad Int’l Airport (DOH)',
       arrivalTime: flightObj.estimatedArrival,
       terminalGate: `Gate ${flightObj.gate} / Belt ${flightObj.carousel}`,
@@ -210,29 +212,25 @@ export const NewBookingModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Flight & Package Selection */}
+          {/* Package Selection */}
           <div className="space-y-3 pt-2 border-t border-slate-100 dark:border-slate-800">
             <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <Plane className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Arrival Flight & Package Selection</span>
+              <Package className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Package Selection</span>
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-slate-600 dark:text-slate-300 font-medium mb-1">
-                  Arriving Flight (Hamad DOH)
+                  Passport Number
                 </label>
-                <select
-                  value={selectedFlight}
-                  onChange={(e) => setSelectedFlight(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none font-mono"
-                >
-                  {flights.map((f) => (
-                    <option key={f.flightNumber} value={f.flightNumber}>
-                      {f.flightNumber} ({f.originCity} - {f.status})
-                    </option>
-                  ))}
-                </select>
+                <input
+                  type="text"
+                  value={passportNumber}
+                  onChange={(e) => setPassportNumber(e.target.value.toUpperCase())}
+                  placeholder="e.g. A1234567"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:outline-none font-mono placeholder:text-slate-400 placeholder:font-sans"
+                />
               </div>
 
               <div>

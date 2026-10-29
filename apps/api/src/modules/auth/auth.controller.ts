@@ -20,10 +20,31 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+const verifySchema = z.object({
+  email: z.string().email(),
+  code: z.string().regex(/^\d{6}$/, 'The code must be 6 digits'),
+});
+
+const resendSchema = z.object({
+  email: z.string().email(),
+});
+
 export async function register(req: Request, res: Response) {
   const input = registerSchema.parse(req.body);
   const result = await authService.register(input);
   res.status(201).json({ ok: true, data: result });
+}
+
+export async function verifyEmail(req: Request, res: Response) {
+  const { email, code } = verifySchema.parse(req.body);
+  const result = await authService.verifyEmail(email, code);
+  res.json({ ok: true, data: result });
+}
+
+export async function resendCode(req: Request, res: Response) {
+  const { email } = resendSchema.parse(req.body);
+  const result = await authService.resendCode(email);
+  res.json({ ok: true, data: result });
 }
 
 export async function login(req: Request, res: Response) {
