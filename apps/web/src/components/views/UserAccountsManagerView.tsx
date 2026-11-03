@@ -85,13 +85,11 @@ export const UserAccountsManagerView: React.FC = () => {
   const [editNameAr, setEditNameAr] = useState('');
   const [editUsername, setEditUsername] = useState('');
   const [editEmail, setEditEmail] = useState('');
-  const [editPassword, setEditPassword] = useState('');
   const [editRole, setEditRole] = useState<UserRole>('transit-agent');
   const [editPhone, setEditPhone] = useState('');
   const [editDept, setEditDept] = useState('');
   const [editStatus, setEditStatus] = useState<'active' | 'inactive'>('active');
   const [editEmailVerified, setEditEmailVerified] = useState<boolean>(false);
-  const [showEditPass, setShowEditPass] = useState(false);
 
   // Add Modal Form State
   const [addName, setAddName] = useState('');
@@ -159,13 +157,11 @@ export const UserAccountsManagerView: React.FC = () => {
     setEditNameAr(acc.nameAr || '');
     setEditUsername(acc.username);
     setEditEmail(acc.email);
-    setEditPassword(acc.password);
     setEditRole(acc.role);
     setEditPhone(acc.phone || '');
     setEditDept(acc.department || '');
     setEditStatus(acc.status);
     setEditEmailVerified(!!acc.isEmailVerified);
-    setShowEditPass(false);
   };
 
   // Quick one-click email verification toggle from the table row (admin only).
@@ -192,17 +188,14 @@ export const UserAccountsManagerView: React.FC = () => {
       notifyError(isRtl ? 'اسم المستخدم مطلوب.' : 'Username is required.');
       return;
     }
-    if (!editPassword.trim()) {
-      notifyError(isRtl ? 'كلمة المرور مطلوبة.' : 'Password cannot be blank.');
-      return;
-    }
 
+    // Password is intentionally NOT handled here — account details and password
+    // changes are separate actions. Use the "Reset Password" flow for passwords.
     const res = updateUserAccount(editingAccount.id, {
       name: editName.trim(),
       nameAr: editNameAr.trim() || undefined,
       username: editUsername.trim(),
       email: editEmail.trim(),
-      password: editPassword.trim(),
       role: editRole,
       phone: editPhone.trim() || undefined,
       department: editDept.trim() || undefined,
@@ -213,8 +206,8 @@ export const UserAccountsManagerView: React.FC = () => {
     if (res.success) {
       notifySuccess(
         isRtl
-          ? `تم تحديث بيانات وكلمة مرور الحساب ${editUsername} بنجاح!`
-          : `Credentials & password updated successfully for ${editUsername}!`
+          ? `تم تحديث بيانات الحساب ${editUsername} بنجاح!`
+          : `Account details updated successfully for ${editUsername}!`
       );
       setEditingAccount(null);
     } else {
@@ -629,10 +622,10 @@ export const UserAccountsManagerView: React.FC = () => {
                           type="button"
                           onClick={() => handleOpenEdit(acc)}
                           className="px-2.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/50 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-bold text-[11px] flex items-center gap-1 border border-blue-200 dark:border-blue-800 transition cursor-pointer active:scale-95"
-                          title="Change ID & Password / Edit Profile"
+                          title="Edit Account Details (name, email, role, status)"
                         >
                           <Edit2 className="w-3 h-3" />
-                          <span>{isRtl ? 'تغيير ID & Pass' : 'Edit ID & Pass'}</span>
+                          <span>{isRtl ? 'تعديل البيانات' : 'Edit Details'}</span>
                         </button>
 
                         {/* Quick Verify Email (admin flag) */}
@@ -691,7 +684,7 @@ export const UserAccountsManagerView: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                  {isRtl ? 'تعديل بيانات الحساب وكلمة المرور' : 'Change Account Credentials & Password'}
+                  {isRtl ? 'تعديل بيانات الحساب' : 'Edit Account Details'}
                 </h3>
                 <p className="text-xs text-slate-500 font-mono">
                   User ID: {editingAccount.id} · ({editingAccount.name})
@@ -763,44 +756,13 @@ export const UserAccountsManagerView: React.FC = () => {
                 </div>
               </div>
 
-              {/* Password change field with Generator */}
-              <div className="p-3.5 rounded-2xl bg-amber-500/5 border border-amber-500/20">
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                    <Lock className="w-3.5 h-3.5" />
-                    <span>{isRtl ? 'كلمة المرور الجديدة (Change Password)' : 'New Account Password'}</span>
-                  </label>
-
-                  <button
-                    type="button"
-                    onClick={() => setEditPassword(generateRandomPassword())}
-                    className="text-[11px] font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 cursor-pointer"
-                  >
-                    <Sparkles className="w-3 h-3" />
-                    <span>{isRtl ? 'توليد كلمة سر قوية' : 'Generate Secure'}</span>
-                  </button>
-                </div>
-
-                <div className="relative">
-                  <input
-                    type={showEditPass ? 'text' : 'password'}
-                    value={editPassword}
-                    onChange={(e) => setEditPassword(e.target.value)}
-                    className="w-full bg-white dark:bg-slate-800 border border-amber-300 dark:border-amber-700/80 rounded-xl px-3 py-2 pr-9 rtl:pr-3 rtl:pl-9 text-slate-900 dark:text-white font-mono font-bold outline-none"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowEditPass(!showEditPass)}
-                    className="absolute right-3 rtl:right-auto rtl:left-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                  >
-                    {showEditPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-                <p className="text-[10px] text-slate-500 mt-1">
+              {/* Password note — password changes are a SEPARATE action */}
+              <div className="p-3 rounded-2xl bg-slate-500/5 border border-slate-300/40 dark:border-slate-600/40 flex items-start gap-2.5">
+                <Lock className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
+                <p className="text-[11px] text-slate-500 leading-relaxed">
                   {isRtl
-                    ? 'سيتمكن الموظف من تسجيل الدخول بكلمة المرور هذه فور حفظ التغييرات.'
-                    : 'The user will immediately authenticate with this password.'}
+                    ? 'لا تُغيّر كلمة المرور من هنا. تعديل بيانات الحساب والحالة منفصل عن تغيير كلمة المرور — استخدم زر "إعادة تعيين كلمة المرور" بجانب كلمة المرور في الجدول.'
+                    : 'Password is not changed here. Editing account details and status is separate from changing the password — use the "Reset Password" button next to the password in the table.'}
                 </p>
               </div>
 
@@ -929,7 +891,7 @@ export const UserAccountsManagerView: React.FC = () => {
                   className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-md shadow-blue-600/20 flex items-center gap-2 transition cursor-pointer active:scale-95"
                 >
                   <Check className="w-4 h-4" />
-                  <span>{isRtl ? 'حفظ بيانات وكلمة مرور الحساب' : 'Save Credentials & Password'}</span>
+                  <span>{isRtl ? 'حفظ بيانات الحساب' : 'Save Account Details'}</span>
                 </button>
               </div>
             </form>
