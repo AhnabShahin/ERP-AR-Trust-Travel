@@ -35,6 +35,8 @@ import { SettingsView } from '../components/views/SettingsView';
 import { GlobalSearchView } from '../components/views/GlobalSearchView';
 import { WebsiteContentView } from '../components/views/WebsiteContentView';
 import { ReviewsManagerView } from '../components/views/ReviewsManagerView';
+import { LeadsView } from '../components/views/LeadsView';
+import { ContactMessagesView } from '../components/views/ContactMessagesView';
 import { InvoicesView } from '../components/views/InvoicesView';
 import { PaymentAccountsView } from '../components/views/PaymentAccountsView';
 import { ReportsCenterView } from '../components/views/ReportsCenterView';
@@ -68,4 +70,6 @@ export const ADMIN_VIEWS: Record<string, ComponentType> = {
   search: GlobalSearchView,
   'website-content': WebsiteContentView,
   reviews: ReviewsManagerView,
+  leads: LeadsView,
+  messages: ContactMessagesView,
 };

@@ -82,8 +82,45 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return body.data;
 }
 
+/** Meta envelope returned by list endpoints for pagination. */
+export interface ListMeta {
+  total: number;
+  skip: number;
+  take: number;
+}
+
+/**
+ * Like `get`, but also returns the list `meta` ({ total, skip, take }) that the
+ * `{ ok, data, meta }` envelope carries for paginated collection endpoints.
+ */
+async function getPage<T>(path: string): Promise<{ data: T[]; meta: ListMeta }> {
+  const token = getToken();
+  const res = await fetch(`${BASE_URL}${path}`, {
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Client-Id': CLIENT_ID,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+  let body: (ApiResponse<T[]> & { meta?: ListMeta }) | null = null;
+  try {
+    body = (await res.json()) as ApiResponse<T[]> & { meta?: ListMeta };
+  } catch {
+    /* non-JSON response */
+  }
+  if (!res.ok || !body || body.ok === false) {
+    const message = body && body.ok === false ? body.error : `Request failed (${res.status})`;
+    throw new ApiError(res.status, message, body && body.ok === false ? body.details : undefined);
+  }
+  return {
+    data: Array.isArray(body.data) ? body.data : [],
+    meta: body.meta ?? { total: 0, skip: 0, take: 0 },
+  };
+}
+
 export const api = {
   get: <T>(path: string) => request<T>(path),
+  getPage,
   post: <T>(path: string, data?: unknown) =>
     request<T>(path, { method: 'POST', body: JSON.stringify(data ?? {}) }),
   patch: <T>(path: string, data?: unknown) =>

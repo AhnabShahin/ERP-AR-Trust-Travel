@@ -14,6 +14,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { useWebsiteLanguage } from '../../../context/WebsiteLanguageContext';
+import { api } from '../../../../lib/api';
 
 interface ContactPageViewProps {
   onNavigateHome: () => void;
@@ -32,20 +33,40 @@ export const ContactPageView: React.FC<ContactPageViewProps> = ({
   });
 
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
+  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [submitError, setSubmitError] = useState<string>('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
-    setTimeout(() => {
-      setIsSubmitted(false);
-      setFormData({
-        name: '',
-        email: '',
-        phone: '+974 ',
-        service: 'Desert Safari Tour',
-        message: '',
+    if (submitting) return;
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      await api.post('/api/contact-messages', {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim() || undefined,
+        service: formData.service,
+        message: formData.message.trim(),
+        // Track which public page the enquiry came from.
+        source: typeof window !== 'undefined' ? window.location.pathname : undefined,
       });
-    }, 4000);
+      setIsSubmitted(true);
+      setTimeout(() => {
+        setIsSubmitted(false);
+        setFormData({
+          name: '',
+          email: '',
+          phone: '+974 ',
+          service: 'Desert Safari Tour',
+          message: '',
+        });
+      }, 4000);
+    } catch {
+      setSubmitError('Sorry, your message could not be sent right now. Please try again or call us directly.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -250,11 +271,16 @@ export const ContactPageView: React.FC<ContactPageViewProps> = ({
 
                 <button
                   type="submit"
-                  className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#C0AB6F] hover:brightness-110 text-[#05161D] font-black text-xs shadow-lg shadow-[#D4AF37]/25 active:scale-95 transition cursor-pointer flex items-center gap-2"
+                  disabled={submitting}
+                  className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#C0AB6F] hover:brightness-110 text-[#05161D] font-black text-xs shadow-lg shadow-[#D4AF37]/25 active:scale-95 transition cursor-pointer flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <Send className="w-4 h-4" />
-                  <span>Send Message to Concierge</span>
+                  <span>{submitting ? 'Sending…' : 'Send Message to Concierge'}</span>
                 </button>
+
+                {submitError && (
+                  <p className="text-xs text-rose-500 dark:text-rose-300">{submitError}</p>
+                )}
               </form>
             )}
           </div>

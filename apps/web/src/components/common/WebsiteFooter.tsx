@@ -25,6 +25,7 @@ import { PublicPageSlug } from './WebsiteHeader';
 import { BackToTop } from './BackToTop';
 import { useApp } from '../../context/AppContext';
 import { useWebsiteLanguage } from '../../context/WebsiteLanguageContext';
+import { api } from '../../../lib/api';
 
 export interface WebsiteFooterProps {
   onNavigate: (slug: PublicPageSlug) => void;
@@ -48,12 +49,31 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
   const [name, setName] = useState('');
   const [selectedInterest, setSelectedInterest] = useState('Desert Safari');
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const handleSubscribe = (e: React.FormEvent) => {
+  const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
-    setIsSubscribed(true);
+    if (!email || submitting) return;
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      await api.post('/api/club-leads', {
+        name: name.trim() || undefined,
+        email: email.trim(),
+        interest: selectedInterest,
+        // Track which public page the signup came from.
+        source: typeof window !== 'undefined' ? window.location.pathname : undefined,
+      });
+      setIsSubscribed(true);
+    } catch {
+      // Still show the voucher so the visitor experience isn't blocked, but
+      // surface a soft note; the lead simply wasn't recorded this time.
+      setSubmitError('We couldn’t save your details just now — please try again or contact us directly.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const copyVoucher = () => {
@@ -271,11 +291,16 @@ export const WebsiteFooter: React.FC<WebsiteFooterProps> = ({
                     {/* Submit Button */}
                     <button
                       type="submit"
-                      className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-[#D4AF37] via-[#E7CF8A] to-[#C0AB6F] hover:brightness-110 text-[#05161D] font-black text-xs transition shadow-lg shadow-[#D4AF37]/25 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                      disabled={submitting}
+                      className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-[#D4AF37] via-[#E7CF8A] to-[#C0AB6F] hover:brightness-110 text-[#05161D] font-black text-xs transition shadow-lg shadow-[#D4AF37]/25 flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      <span>Claim VIP Membership & 10% Voucher</span>
-                      <ArrowRight className="w-4 h-4" />
+                      <span>{submitting ? 'Processing…' : 'Claim VIP Membership & 10% Voucher'}</span>
+                      {!submitting && <ArrowRight className="w-4 h-4" />}
                     </button>
+
+                    {submitError && (
+                      <p className="text-[10px] text-rose-300 text-center leading-normal">{submitError}</p>
+                    )}
 
                     {/* Anti-spam Guarantee */}
                     <p className="text-[10px] text-slate-400 text-center leading-normal">

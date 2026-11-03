@@ -36,6 +36,8 @@ export const KNOWN_TABS = [
   'search',
   'website-content',
   'reviews',
+  'leads',
+  'messages',
 ] as const;
 
 const TAB_SET = new Set<string>(KNOWN_TABS);

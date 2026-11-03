@@ -30,6 +30,13 @@ export interface CrudOptions {
   /** When true, GET routes are public (no token); writes still require auth. */
   publicRead?: boolean;
   /**
+   * When true, POST (create) is public — no token required. Used for public
+   * website forms (lead capture, contact enquiries). Reads/updates/deletes
+   * still require auth so the dashboard stays protected. Audit stamping is
+   * skipped automatically for anonymous creates (no `req.user`).
+   */
+  publicCreate?: boolean;
+  /**
    * When true (default), create/update stamp who did it onto the row
    * (createdBy / createdByName / updatedBy / updatedByName) from the
    * authenticated user. Set false for models that don't have those columns.
@@ -56,6 +63,7 @@ export function createCrudRouter(opts: CrudOptions): Router {
     filterFields = [],
     defaultOrderBy = { createdAt: 'desc' },
     publicRead = false,
+    publicCreate = false,
     audit = true,
   } = opts;
 
@@ -76,8 +84,10 @@ export function createCrudRouter(opts: CrudOptions): Router {
   };
 
   const router = Router();
-  // Reads may be public (catalogue data for the website); writes never are.
+  // Reads may be public (catalogue data for the website); writes never are,
+  // except create when publicCreate is set (public website form submissions).
   const readGuard = publicRead ? [] : [authenticate];
+  const createGuard = publicCreate ? [] : [authenticate];
 
   router.get(
     '/',
@@ -118,7 +128,7 @@ export function createCrudRouter(opts: CrudOptions): Router {
 
   router.post(
     '/',
-    authenticate,
+    ...createGuard,
     asyncHandler(async (req, res) => {
       const data = createSchema.parse(req.body) as Record<string, unknown>;
       // Honour a client-supplied id so the frontend and DB stay in sync.

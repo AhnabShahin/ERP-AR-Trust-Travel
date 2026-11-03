@@ -933,42 +933,48 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Desktop Grid Layout */}
-          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {reviews.map((rev) => (
-              <div
-                key={rev.id}
-                className="bg-white dark:bg-[#05161D] p-6 rounded-3xl border border-slate-200 dark:border-[#C0AB6F]/30 shadow-md flex flex-col justify-between"
-              >
-                <div>
-                  {/* Star row */}
-                  <div className="flex items-center gap-1 mb-3 text-[#D4AF37]">
-                    {[...Array(rev.rating)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 fill-[#D4AF37]" />
-                    ))}
-                  </div>
+          {/* Desktop Auto-Scrolling Review Slider (continuous marquee, pauses on hover) */}
+          <div className="hidden md:block w-full overflow-hidden relative [mask-image:linear-gradient(to_right,transparent,black_3%,black_97%,transparent)] py-2">
+            <div className="animate-marquee flex items-stretch gap-6">
+              {/* Two identical groups back-to-back for a seamless infinite loop */}
+              {[0, 1].map((group) =>
+                reviews.map((rev) => (
+                  <div
+                    key={`desk-${group}-${rev.id}`}
+                    aria-hidden={group === 1 ? 'true' : undefined}
+                    className="w-[340px] lg:w-[360px] shrink-0 bg-white dark:bg-[#05161D] p-6 rounded-3xl border border-slate-200 dark:border-[#C0AB6F]/30 shadow-md flex flex-col justify-between"
+                  >
+                    <div>
+                      {/* Star row */}
+                      <div className="flex items-center gap-1 mb-3 text-[#D4AF37]">
+                        {[...Array(rev.rating)].map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-[#D4AF37]" />
+                        ))}
+                      </div>
 
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic mb-4">
-                    "{rev.comment}"
-                  </p>
-                </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed italic mb-4 line-clamp-5">
+                        "{rev.comment}"
+                      </p>
+                    </div>
 
-                <div className="pt-4 border-t border-slate-100 dark:border-white/10 flex items-center gap-3">
-                  <img
-                    src={imgSrc(rev.avatar)}
-                    alt={rev.author}
-                    className="w-10 h-10 rounded-full object-cover border border-[#C0AB6F]/40"
-                    loading="lazy"
-                  />
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                      {rev.author}
-                    </h4>
-                    <span className="text-[11px] text-slate-400 block">{rev.country}</span>
+                    <div className="pt-4 border-t border-slate-100 dark:border-white/10 flex items-center gap-3">
+                      <img
+                        src={imgSrc(rev.avatar)}
+                        alt={rev.author}
+                        className="w-10 h-10 rounded-full object-cover border border-[#C0AB6F]/40"
+                        loading="lazy"
+                      />
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                          {rev.author}
+                        </h4>
+                        <span className="text-[11px] text-slate-400 block">{rev.country}</span>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                ))
+              )}
+            </div>
           </div>
 
           {/* Mobile Auto-Scrolling Review Cards Track (Continuous marquee, pauses on touch/hover) */}

@@ -24,6 +24,8 @@ interface ResourceDef {
   filterFields?: string[];
   defaultOrderBy?: Record<string, 'asc' | 'desc'>;
   publicRead?: boolean;
+  /** Allow anonymous POST (public website form submissions). */
+  publicCreate?: boolean;
   /** Set false for models without the createdBy/updatedBy audit columns. */
   audit?: boolean;
 }
@@ -495,6 +497,49 @@ const resources: ResourceDef[] = [
       sortOrder: num.int().optional(),
     },
   },
+  {
+    // VIP Travel Club signups — submitted publicly from the website
+    // ("Claim VIP Membership & 10% Voucher"). List/edit/delete are dashboard-
+    // only (auth); create is public. No audit columns (anonymous create).
+    path: 'club-leads',
+    name: 'Club lead',
+    delegate: prisma.clubLead,
+    publicCreate: true,
+    audit: false,
+    defaultOrderBy: { createdAt: 'desc' },
+    searchFields: ['name', 'email', 'interest', 'source'],
+    filterFields: ['status', 'interest', 'source'],
+    shape: {
+      name: str.optional(),
+      email: str,
+      interest: str.optional(),
+      source: str.optional(),
+      status: str.optional(),
+      notes: str.optional(),
+    },
+  },
+  {
+    // Contact / concierge enquiries — submitted publicly from the contact (and
+    // other) pages ("Send Message to Concierge"). Create public; rest auth.
+    path: 'contact-messages',
+    name: 'Contact message',
+    delegate: prisma.contactMessage,
+    publicCreate: true,
+    audit: false,
+    defaultOrderBy: { createdAt: 'desc' },
+    searchFields: ['name', 'email', 'phone', 'service', 'message', 'source'],
+    filterFields: ['status', 'service', 'source'],
+    shape: {
+      name: str,
+      email: str,
+      phone: str.optional(),
+      service: str.optional(),
+      message: str,
+      source: str.optional(),
+      status: str.optional(),
+      notes: str.optional(),
+    },
+  },
 ];
 
 /** Mounts every resource router under /api/<path>. */
@@ -512,6 +557,7 @@ export function registerResourceRoutes(app: Express) {
         filterFields: def.filterFields,
         defaultOrderBy: def.defaultOrderBy,
         publicRead: def.publicRead,
+        publicCreate: def.publicCreate,
         audit: def.audit,
       })
     );

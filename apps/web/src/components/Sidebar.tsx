@@ -31,6 +31,8 @@ import {
   Wallet,
   BarChart3,
   Share2,
+  Crown,
+  Inbox,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { imgSrc } from '../../lib/uploads';
@@ -310,6 +312,16 @@ export const Sidebar: React.FC = () => {
           id: 'reviews',
           label: language === 'ar' ? 'تقييمات العملاء' : 'Customer Reviews',
           icon: Star,
+        },
+        {
+          id: 'leads',
+          label: language === 'ar' ? 'طلبات نادي VIP' : 'VIP Club Leads',
+          icon: Crown,
+        },
+        {
+          id: 'messages',
+          label: language === 'ar' ? 'رسائل التواصل' : 'Contact Messages',
+          icon: Inbox,
         },
       ],
     },

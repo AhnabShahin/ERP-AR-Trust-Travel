@@ -853,6 +853,49 @@ model Review {
 }
 
 // ---------------------------------------------------------------------
+// Public website lead capture — submissions from the marketing site.
+// These rows are created by anonymous visitors (public POST, no auth), so
+// they carry no createdBy/updatedBy audit columns. `source` records which
+// public page the form was submitted from (e.g. "/", "/contact").
+// ---------------------------------------------------------------------
+
+// VIP Travel Club signups ("Claim VIP Membership & 10% Voucher" form).
+model ClubLead {
+  id        String   @id @default(cuid())
+  name      String? // optional on the form
+  email     String
+  interest  String? // Desert Safari | Airport Driver | City Tour | Holiday Packages
+  source    String? // page path the signup came from
+  status    String   @default("new") // new | contacted | converted | archived
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("club_leads")
+}
+
+// Contact / concierge enquiries ("Send Message to Concierge" form).
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  service   String? // interested service dropdown
+  message   String   @db.Text
+  source    String? // page path the message came from
+  status    String   @default("new") // new | read | replied | archived
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("contact_messages")
+}
+
+// ---------------------------------------------------------------------
 // Billing — payment accounts + invoices (BizBill-style).
 // `items` and `payments` are JSON (line items / payment ledger) to match the
 // codebase convention of storing nested structures as JSON columns. Links to
